@@ -76,6 +76,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 35 | §35 | Word context menus and mini toolbar | §5 | [ ] |
 | 36 | §36 | Word Backstage document states | §6 | [ ] |
 | 37 | §37 | Word Backstage account states | §6 | [ ] |
+| 38 | §38 | Sweep gate on checker changes | §27 | [ ] |
 
 ## 1. Inventory Schema Checker
 
@@ -995,6 +996,30 @@ Filed 2026-11-13T03:17:13Z from D02 T01 §6's fresh plan review (gap 3). The `ac
 - [ ] Commit: `inventory: capture Word Backstage signed out`
 
 **Test checkpoint:** `python scripts/check-inventory.py design/inventory/word` exits 0 with no `account-state` reason left in `ABSENT`.
+
+## 38. Sweep Gate on Checker Changes
+
+Filed 2026-11-13T10:40:00Z by the lead while D02 T01 §27 was built. §27 proved once that every rule of `scripts/check-inventory.py` and `design/inventory/schema.json` is held by a test (`docs/reviews/02-interface/inventory-mutation-sweep.md`), and nothing runs that proof again: the next change to the checker, its schema or its tests can add a rule no test holds, or drop the test that held one, and nobody would know until someone ran the sweep by hand, which takes about an hour on this PC (270 rules, four workers). This section makes the sweep a standing gate that GitHub runs in shares on every push that changes one of those files, so a red head names the unheld rule within one CI run (owner, 2026-11-12, decision 45: this PC runs what a change touches, GitHub does the heavy lifting).
+
+**Phase:** 2
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Give `scripts/mutation-sweep-inventory.py` shares, a stop at the first failing test and a check of what a push changed. Done when: the shares of a fixture sweep together remove every rule exactly once, a killed removal's run ends at its first failure, and a push that changed none of the swept files runs nothing.
+2. Add the `sweep` job to `.github/workflows/ci.yml`. Done when: the job runs four shares with the command below and `scripts/ci-status.py` reads its result with the rest of the run.
+3. Prove it on GitHub. Done when: the push that adds the job shows four `sweep` shares that removed rules and passed, and a later push that changes none of the swept files shows them skipped.
+
+- [ ] Add `--shard <i>/<n>` to `scripts/mutation-sweep-inventory.py`: the rules, in the order `--list` prints them, are dealt to `n` shares by position, and every share starts with its own unmutated run. Done when: a test in `scripts/tests/test_mutation_sweep_inventory.py` shows the four shares of the fixture disjoint and together equal to the whole list, and `--shard 0/4`, `--shard 5/4` and `--shard x` each exit 2 with a message naming the form. Cheaper substitute: dealing by a hash of the rule's name, which leaves shares uneven and moves a rule between shares when its line number changes; refused. Source: `scripts/run-tests.py`, `--shard`.
+- [ ] Stop a removal's test run at its first failing test in `run_tests` of `scripts/mutation-sweep-inventory.py`, with a result class whose `addFailure` stops the run and whose `addError` does not, and report a run stopped that way as `KILLED` without asking that every discovered test ran. Done when: fixture tests show a killed removal reported `KILLED` with one failing test and fewer tests run than discovered, a removal whose tests only error still `ERRORED` after every test ran, a removal whose first test errors and whose later test fails `KILLED`, and a removal that hides a test file still `UNDISCOVERED`. Cheaper substitute: unittest's own `failfast`, which also stops at the first error and would report a killable removal as `ERRORED`; refused.
+- [ ] Add `--if-changed <base> <head>` to `scripts/mutation-sweep-inventory.py`: when `git diff --name-only <base> <head>` names none of `scripts/check-inventory.py`, `design/inventory/schema.json`, `scripts/tests/test_check_inventory.py` and `scripts/mutation-sweep-inventory.py`, it prints `sweep skipped: no swept file changed between <base> and <head>` and exits 0 having removed nothing; when one is named, or when either commit cannot be read (the all-zero base of a first push, a commit missing from a shallow clone, `git` failing), it runs the sweep. Done when: tests over a fixture repository show the skip, a run for a change to each of the four files, and a run for an unreadable base, each with the line it prints. Cheaper substitute: a `paths:` filter on a workflow of its own, whose run `scripts/ci-status.py` does not read and which no test here can exercise; refused.
+- [ ] Add the `sweep` job to `.github/workflows/ci.yml`: four shares on `windows-latest` with `fail-fast: false`, `fetch-depth: 0`, the Python and requirements steps of the `tests` job, then `python -B scripts/mutation-sweep-inventory.py --shard ${{ matrix.share }}/4 --if-changed ${{ github.event.before }} ${{ github.sha }}`. Done when: a test in `scripts/tests/test_mutation_sweep_inventory.py` reads the workflow and finds the job, its four shares, the full history checkout and that command, and `scripts/tests/test_ci_status.py` shows a run whose `sweep` share failed read as red with that share named. Cheaper substitute: a workflow file of its own, whose red result would not stop the campaign because `scripts/ci-status.py` reads the `ci.yml` run; refused.
+- [ ] Name the gate where a reader looks for it: the list of CI checks in `AGENTS.md` (TODO workflow) and the head of `docs/reviews/02-interface/inventory-mutation-sweep.md`, each saying what starts it and how a red share is reproduced here (`python -B scripts/mutation-sweep-inventory.py --shard N/4`). Done when: both name the `sweep` job and that command.
+- [ ] Record the proof on GitHub in this section's findings file `docs/reviews/02-interface/D02-T01-s38.md` under a `## Writer note:` heading: the run of the push that adds the job (four `sweep` shares, each printing `survivors: 0` after removing its rules) and the run of a later push that changes none of the four files (four shares, each printing `sweep skipped`), with both run addresses and the seconds each share took. Done when: both runs are green and quoted there. Cheaper substitute: trusting the workflow test alone, which reads the file and never runs it.
+- [ ] Commit: `ci: sweep the inventory checker's rules on every change to it`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_mutation_sweep_inventory.py"` passes, and `python scripts/ci-status.py HEAD` exits 0 for a head whose run holds four `sweep` jobs.
 
 ## Verification
 
