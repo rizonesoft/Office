@@ -82,6 +82,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 44 | §58 | The plan lists sections, never TODO files | -- | [x] |
 | 45 | §59 | A parked section is neither ready nor in progress | -- | [x] |
 | 46 | §60 | CI runs the tooling tests in parallel jobs | -- | [x] |
+| 47 | §61 | A reconciliation honours an owner decision | -- | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -1158,6 +1159,7 @@ Filed 2026-11-11 (owner, in session: agents are read-only; the Fable `principal-
 ## 53. Automation Notices Go in the Weekly Digest
 
 > **Started:** 2026-11-12T03:10:00Z
+> **Parked:** 2026-11-13T00:29:30Z until D00 T03 §61: its reconciliation needs the rule by which a reconciliation honours an owner decision; reconciliation 10 returned the obligation the owner gave up (decision 46) as open
 
 Filed 2026-11-11 from the completion review of §35 (`docs/reviews/00-workspace/D00-T03-s35-completion.md`, round 1, finding 5, P2). Decision 32 of `docs/specs/2026-10-23-campaign-scope-design.md` promises one weekly email and no other interruption, but three senders still email at once: `run.py` when a scheduled task fails (`.conclave/automations/run.py`, through `alert.py`), the host readiness check when a campaign parks (`scripts/check-campaign-host.py --notify`, `process-plan`'s Host readiness step), and the version notices of `check-visual-studio.py` and `check-python-pin.py`. This section records each notice for the digest instead, keeps one immediate email only where waiting a week would lose work, and says which in the README.
 
@@ -1374,6 +1376,26 @@ Filed 2026-11-13 from the owner's direction of 2026-11-12 (decision 45 of `docs/
 
 > **Verified:** 2026-11-13 | §60 | 56729c6617e79749a58244ac9568c4a26b67b11f
 > **Review:** `docs/reviews/d00-t03-s60.json`
+## 61. A Reconciliation Honours an Owner Decision
+
+> **Started:** 2026-11-13T00:29:30Z
+
+Filed 2026-11-13 from §53's tenth reconciliation. Two obligations that reviews held §53 to cannot both be met in one state (never repeat a digest that was delivered; never take SMTP2GO's acceptance as delivery), the owner chose between them in session on 2026-11-13 (decision 46 of `docs/specs/2026-10-23-campaign-scope-design.md`, applied by §56), and the reconciliation still returned the given-up obligation as an open P1, saying that "this reconciliation's instructions expressly prohibit waiving that obligation". They do: `docs/reconciliation-review-prompt.md` tells the reviewer that obligations "cannot be narrowed, reclassified or waived to obtain approval", and names no one who may decide between two that conflict. That rule is right against a writer, and wrong against the owner, whose product it is: without a way to honour an owner decision, a section whose reviews demand both sides of a real trade can never be stamped, however the owner chooses. This section gives the reconciliation that way, and keeps it out of the writer's reach.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Say in the reconciliation prompt how an owner decision settles a gap. Done when: a filled prompt carries the rule and what the reviewer must verify.
+2. Say in the review skill how the writer records it. Done when: `review-todo-section` names the `- Decided:` line and when it may be written.
+
+- [ ] Add the rule to `docs/reconciliation-review-prompt.md`, in "What to check": where obligations the reviews held the section to conflict and the owner has chosen, the choice is a numbered, dated decision in the governing record the prompt names, made after the failed completion review and naming the section or the gap; the obligation the owner kept is checked as any other; the one given up is `closed by owner decision <N>` only when the reviewer has read the decision in the record, the candidate does what it says and no more of the given-up behaviour than it allows, a test holds that behaviour, and the writer's `- Decided:` line names the gap and the decision; a writer's note, re-think or filed section is never such a decision, and a decision that does not name the section or predates the completion review settles nothing. Done when: `python scripts/review-prompt.py --kind reconciliation` writes a prompt holding the rule, and tests in `scripts/tests/test_review_prompt.py` show the filled prompt carrying each of those conditions and still carrying the sentence that obligations cannot be narrowed, reclassified or waived by the writer. Cheaper substitute: telling the reviewer in one prompt's free text that the owner agreed, which the next reconciliation of any section would lack and no test would hold.
+- [ ] Name the `- Decided: <gap> by owner decision <N> of <record>` line in `.claude/skills/review-todo-section/SKILL.md` (step 4, reconciliation after gaps): written under the review that raised the gap, only for a decision the owner made and the governing record holds, never to close a gap the repair can close. Done when: the skill names the line, who may decide, and that an unattended run files the question as an `owner-decision` section and parks instead of deciding. Cheaper substitute: leaving such a section to loop until the pass cap.
+- [ ] Commit: `review: a reconciliation honours an owner decision between conflicting obligations`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_review_prompt.py"` passes with the tests named above among them.
 ## Verification
 - `python -m unittest discover -s scripts/tests` passes on a fresh clone.
 - `Get-ScheduledTask -TaskPath '\Office\'` lists every task in `tasks.json`, and `README.md` matches it.
