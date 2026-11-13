@@ -135,6 +135,23 @@ class Validate(unittest.TestCase):
         absent = dict(wb.ABSENT, GroupReadOnly="a-new-reason")
         self.refused(self.records, "the absence reason a-new-reason is not documented", absent=absent)
 
+    def test_an_absence_reason_without_an_owner_or_a_final_disposition_is_refused(self):
+        reference = self.reference + "\n- `server-state`: shown only for a document in a library.\n"
+        self.refused(self.records, "the absence reason server-state has no owning section and is not final",
+                     absent=dict(wb.ABSENT, GroupReadOnly="server-state"), reference=reference)
+        self.refused(self.records, "REFERENCE.md does not say document-state is captured by D02 T01 §36",
+                     reference=self.reference.replace("by `D02 T01 §36`", "later"))
+        self.refused(self.records, "REFERENCE.md does not say not-offered is final",
+                     reference=self.reference.replace("- `not-offered`: Final:", "- `not-offered`:"))
+
+    def test_a_menu_that_lost_one_of_its_items_is_refused_naming_it(self):
+        recs = [r for r in self.records if r["id"] != "word.backstage.print.print.settings.margins.custom-margins"]
+        self.assertEqual(len(recs), len(self.records) - 1)
+        self.refused(recs, "word.backstage.print.print.settings.margins: Margins holds 6 of the 7 items")
+        recs = [dict(r) for r in self.records]
+        del next(r for r in recs if r["id"] == "word.backstage.print.print.settings.margins")["itemCount"]
+        self.refused(recs, "Margins has items but no itemCount")
+
     def test_an_absence_that_was_captured_after_all_is_refused(self):
         self.refused(self.records, "listed absent but captured: GroupPermissions",
                      absent=dict(wb.ABSENT, GroupPermissions="document-state"))

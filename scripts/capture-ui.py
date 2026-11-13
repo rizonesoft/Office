@@ -2912,6 +2912,39 @@ def _backstage_view(uia, hwnd):
     return find(uia.element(hwnd), lambda e: e.automation_id == "BackstageView" and e.control_type == "Pane", depth=20)
 
 
+def _signature(element, depth=12):
+    """What an element shows, to tell a settled view from one still changing."""
+    return tuple((el.control_type, el.name or "", el.automation_id or "") for el in descendants(element, depth))
+
+
+def _loading(elements):
+    return any((el.name or "").lower().startswith("loading") for k in elements for el in [k, *descendants(k, 12)])
+
+
+def settled(read, seconds, step=0.4):
+    """The value `read()` gives once two reads `step` apart agree. `read` returns (value, signature), or None while
+    the view is not ready; the result is None when it has not settled within `seconds`."""
+    deadline, previous = time.monotonic() + seconds, None
+    while True:
+        current = read()
+        if current is not None and previous is not None and current[1] == previous[1]:
+            return current[0]
+        previous = current
+        if time.monotonic() >= deadline:
+            return None
+        time.sleep(step)
+
+
+def _loaded_page(uia, hwnd, label, ready):
+    """The page's content once it holds a record's worth, none of it is loading and two reads agree (D02 T01 §6)."""
+    def read():
+        content = _page_content(_backstage_view(uia, hwnd), label)
+        if content is None or _loading(list(content.children())):
+            return None
+        return content, _signature(content)
+    return settled(read, ready)
+
+
 def _page_content(view, label):
     """The page's content group in the Backstage pane, once it holds something a record is made for."""
     if view is None:
@@ -2963,7 +2996,7 @@ def capture_word_backstage(launched, uia, win, ctx, identifiers, ready=BACKSTAGE
                 # For a document never saved, Save only shows the Save As page: nothing can be written, so it is
                 # pressed and recorded as the page it shows (its content is Save As's, recorded under that page).
                 entry.activate()
-                if wait_for(lambda: _page_content(_backstage_view(uia, hwnd), "Save As"), seconds=ready) is None:
+                if _loaded_page(uia, hwnd, "Save As", ready) is None:
                     raise Refused("Save on the capture's new document did not show the Save As page")
                 records.append(ctx.base(word_backstage.ACTIONS[label], "backstagePage", label, order, entry,
                                         parent=None, target="word.backstage.save-as"))
@@ -2976,9 +3009,9 @@ def capture_word_backstage(launched, uia, win, ctx, identifiers, ready=BACKSTAGE
                 continue
             launched.check_alone()
             entry.activate()
-            content = wait_for(lambda: _page_content(_backstage_view(uia, hwnd), label), seconds=ready)
+            content = _loaded_page(uia, hwnd, label, ready)
             if content is None:
-                raise Refused(f"the Backstage page {label!r} did not load within {ready:.0f} s")
+                raise Refused(f"the Backstage page {label!r} did not load and settle within {ready:.0f} s")
             pid = f"word.backstage.{word_backstage.slug(label)}"
             extra = {"idMso": word_backstage.PAGES[label]} if label in word_backstage.PAGES else {}
             records.append(ctx.base(pid, "backstagePage", label, order, entry, parent=None, **extra))
@@ -2990,8 +3023,16 @@ def capture_word_backstage(launched, uia, win, ctx, identifiers, ready=BACKSTAGE
                     if el.expand_state() is None:
                         return None
                     el.expand()
-                    time.sleep(0.8)
-                    items = [backstage_tree(k, identifiers, limit=6) for k in el.children()]
+
+                    def read():  # a menu still filling is read again until two reads agree
+                        kids = list(el.children())
+                        if not kids or _loading(kids):
+                            return None
+                        return kids, tuple((k.control_type, k.name) + _signature(k, 6) for k in kids)
+                    kids = settled(read, ready)
+                    if kids is None:
+                        raise Refused(f"its items did not settle within {ready:.0f} s")
+                    items = [backstage_tree(k, identifiers, limit=6) for k in kids]
                     el.collapse()
                     time.sleep(0.3)
                     return items
@@ -3023,14 +3064,16 @@ def backstage_task_details(uia, hwnd, label, page_records, ctx, identifiers, bas
         before = {(k.name, k.automation_id) for k in _page_content(_backstage_view(uia, hwnd), label).children()}
         element.activate()
 
-        def shown():
+        def shown():  # the task's own panels, once none of them is loading and two reads agree
             content = _page_content(_backstage_view(uia, hwnd), label)
             if content is None:
                 return None
             new = [k for k in content.children() if (k.name, k.automation_id) not in before and k.control_type == "Group"
                    and k.automation_id not in word_backstage.TASK_GROUPS]
-            return new or None
-        panels = wait_for(shown, seconds=min(ready, 5.0))
+            if not new or _loading(new):
+                return None
+            return new, tuple((k.name, k.automation_id) + _signature(k) for k in new)
+        panels = settled(shown, min(ready, 5.0))
         if not panels:
             ctx.notes.append(f"the {task['label']!r} task on {label!r} showed no panel of its own")
             continue

@@ -4653,6 +4653,36 @@ def menu(name, *items):
     return el
 
 
+def filling(el, steps):
+    """Make `el` show `steps[i]` (a list of children) on its i-th read, the last one from then on; or `steps(i)` when
+    it is a function, for a view that never stops changing."""
+    reads = {"n": 0}
+
+    def children():
+        reads["n"] += 1
+        shown = steps(reads["n"]) if callable(steps) else steps[min(reads["n"], len(steps)) - 1]
+        return (E._wrap(k) for k in shown)
+    el.children = children
+    return el
+
+
+def slow_menu(name, *steps):
+    """A menu button whose opened menu shows `steps[i]` (item names) on its i-th read: one still filling."""
+    el = E("MenuItem", name)
+    state = {"open": False}
+    el.expand_state = lambda: 1 if state["open"] else 0
+
+    def expand():
+        state["open"] = True
+        filling(el, steps[0] if callable(steps[0]) else [[E("MenuItem", i) for i in step] for step in steps])
+
+    def collapse():
+        state["open"] = False
+        el.children = lambda: iter(())
+    el.expand, el.collapse = expand, collapse
+    return el
+
+
 class SlowClose(unittest.TestCase):
     """D02 T01 §6: Word can take longer than the close's wait to quit after a Backstage session."""
 
@@ -4723,6 +4753,59 @@ class WordBackstage(unittest.TestCase):
         self.assertIn("word.backstage.print.print.copies", by_id)
         self.assertNotIn("Adobe", json.dumps(records))
         self.assertIsNone(word.view)  # Backstage was left
+
+    def test_a_menu_still_filling_is_read_until_it_settles(self):
+        word = FakeWordBackstage({"Print": [slow_menu("Margins", ["Normal"], ["Normal", "Wide"],
+                                                      ["Normal", "Wide", "Custom Margins"])]})
+        records, _ = self.run_capture(word)
+        items = [r["label"] for r in records if r.get("parent") == "word.backstage.print.margins"]
+        self.assertEqual(items, ["Normal", "Wide", "Custom Margins"])
+        self.assertEqual(next(r for r in records if r["id"] == "word.backstage.print.margins")["itemCount"], 3)
+
+    def test_a_menu_that_never_settles_fails_the_capture(self):
+        word = FakeWordBackstage({"Print": [slow_menu("Margins", lambda n: [E("MenuItem", f"Choice {n}")])]})
+        with self.assertRaises(cu.Refused) as ctx:
+            self.run_capture(word)
+        self.assertIn("'Margins' on the Backstage page 'Print' did not open", str(ctx.exception))
+        self.assertIn("its items did not settle", str(ctx.exception))
+        self.assertIsNone(word.view)
+
+    def test_a_page_that_fills_in_two_steps_is_recorded_in_full(self):
+        word = FakeWordBackstage({"Info": []})
+        press = word.nav.kids[1].activate
+
+        def fill():
+            press()
+            filling(word.view.kids[0], [[E("Button", "Version History")]] * 3 +
+                    [[E("Button", "Version History"), E("Button", "Manage Document")]])
+        word.nav.kids[1].activate = fill
+        records, _ = self.run_capture(word)
+        self.assertEqual([r["label"] for r in records if r.get("parent") == "word.backstage.info"],
+                         ["Version History", "Manage Document"])
+
+    def test_a_page_that_keeps_changing_fails_and_the_committed_file_is_kept(self):
+        word = FakeWordBackstage({"Info": []})
+        press = word.nav.kids[1].activate
+
+        def churn():
+            press()
+            filling(word.view.kids[0], lambda n: [E("Button", f"Entry {n}")])
+        word.nav.kids[1].activate = churn
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "backstage.json"
+            out.write_text("[]\n", encoding="utf-8")
+            before = out.read_bytes()
+            launched = type("L", (), {"hwnd": 5, "close": lambda self: None})()
+            real, cu.capture = cu.capture, lambda *a: self.run_capture(word)
+            try:
+                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()) as err:
+                    code = cu.main(["--app", "word", "--backstage", "--merge", "--out", str(out)],
+                                   launcher=lambda app: launched, uia_factory=lambda: None, win_factory=lambda: None)
+            finally:
+                cu.capture = real
+            self.assertNotEqual(code, 0)
+            self.assertIn("the Backstage page 'Info' did not load and settle", err.getvalue())
+            self.assertEqual(out.read_bytes(), before)
 
     def test_save_on_a_document_never_saved_is_the_save_as_page_it_shows(self):
         pages = {"Save As": [E("Group", "Pick a Folder", kids=[E("Button", "Save")])]}

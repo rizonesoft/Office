@@ -69,6 +69,11 @@ ACTIONABLE = {"control", "menuItem", "backstagePage"}
 AVAILABILITY = re.compile(r"(?:^|[.;]\s+)(Always available|Needs |Disabled |Unavailable |Shown only |Empty when |"
                           r"Read only|Available only )[^.;]*\.?$", re.IGNORECASE)
 CONDITION = AVAILABILITY  # the name the capture scripts used
+
+# Who captures what an absence reason leaves out, or None when the reason is final (D02 T01 §6, fresh plan review
+# gap 3). REFERENCE.md names the same owner, or says "Final:", on the reason's own line.
+REASON_OWNERS = {"document-state": "D02 T01 §36", "account-state": "D02 T01 §37", "layout-variant": "D02 T01 §37",
+                 "not-offered": None, "not-exposed": None}
 # Baseline Backstage ids that UI Automation shows without an automation id, matched by their page and label instead.
 LABELS = {
     ("TabRecent", "Recent"): "ButtonTaskRecentDocuments", ("TabRecent", "Shared with Me"): "ButtonTaskSharedWithMe",
@@ -271,7 +276,9 @@ def record_tree(page_id: str, node: dict, base, expand=None) -> list:
                     and label not in ENVIRONMENT_LISTS and not environment:
                 items = expand(child)
                 if items:
-                    menu_items(items, me)
+                    control = records[-1]
+                    control["itemCount"] = menu_items(items, me)  # what the file must hold under it
+
     def menu_items(items, parent):
         order = 0
         for item in flatten(items):
@@ -283,6 +290,7 @@ def record_tree(page_id: str, node: dict, base, expand=None) -> list:
                 continue  # the dropdown's own open and close arrows
             records.append(base(rid(parent, label), "menuItem", label, order, item, parent))
             order += 1
+        return order
 
     walk(node.get("children", []), page_id, 0)
     return records
@@ -351,9 +359,15 @@ def validate(records: list, baseline: dict, absent: dict, reference_text: str, r
         if rec is None or not (rec.get("kind") == "control" or page):
             problems.append(f"the navigation action {label} is not recorded as {rid}")
     seen = {r.get("idMso") for r in records if r.get("idMso")}
-    for reason in set(absent.values()):
-        if f"`{reason}`" not in reference_text:
+    for reason in sorted(set(absent.values())):
+        line = next((x for x in reference_text.splitlines() if x.startswith(f"- `{reason}`:")), None)
+        if line is None:
             problems.append(f"the absence reason {reason} is not documented in design/inventory/REFERENCE.md")
+        elif reason not in REASON_OWNERS:
+            problems.append(f"the absence reason {reason} has no owning section and is not final")
+        elif not (f"`{REASON_OWNERS[reason]}`" in line if REASON_OWNERS[reason] else "Final:" in line):
+            problems.append(f"REFERENCE.md does not say {reason} is " +
+                            (f"captured by {REASON_OWNERS[reason]}" if REASON_OWNERS[reason] else "final"))
     for row in baseline_rows(baseline):
         mso = row.get("idMso")
         if not mso:
@@ -366,7 +380,17 @@ def validate(records: list, baseline: dict, absent: dict, reference_text: str, r
         if page in pages and mso not in seen and mso not in absent:
             problems.append(f"baseline {row.get('controlType')} {mso} on {page} is neither captured nor listed absent")
     with_items = {r.get("parent") for r in records if r.get("kind") == "menuItem"}
+    item_counts = {}
     for rec in records:
+        if rec.get("kind") == "menuItem":
+            item_counts[rec.get("parent")] = item_counts.get(rec.get("parent"), 0) + 1
+    for rec in records:
+        if rec.get("controlType") in OPENS and rec["id"] in with_items:
+            if not isinstance(rec.get("itemCount"), int):
+                problems.append(f"{rec['id']}: {rec['label']} has items but no itemCount, so a lost item goes unseen")
+            elif item_counts[rec["id"]] != rec["itemCount"]:
+                problems.append(f"{rec['id']}: {rec['label']} holds {item_counts[rec['id']]} of the "
+                                f"{rec['itemCount']} items the capture recorded under it")
         if rec.get("controlType") in OPENS:
             environment = rec.get("label") in ENVIRONMENT_LISTS
             if environment and rec["id"] in with_items:
