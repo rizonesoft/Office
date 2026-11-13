@@ -143,9 +143,25 @@ class Outcomes(Fixture):
     def test_each_outcome_is_reported_apart_and_the_sweep_fails(self):
         code, out, err = self.sweep("--only", "guard", "--only", "required", "--only", "alternative")
         self.assertEqual(code, 1, err)
-        self.assertTrue(self.line(out, "if value == 'a'").startswith("KILLED       1 failing, 0 erroring"))
-        self.assertTrue(self.line(out, "if value == 'b'").startswith("SURVIVED"))
-        self.assertTrue(self.line(out, "if value == 'c'").startswith("ERRORED      0 failing, 1 erroring"))
+        # Each line carries how every test of that run ended and that all of them ran (completion review, gap 1):
+        # a count of failures alone would not show that discovery was complete.
+        total = out.splitlines()[0].split(" tests pass")[0].split()[-1]
+        self.assertEqual(out.splitlines()[0].split(" (")[1].split(")")[0],
+                         f"0 failing, 0 erroring, {total} passing, 0 skipped, {total} of {total} run")
+        self.assertTrue(self.line(out, "if value == 'a'").startswith(
+            f"KILLED       1 failing, 0 erroring, {int(total) - 1} passing, 0 skipped, {total} of {total} run"),
+            self.line(out, "if value == 'a'"))
+        self.assertTrue(self.line(out, "if value == 'b'").startswith(
+            f"SURVIVED     0 failing, 0 erroring, {total} passing, 0 skipped, {total} of {total} run"),
+            self.line(out, "if value == 'b'"))
+        self.assertTrue(self.line(out, "if value == 'c'").startswith(
+            f"ERRORED      0 failing, 1 erroring, {int(total) - 1} passing, 0 skipped, {total} of {total} run"),
+            self.line(out, "if value == 'c'"))
+        undiscovered = self.line(out, "schema / required")
+        self.assertIn(" passing, ", undiscovered)
+        self.assertNotIn(f"{total} of {total} run", undiscovered)  # fewer tests found or run than the unmutated run
+        for line in out.splitlines()[1:-2]:  # the rule always starts in the same column, whatever the counts
+            self.assertIn(line[80:86], ("guard ", "schema"), line)
         self.assertTrue(self.line(out, "if value == 'slow'").startswith("TIMED-OUT"))
         self.assertTrue(self.line(out, "if value == 'raise'").startswith("KILLED"))
         self.assertTrue(self.line(out, "isinstance(value, str)").startswith("KILLED"))

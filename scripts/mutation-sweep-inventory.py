@@ -19,6 +19,12 @@ An unmutated run comes first and must pass in full, or the sweep exits 2 having 
 only when a test fails with every test discovered; one whose tests only error, that discovers fewer tests, that runs
 out of time or whose process dies is reported as such. Each child runs in a process tree with a time limit and an
 output limit (scripts/lib/process_tree.py). Exit 0 when every rule is killed, 1 otherwise, 2 when it cannot start.
+
+One line per rule: the outcome, then how its tests ended and how many ran, then the rule:
+
+    KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run   guard check-inventory.py:339 if ...
+
+so the record of a sweep shows for each removal that every test was discovered and run, not only that one failed.
 """
 import argparse
 import ast
@@ -183,8 +189,17 @@ def run_tests(copy_root, result_path, pattern):
     Path(result_path).write_text(json.dumps({
         "discovered": discovered, "ran": result.testsRun, "failures": len(result.failures),
         "errors": len(result.errors) - failed_import, "import_errors": failed_import + len(loader.errors),
-        "skipped": len(result.skipped)}), encoding="utf-8")
+        "skipped": len(result.skipped),
+        # What neither failed, errored nor was skipped; an expected failure or an unexpected success is not a pass.
+        "passed": result.testsRun - len(result.failures) - len(result.errors) - len(result.skipped)
+        - len(result.expectedFailures) - len(result.unexpectedSuccesses)}), encoding="utf-8")
     return 0
+
+
+def counts_text(counts):
+    """How one run's tests ended and how many ran, as a sweep line and its record show it."""
+    return (f"{counts['failures']} failing, {counts['errors']} erroring, {counts['passed']} passing, "
+            f"{counts['skipped']} skipped, {counts['ran']} of {counts['discovered']} run")
 
 
 class Workspace:
@@ -265,7 +280,8 @@ def main(argv=None, root=ROOT):
                   file=sys.stderr)
             return 2
         baseline, timeout = counts, args.timeout or max(120.0, 5 * seconds)
-        print(f"unmutated: {baseline['discovered']} tests pass in {seconds:.0f} s; {len(rules)} rules", flush=True)
+        print(f"unmutated: {baseline['discovered']} tests pass in {seconds:.0f} s ({counts_text(baseline)}); "
+              f"{len(rules)} rules", flush=True)
         free = list(spaces)
         pool_lock = threading.Lock()
 
@@ -282,12 +298,12 @@ def main(argv=None, root=ROOT):
             for rule, (state, counts, _) in pool.map(one, rules):
                 if state == "ran":
                     word = verdict(counts, baseline)
-                    detail = f"{counts['failures']} failing, {counts['errors']} erroring"
+                    detail = counts_text(counts)
                 else:
                     word = {"time limit": "TIMED-OUT", "output limit": "FLOODED"}.get(state, "CRASHED")
                     detail = state
                 tally[word] = tally.get(word, 0) + 1
-                print(f"{word:<12} {detail:<24} {rule.name}", flush=True)
+                print(f"{word:<12} {detail:<66} {rule.name}", flush=True)
     survivors = tally.get("SURVIVED", 0)
     others = sum(n for w, n in tally.items() if w not in ("KILLED", "SURVIVED"))
     print(f"rules: {len(rules)}, killed: {tally.get('KILLED', 0)}, other outcomes: {others}")
