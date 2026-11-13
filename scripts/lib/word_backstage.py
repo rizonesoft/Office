@@ -299,12 +299,27 @@ def record_tree(page_id: str, node: dict, base, expand=None) -> list:
     return records
 
 
+CARRIED = ("behaviour", "disposition", "dispositionReason")  # what is written by hand on a Backstage record
+
+
 def carry_behaviours(existing: list, captured: list) -> list:
-    """The captured records, each with the behaviour sentence the committed record of the same id carries: the only
-    hand-written field. A record the capture did not see is not kept, so an old record never stands in for a fresh one."""
-    written = {r["id"]: r["behaviour"] for r in existing if isinstance(r, dict) and r.get("behaviour")}
-    return [dict(r, behaviour=written[r["id"]]) if r["id"] in written and not r.get("behaviour") else r
-            for r in captured]
+    """The captured records, each with the hand-written fields the committed record of the same id carries: its
+    behaviour sentence, and its disposition with the reason (D02 T01 §28). A record the capture did not see is not
+    kept, so an old record never stands in for a fresh one; but one that carries a disposition is the owner's
+    decision about a control, and a capture that no longer shows it is refused (Invalid) instead of dropping that
+    decision without a word."""
+    written = {r["id"]: r for r in existing if isinstance(r, dict) and isinstance(r.get("id"), str)}
+    seen = {r["id"] for r in captured}
+    lost = sorted(rid for rid, r in written.items() if "disposition" in r and rid not in seen)
+    if lost:
+        raise Invalid("the capture does not show these records, which carry a disposition; reconcile them by hand "
+                      "first: " + ", ".join(lost))
+    out = []
+    for r in captured:
+        old = written.get(r["id"], {})
+        kept = {field: old[field] for field in CARRIED if old.get(field) and not r.get(field)}
+        out.append(dict(r, **kept) if kept else r)
+    return out
 
 
 def flatten(items):

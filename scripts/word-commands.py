@@ -178,7 +178,9 @@ def records(table, build, identifiers, ribbon_records=(), effective=None):
     return commands, shortcuts, unmatched, shadowed
 
 
-HAND = ("scope", "condition", "behaviour")  # what D02 T01 §17 writes on a shortcut record; the table never does
+DECIDED = ("disposition", "dispositionReason")  # what we do with a record, written by hand (D02 T01 §28)
+# What is written by hand on a shortcut record (D02 T01 §17, and a disposition); the table never holds it.
+HAND = ("scope", "condition", "behaviour") + DECIDED
 
 
 def carry(existing, fresh):
@@ -194,6 +196,21 @@ def carry(existing, fresh):
                       "; ".join(moved + [f"{rid} left the table" for rid in gone]))
     out = [dict(r, **{k: old[r["id"]][k] for k in HAND if k in old.get(r["id"], {})}) for r in fresh]
     return out + [r for r in existing if str(r.get("source", "")).startswith("published:")]
+
+
+def carry_decided(existing, fresh):
+    """The fresh command records, each with the disposition and reason the committed record of the same id carries
+    (D02 T01 §28): the table never holds them, so without this a refresh would undo the owner's decisions. Raises
+    Refused, naming each, when a committed record that carries a disposition is no longer in the table: the decision
+    would vanish with the record."""
+    old = {r["id"]: r for r in existing if isinstance(r, dict) and isinstance(r.get("id"), str) and "disposition" in r}
+    new = {r["id"] for r in fresh}
+    gone = sorted(rid for rid in old if rid not in new)
+    if gone:
+        raise Refused("committed command records that carry a disposition left the table; reconcile them by hand "
+                      "first: " + ", ".join(gone))
+    return [dict(r, **{k: old[r["id"]][k] for k in DECIDED if k in old[r["id"]]}) if r["id"] in old else r
+            for r in fresh]
 
 
 MODIFIERS = ("Ctrl+", "Alt+", "Shift+")
@@ -300,10 +317,17 @@ def main(argv=None, lister=list_commands, build=reference_build, installed=insta
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         print(f"word-commands: {shortcut_path} could not be read ({exc})", file=sys.stderr)
         return 1
+    command_path = Path(out) / "commands.json"
+    try:
+        committed = json.loads(command_path.read_text(encoding="utf-8")) if command_path.is_file() else []
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        print(f"word-commands: {command_path} could not be read ({exc})", file=sys.stderr)
+        return 1
     try:
         commands, shortcuts, unmatched, shadowed = records(
             table, expected, baseline_identifiers(Path(out) / "baseline.json"), ribbon_records=ribbon_records,
             effective=effective)
+        commands = carry_decided(committed if isinstance(committed, list) else [], commands)
         shortcuts = carry(existing if isinstance(existing, list) else [], shortcuts)
     except Refused as exc:
         print(f"word-commands: {exc}", file=sys.stderr)

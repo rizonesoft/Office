@@ -395,6 +395,101 @@ class Owners(Fixture):
         self.authoring("[]")
         self.assertEqual(self.run_report("--check")[0], 0)  # and reads no authoring file
 
+    # D02 T01 §28: what we do with a record. Word holds one record with no disposition, one of each value.
+
+    DECIDED = ("word.a", "word.b", "word.c", "word.d")
+
+    def decided(self, **changed):
+        """Word's records replaced by four controls: `word.a` with no disposition, `word.b` build, `word.c`
+        equivalent, `word.d` excluded (a keyword changes one record's disposition)."""
+        reason = "Depends on a Microsoft cloud service; our own replaces it."
+        values = dict({"a": None, "b": "build", "c": "equivalent", "d": "excluded"}, **changed)
+        recs = []
+        for name, value in values.items():
+            extra = {} if value is None else {"disposition": value}
+            if value in ("equivalent", "excluded"):
+                extra["dispositionReason"] = reason
+            recs.append(rec(f"word.{name}", "control", **extra))
+        path = self.root / "design" / "inventory" / "word" / "ribbon.json"
+        path.write_text(json.dumps(recs), encoding="utf-8")
+
+    def dispositions_row(self, app="word"):
+        code, out, err = self.run_report()
+        self.assertEqual((code, err), (0, ""))
+        table = out.split("\n## Dispositions\n", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("| App | Build | Equivalent | Excluded | Accounted for |", table)
+        return next(line for line in table.splitlines() if line.startswith(f"| {app} |"))
+
+    def test_coverage_counts_each_disposition_and_what_is_accounted_for(self):
+        self.decided()
+        self.assertEqual(self.dispositions_row(), "| word | 2 | 1 | 1 | 1 |")  # absent is build; only the exclusion
+        self.assertEqual(self.dispositions_row("shell"), "| shell | 1 | 0 | 0 | 0 |")
+        claims = self.claim("D09 T02 §1", "word.a", "word.b", "word.c")  # an open section: nothing is built yet
+        self.assertEqual(self.dispositions_row(), "| word | 2 | 1 | 1 | 1 |")
+        claims.done = True  # stamped: the three it implements, and the exclusion
+        self.assertEqual(self.dispositions_row(), "| word | 2 | 1 | 1 | 4 |")
+        claims.body = "> **Implements:** `word.b` `word.c`"  # an unclaimed record is never accounted for
+        self.assertEqual(self.dispositions_row(), "| word | 2 | 1 | 1 | 3 |")
+        self.assertEqual(self.run_report("--check")[0], 0)
+        self.decided(a="equivalent")  # a disposition changes: the committed report is stale until regenerated
+        code, _, err = self.run_report("--check")
+        self.assertEqual(code, 1)
+        self.assertIn("design/inventory/COVERAGE.md is stale", err)
+        self.assertEqual(self.dispositions_row(), "| word | 1 | 2 | 1 | 3 |")
+        self.assertEqual(self.run_report("--check")[0], 0)
+        claims.done = False  # and a stamp that goes takes its records out again
+        self.assertEqual(self.run_report("--check")[0], 1)
+        self.assertEqual(self.dispositions_row(), "| word | 1 | 2 | 1 | 1 |")
+
+    def test_a_disposition_the_schema_does_not_allow_is_not_guessed_at(self):
+        self.decided(a="maybe")
+        for argv in ((), ("--owners",), ("--owners", "--check")):
+            code, out, err = self.run_report(*argv)
+            self.assertEqual((code, out), (2, ""), argv)
+            self.assertIn("word.a: disposition 'maybe' is not one of build, equivalent, excluded", err)
+
+    def test_an_excluded_record_needs_no_owner_and_takes_none(self):
+        self.decided()
+        self.authors["word"].done = True
+        claims = self.claim("D09 T02 §1", "word.a", "word.b", "word.c")
+        for argv in (("--check",), ("--check", "--all", "--app", "word"), ("--check", "--app", "word")):
+            code, out, err = self.owners(*argv)
+            self.assertEqual((code, err), (0, ""), argv)  # the exclusion is the one record nobody claims
+            self.assertIn("word: enforced (D09 T01 §1 is stamped): 3 of 3 records owned, 1 excluded\n", out)
+            self.assertIn("  control: 3 of 3\n", out)
+        for dropped, kind in (("word.c", "equivalent"), ("word.b", "build"), ("word.a", "no disposition")):
+            claims.body = "> **Implements:** " + " ".join(f"`{i}`" for i in self.DECIDED[:3] if i != dropped)
+            code, out, err = self.owners("--check")
+            self.assertEqual(code, 1, kind)
+            self.assertEqual(err, "refused: word: 1 record(s) no section claims on an Implements line\n"
+                                  f"  unowned control {dropped}\n", kind)
+            self.assertIn("word: enforced (D09 T01 §1 is stamped): 2 of 3 records owned, 1 excluded\n", out)
+
+    def test_a_claim_of_an_excluded_record_is_refused_in_every_state(self):
+        self.decided()
+        self.claim("D09 T02 §1", "word.a", "word.b", "word.c", "word.d")
+        refusal = "refused: excluded claim: word.d is excluded, and D09 T02 §1 claims it\n"
+        for argv in (("--check",), ("--check", "--all", "--app", "word"), ("--check", "--app", "word")):
+            code, out, err = self.owners(*argv)  # Word is pending authoring here
+            self.assertEqual((code, err), (1, refusal), argv)
+            self.assertIn("word: pending authoring (D09 T01 §1 is open): 3 of 3 records owned, 1 excluded\n", out)
+        self.assertEqual(self.owners("--check", "--app", "shell")[::2], (0, ""))  # not the shell's to report
+        self.authors["word"].done = True
+        self.assertEqual(self.owners("--check")[::2], (1, refusal))
+        code, out, err = self.owners()  # the report lists it and refuses nothing
+        self.assertEqual((code, err), (0, ""))
+        self.assertIn("excluded claim: word.d is excluded, and D09 T02 §1 claims it\n", out)
+
+    def test_a_pending_app_with_unclaimed_exclusions_still_passes(self):
+        self.decided(a="excluded", b="excluded")
+        code, out, err = self.owners("--check")
+        self.assertEqual((code, err), (0, ""))
+        self.assertIn("word: pending authoring (D09 T01 §1 is open): 0 of 1 records owned, 3 excluded\n", out)
+        self.decided(a="excluded", b="excluded", c="excluded")  # nothing left to build: still a captured app
+        code, out, err = self.owners("--check", "--all", "--app", "word")
+        self.assertEqual((code, err), (0, ""))
+        self.assertIn("word: pending authoring (D09 T01 §1 is open): 0 of 0 records owned, 4 excluded\n", out)
+
 
 class Filters(Fixture):
     def cite(self, text):
@@ -609,7 +704,7 @@ class Committed(unittest.TestCase):
             if process.poll() is None:
                 process.kill()
             process.stderr.close()
-        rows, _, _ = ir.ownership(ir.ROOT, ir.load_inventory(ir.ROOT)[0], ir.read_sections(ir.ROOT), "word")
+        rows, *_ = ir.ownership(ir.ROOT, ir.load_inventory(ir.ROOT)[0], ir.read_sections(ir.ROOT), "word")
         unowned = sum(len(pair[1]) for pair in rows[0][3].values())
         if unowned:
             self.assertEqual(code, 1, refusals)

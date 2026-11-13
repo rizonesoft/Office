@@ -367,11 +367,40 @@
         "baselineMissing": {
           "type": "boolean",
           "description": "true when the live build shows it but the 2024 baseline lacks it"
+        },
+        "disposition": {
+          "enum": [
+            "build",
+            "equivalent",
+            "excluded"
+          ],
+          "description": "what we do with the record (owner decision 6, 2026-10-22): build it as captured (the meaning of an absent field), build an equivalent of our own for a control that depends on a Microsoft cloud service, or exclude it because no equivalent is possible"
+        },
+        "dispositionReason": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^\\s*\\S",
+          "description": "one sentence in our own words: the cloud service the record depends on and, for an equivalent, what replaces it; required with equivalent and excluded, refused with build",
+          "allOf": [
+            {
+              "$ref": "#/$defs/noLink"
+            },
+            {
+              "$ref": "#/$defs/noControl"
+            },
+            {
+              "$ref": "#/$defs/noHost"
+            }
+          ],
+          "maxLength": 500
         }
       },
       "dependentRequired": {
         "bounds": [
           "captureProfile"
+        ],
+        "dispositionReason": [
+          "disposition"
         ]
       },
       "allOf": [
@@ -425,6 +454,46 @@
             "required": [
               "capturedFrom"
             ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "disposition": {
+                "enum": [
+                  "equivalent",
+                  "excluded"
+                ]
+              }
+            },
+            "required": [
+              "disposition"
+            ]
+          },
+          "then": {
+            "required": [
+              "dispositionReason"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "disposition": {
+                "const": "build"
+              }
+            },
+            "required": [
+              "disposition"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "dispositionReason"
+              ],
+              "description": "a dispositionReason on a record that is built as captured"
+            }
           }
         }
       ],

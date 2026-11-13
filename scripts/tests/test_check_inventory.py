@@ -326,7 +326,7 @@ class Inventory(unittest.TestCase):
         # Audit round 4, finding 3: each field below must refuse "" on its own, so removing any one field's rule fails
         # this test. The list is written out here, not read from the schema.
         fields = ("label", "parent", "keytip", "shortcut", "target", "menuPath", "captureProfile", "behaviour",
-                  "idMso", "uiaId", "source", "capturedFrom", "id", "condition")
+                  "idMso", "uiaId", "source", "capturedFrom", "id", "condition", "dispositionReason")
         for field in fields:
             rec = dict(BOLD, **{field: ""})
             self.write("word/ribbon.json", [TAB, GROUP, rec])
@@ -1271,7 +1271,7 @@ class Inventory(unittest.TestCase):
         # Audit round 12, finding 2: each field below must refuse one character over its limit, written out here.
         limits = {"id": 200, "label": 200, "parent": 200, "keytip": 16, "shortcut": 64, "target": 200, "menuPath": 500,
                   "captureProfile": 64, "behaviour": 1000, "idMso": 200, "uiaId": 200, "source": 100,
-                  "capturedFrom": 64, "condition": 200}
+                  "capturedFrom": 64, "condition": 200, "dispositionReason": 500}
         for field, limit in limits.items():
             self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, **{field: "a" * (limit + 1)})])
             self.assertTrue(any(f".{field}: longer than {limit}" in p for p in self.problems()), field)
@@ -1339,7 +1339,7 @@ class Inventory(unittest.TestCase):
     def test_every_string_field_refuses_a_control_character(self):
         # Audit round 10, finding 5: each string field below must refuse U+0001 on its own, written out here.
         fields = ("id", "label", "parent", "keytip", "shortcut", "target", "menuPath", "captureProfile", "behaviour",
-                  "idMso", "uiaId", "source", "capturedFrom", "condition")
+                  "idMso", "uiaId", "source", "capturedFrom", "condition", "dispositionReason")
         for field in fields:
             self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, **{field: BOLD.get(field, "x") + "\u0001"})])
             # D02 T01 §27: the rule's own word, so a field's pattern that also refuses U+0001 cannot stand in for it.
@@ -1436,7 +1436,7 @@ class Inventory(unittest.TestCase):
     def test_every_text_and_reference_field_refuses_a_blank_value(self):
         # Audit round 5, finding 4: each field below must refuse a value of spaces on its own, written out here.
         fields = ("label", "parent", "keytip", "shortcut", "target", "menuPath", "captureProfile", "behaviour",
-                  "idMso", "uiaId", "source", "capturedFrom", "id", "condition")
+                  "idMso", "uiaId", "source", "capturedFrom", "id", "condition", "dispositionReason")
         for field in fields:
             self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, **{field: "  "})])
             self.assertTrue(any(f".{field}" in p or f" {field} " in p or "orphan" in p and field == "parent"
@@ -1740,6 +1740,57 @@ class Inventory(unittest.TestCase):
             with self.assertRaises(ci.Unreadable) as raised:
                 self.problems()
         self.assertIn("the TODO tree cannot be read (two files for one number)", str(raised.exception))
+
+
+    # D02 T01 §28: what we do with a record (owner decision 6).
+
+    def test_a_disposition_says_what_we_do_with_a_record(self):
+        schema = ci.load(ci.SCHEMA)
+        reason = "Depends on a Microsoft cloud dictation service; Windows speech replaces it."
+
+        def problems(**fields):
+            return ci.validate([dict(TAB, **fields)], schema, schema)
+        for accepted in ({}, {"disposition": "build"}, {"disposition": "equivalent", "dispositionReason": reason},
+                         {"disposition": "excluded", "dispositionReason": reason},
+                         {"disposition": "excluded", "dispositionReason": "a" * 500}):
+            self.assertEqual(problems(**accepted), [], accepted)
+        refused = (
+            ({"disposition": "unknown"}, ["$[0].disposition: 'unknown' is not one of the allowed values"]),
+            ({"disposition": 7}, ["$[0].disposition: 7 is not one of the allowed values"]),
+            ({"disposition": "equivalent"}, ["$[0]: missing dispositionReason"]),
+            ({"disposition": "excluded"}, ["$[0]: missing dispositionReason"]),
+            ({"dispositionReason": reason}, ["$[0]: dispositionReason requires disposition"]),
+            ({"disposition": "build", "dispositionReason": reason},
+             ["$[0]: a dispositionReason on a record that is built as captured"]),
+            ({"disposition": "excluded", "dispositionReason": 7}, ["$[0].dispositionReason: expected string"]),
+            ({"disposition": "excluded", "dispositionReason": ""},
+             ["$[0].dispositionReason: empty", "$[0].dispositionReason: '' does not match ^\\s*\\S"]),
+            ({"disposition": "excluded", "dispositionReason": "   "},
+             ["$[0].dispositionReason: '   ' does not match ^\\s*\\S"]),
+            ({"disposition": "excluded", "dispositionReason": "Uses a.b for it"},
+             ["$[0].dispositionReason: host name or address"]),
+            ({"disposition": "excluded", "dispositionReason": "No equivalent" + chr(1)},
+             ["$[0].dispositionReason: control character (or an invisible one)"]),
+            ({"disposition": "excluded", "dispositionReason": "a" * 501},
+             ["$[0].dispositionReason: longer than 500 characters"]),
+        )
+        for fields, expected in refused:
+            self.assertEqual(problems(**fields), expected, fields)
+        self.assertIn("$[0].dispositionReason: link",
+                      problems(disposition="excluded", dispositionReason="See mailto:someone for it"))
+        # And through the checker, on a file: an unknown disposition fails, a reasoned exclusion passes.
+        self.write("word/ribbon.json", [dict(TAB, disposition="unknown")])
+        self.assertTrue(any("disposition: 'unknown' is not one of the allowed values" in p for p in self.problems()))
+        self.write("word/ribbon.json", [dict(TAB, disposition="excluded", dispositionReason=reason)])
+        self.assertEqual(self.problems(), [])
+
+    def test_the_reference_says_who_sets_a_disposition(self):
+        text = (ci.INVENTORY / ci.REFERENCE).read_text(encoding="utf-8")
+        section = text.split("\n## Disposition\n", 1)[1].split("\n## ", 1)[0]
+        for said in ("decision 6", "`build`", "`equivalent`", "`excluded`", "`dispositionReason`", "D03 T01 §14",
+                     "D03 T01 §20 to §24", "a recapture carries both fields over"):
+            self.assertIn(said, section)
+        self.assertNotIn("only D03 T01 §14", section.replace("Only", "only"))
 
 
 class Cli(unittest.TestCase):

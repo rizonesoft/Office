@@ -272,7 +272,8 @@ def expand_items(control_rec, element, popup_items, ctx):
 
 def merge(existing, captured, unverified=None):
     """Captured records refresh `bounds`, `order` and the profile they were taken under; every other field of an
-    existing record (behaviour, source and anything written by hand) is kept, and records not captured stay."""
+    existing record (behaviour, source and anything written by hand, a disposition and its reason among them:
+    D02 T01 §28) is kept, and records not captured stay."""
     refreshed = ("bounds", "order", "captureProfile", "size", "capturedFrom")
     keep = {r.get("id"): r for r in existing}
     mapping, matched, out_by_id = {}, set(), {}
@@ -7788,8 +7789,11 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
                 raise Refused(f"{out} changed during the capture; re-run to merge cleanly")
             if current_bytes is not None:
                 existing_records = _load_existing_records(out, current_bytes)
-                if args.backstage:  # only the hand-written behaviours carry over; no old record survives
-                    records = word_backstage.carry_behaviours(existing_records, records)
+                if args.backstage:  # only the hand-written fields carry over; no old record survives
+                    try:
+                        records = word_backstage.carry_behaviours(existing_records, records)
+                    except word_backstage.Invalid as exc:
+                        raise Refused(str(exc)) from None
                 elif args.app == "word" and is_canonical_word_ribbon:
                     records = merge_word_ribbon(
                         existing_records,

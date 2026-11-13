@@ -1295,6 +1295,23 @@ class Round3(unittest.TestCase):
         self.assertIsNone(ctx.origin)
         self.assertIn("no bounds: moved", ctx.notes)
 
+    def test_a_merge_keeps_a_disposition_and_a_fresh_record_gains_none(self):
+        # D02 T01 §28: a disposition and its reason are written by hand, and a recapture refreshes only what it measures.
+        decided = {"disposition": "equivalent", "dispositionReason": "Cloud dictation; Windows speech replaces it."}
+        old = [dict({"id": "word.home.voice.dictate", "label": "Dictate", "order": 1, "behaviour": "Starts dictation."},
+                    **decided),
+               {"id": "word.home.gone", "label": "Gone", "disposition": "excluded", "dispositionReason": "No equivalent."}]
+        new = [{"id": "word.home.voice.dictate", "label": "Dictate", "order": 4,
+                "bounds": {"x": 1, "y": 2, "width": 3, "height": 4}, "captureProfile": "fhd-100"},
+               {"id": "word.home.voice.new", "label": "New", "order": 5}]
+        out = {r["id"]: r for r in cu.merge(old, new)}
+        dictate = out["word.home.voice.dictate"]
+        self.assertEqual({k: dictate.get(k) for k in decided}, decided)
+        self.assertEqual((dictate["order"], dictate["bounds"]["x"], dictate["behaviour"]), (4, 1, "Starts dictation."))
+        self.assertEqual(out["word.home.gone"]["disposition"], "excluded")  # a record not captured stays, as it is
+        self.assertNotIn("disposition", out["word.home.voice.new"])
+        self.assertNotIn("dispositionReason", out["word.home.voice.new"])
+
     def test_split_buttons_without_their_own_id_merge_by_idmso(self):
         old = [{"id": "w.g.x", "parent": "w.g", "idMso": "First", "label": "X", "behaviour": "About First."},
                {"id": "w.g.x-second", "parent": "w.g", "idMso": "Second", "label": "X"}]

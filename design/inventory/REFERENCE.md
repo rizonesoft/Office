@@ -115,3 +115,20 @@ Verified on 2026-11-13 (`D02 T01 §17`) against Word `16.0.20527.20150`. `design
 Notation (`scripts/lib/shortcuts.py`): a chord is keys pressed together joined by `+`, modifiers first; a sequence is chords pressed one after another joined by `, `; a key that is itself `+` or `,` is written `Plus` or `Comma`. The file keeps Word's own modifier order (`Alt+Ctrl+V`) and key names (`Return`, `Del`, `Esc`, `Space`); chords are compared in the order Ctrl, Alt, Shift, and no app may give one chord twice in one `scope`. The scopes are `document`, `table`, `outline`, `read-mode`, `print-preview`, `ribbon`, `dialog`, `backstage`, `task-pane`, `window` and `ime`. A key that does what its record says only in some state names that state in `condition`.
 
 Limits: a `published:` record without a `target` was not confirmed by Word's key table, because the window, not a key binding, handles it; its behaviour is the list's account in our words. The mouse wheel with `Ctrl` is recorded as the key `Wheel`.
+
+## Disposition
+
+Owner decision 6 of `docs/specs/2026-10-23-campaign-scope-design.md` (2026-10-22): every control that depends on a Microsoft cloud service gets a working equivalent of our own, and one with no possible equivalent is excluded with a reason, never left as a dead control. A record says which with two fields (`schema.json`, checked by `scripts/check-inventory.py`).
+
+| Field | Value | Meaning |
+| ----- | ----- | ------- |
+| `disposition` | `build` | Built as captured; also what an absent field means |
+| `disposition` | `equivalent` | Built as an equivalent of our own |
+| `disposition` | `excluded` | Not built: no equivalent is possible |
+| `dispositionReason` | One sentence | The service, and what replaces it |
+
+The reason is in our own words: the cloud service the record depends on and, for an equivalent, what replaces it. It is required with `equivalent` and `excluded`, and refused with `build` and on a record with no `disposition`.
+
+Who writes the fields: D03 T01 §14 decides each cloud service once, for the whole suite, and sets the records of the apps that are captured when it runs; the section that authors each later app's domain (D03 T01 §20 to §24) sets that app's records from §14's decisions. Nothing else writes them, and no capture does: a recapture carries both fields over from the committed record of the same id (`merge` in `scripts/capture-ui.py`, `carry_behaviours` in `scripts/lib/word_backstage.py`, `carry` and `carry_decided` in `scripts/word-commands.py`), and refuses, naming the record, when a Backstage record or a command that carries a disposition is no longer there to carry it to.
+
+What reads them: `design/inventory/COVERAGE.md` counts the three values for each app and counts an excluded record as accounted for; `python scripts/inventory-report.py --owners` leaves an excluded record out of the records that need an owner and refuses a section that claims one.

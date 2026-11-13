@@ -30,7 +30,9 @@ a `> **Implements:**` line, open or stamped. Each app (the shell counts as one) 
 app's domain, named in design/inventory/authoring.json, not yet stamped) and `enforced` (that section stamped).
 --owners prints each app's state with its owned and total counts, the counts per kind, and every unowned id.
 --owners --check exits 1 when an enforced app has a record nobody owns, when a claim names an id the inventory does
-not hold, or when two sections claim one id; a pending app's unowned records are counted, not refused. --all holds
+not hold, when two sections claim one id, or when a section claims an excluded record; a pending app's unowned
+records are counted, not refused. An excluded record (`disposition`, D02 T01 §28) is built by nobody: it needs no
+owner and is counted apart on its app's line. --all holds
 every app as enforced, so an app with no captured record is refused too: the gate for a finished plan. --app takes
 one app, and with --owners refuses a name that is no app folder. Refusals go to stderr, states and counts to stdout.
 """
@@ -50,6 +52,7 @@ import todo_graph  # noqa: E402
 import word_absences  # noqa: E402
 
 REPORT = Path("design") / "inventory" / "COVERAGE.md"
+DISPOSITIONS = ("build", "equivalent", "excluded")  # design/inventory/schema.json, `disposition` (D02 T01 §28)
 SURFACES = ("tab", "contextualTab", "backstagePage")  # the records a baseline row's `tab` names
 ID_CHAR = r"A-Za-z0-9_\-"
 
@@ -77,6 +80,16 @@ def load_inventory(root):
             else:
                 raise Unreadable(f"{f}: not a list of records")
     return records, baselines
+
+
+def disposition(record):
+    """What we do with a record: `build` when it carries no `disposition` (the schema's default). A value the schema
+    does not allow is a file the checker refuses, and the report does not guess what it meant."""
+    value = record.get("disposition", "build")
+    if value not in DISPOSITIONS:
+        raise Unreadable(f"{shown(record.get('id'))}: disposition {shown(repr(value))} is not one of "
+                         f"{', '.join(DISPOSITIONS)}; run python scripts/check-inventory.py")
+    return value
 
 
 def surface_of(records):
@@ -161,10 +174,12 @@ def shown(text):
 
 
 def ownership(root, records, sections, app=None):
-    """Who the plan says builds each record (D02 T01 §22): (one row per app, the unknown claims, the double claims).
-    A row is (app, state, its authoring section's reference, {kind: [owned ids, unowned ids]}). The states are in the
-    module's description. An unknown or double claim belongs to the app its first dotted part names. Raises Unreadable
-    for an authoring file the reader refuses and for an `app` that is no app folder."""
+    """Who the plan says builds each record (D02 T01 §22): (one row per app, the unknown claims, the double claims,
+    the claims of excluded records). A row is (app, state, its authoring section's reference, {kind: [owned ids,
+    unowned ids]}, the excluded ids). An excluded record (D02 T01 §28) is built by nobody: it is outside the owned
+    and unowned ids, and a claim of it is a wrong claim in every state. The states are in the module's description.
+    An unknown, double or excluded claim belongs to the app its first dotted part names. Raises Unreadable for an
+    authoring file the reader refuses and for an `app` that is no app folder."""
     inventory = Path(root) / "design" / "inventory"
     by_ref = {section.ref: section for section in sections}
     authoring, problems = inventory_authoring.read(inventory, lambda ref: ref in by_ref)
@@ -175,21 +190,28 @@ def ownership(root, records, sections, app=None):
         raise Unreadable(f"--app {shown(app)} is not an app folder of the inventory ({', '.join(apps)})")
     claimed = inventory_claims.owners(sections)
     held = {r["id"] for recs in records.values() for r in recs if isinstance(r.get("id"), str)}
+    left_out = {r["id"] for recs in records.values() for r in recs
+                if isinstance(r.get("id"), str) and disposition(r) == "excluded"}
     mine = (lambda rid: app is None or rid.split(".", 1)[0] == app)
     unknown = sorted((rid, refs) for rid, refs in claimed.items() if rid not in held and mine(rid))
     doubled = sorted((rid, refs) for rid, refs in claimed.items() if len(refs) > 1 and mine(rid))
+    excluded = sorted((rid, refs) for rid, refs in claimed.items() if rid in left_out and mine(rid))
     rows = []
     for name in apps if app is None else [app]:
-        kinds = {}
+        kinds, captured, out = {}, False, set()
         for r in records.get(name, []):
             if isinstance(r.get("id"), str):
-                kinds.setdefault(str(r.get("kind")), set()).add(r["id"])
+                captured = True
+                if r["id"] in left_out:
+                    out.add(r["id"])
+                else:
+                    kinds.setdefault(str(r.get("kind")), set()).add(r["id"])
         section = by_ref[authoring[name]]
-        state = "pending inventory" if not kinds else "enforced" if section.done else "pending authoring"
+        state = "pending inventory" if not captured else "enforced" if section.done else "pending authoring"
         rows.append((name, state, section.ref, {kind: [sorted(i for i in ids if i in claimed),
                                                       sorted(i for i in ids if i not in claimed)]
-                                                for kind, ids in sorted(kinds.items())}))
-    return rows, unknown, doubled
+                                                for kind, ids in sorted(kinds.items())}, sorted(out)))
+    return rows, unknown, doubled, excluded
 
 
 def owners_report(root, app=None, check=False, hold_all=False):
@@ -198,16 +220,17 @@ def owners_report(root, app=None, check=False, hold_all=False):
     the verdict cannot depend on whether its reader is still listening."""
     out, err = [], []
     records, _ = load_inventory(root)
-    rows, unknown, doubled = ownership(root, records, read_sections(root), app)
+    rows, unknown, doubled, excluded = ownership(root, records, read_sections(root), app)
     refusals = 0
-    for name, state, ref, kinds in rows:
+    for name, state, ref, kinds, left_out in rows:
         owned = sum(len(pair[0]) for pair in kinds.values())
         unowned = [(kind, rid) for kind, pair in kinds.items() for rid in pair[1]]
         if state == "pending inventory":
             out.append(f"{name}: pending inventory (no captured record; {ref} authors it)")
         else:
             waits = "is stamped" if state == "enforced" else "is open"
-            out.append(f"{name}: {state} ({ref} {waits}): {owned} of {owned + len(unowned)} records owned")
+            out.append(f"{name}: {state} ({ref} {waits}): {owned} of {owned + len(unowned)} records owned"
+                       + (f", {len(left_out)} excluded" if left_out else ""))
             for kind, pair in kinds.items():
                 out.append(f"  {kind}: {len(pair[0])} of {len(pair[0]) + len(pair[1])}")
         held_to = hold_all or state == "enforced"
@@ -232,6 +255,10 @@ def owners_report(root, app=None, check=False, hold_all=False):
         refusals += 1
         (err if check else out).append(f"{'refused: ' if check else ''}double claim: {shown(rid)} is claimed by "
                                        f"{' and '.join(refs)}")
+    for rid, refs in excluded:
+        refusals += 1
+        (err if check else out).append(f"{'refused: ' if check else ''}excluded claim: {shown(rid)} is excluded, and "
+                                       f"{', '.join(refs)} claims it")
     return (1 if check and refusals else 0), out, err
 
 
@@ -249,6 +276,18 @@ def render(records, baselines, implemented):
         for kind in sorted(kinds):
             ids = kinds[kind]
             lines.append(f"| {app} | {kind} | {len(ids)} | {sum(1 for i in set(ids) if i in implemented)} |")
+    lines += ["", "## Dispositions", "",
+              "What we do with each record (owner decision 6): build it as captured, build an equivalent of our own "
+              "for a control that depends on a Microsoft cloud service, or exclude it. Accounted for: the build and "
+              "equivalent records a verified section implements, and every excluded record.", "",
+              "| App | Build | Equivalent | Excluded | Accounted for |", "| --- | ---: | ---: | ---: | ---: |"]
+    for app in sorted(records):
+        by = {name: set() for name in DISPOSITIONS}
+        for r in records[app]:
+            if isinstance(r.get("id"), str):
+                by[disposition(r)].add(r["id"])
+        accounted = len(by["excluded"]) + sum(1 for rid in by["build"] | by["equivalent"] if rid in implemented)
+        lines.append(f"| {app} | {len(by['build'])} | {len(by['equivalent'])} | {len(by['excluded'])} | {accounted} |")
     lines += ["", "## Baseline", "",
               "| App | Rows | Captured | Documented absent | Unmatched | Pending surface | No idMso |",
               "| --- | ---: | ---: | ---: | ---: | ---: | ---: |"]
@@ -352,7 +391,11 @@ def main(argv=None, root=ROOT, write=todo_graph.atomic):
                 for name in sorted(types):
                     print(f"  {name}: {types[name][0]} cited, {types[name][1]} not")
         return 0
-    report = render(records, baselines, implemented)
+    try:
+        report = render(records, baselines, implemented)
+    except Unreadable as exc:  # a record the report cannot count: a disposition the schema does not allow
+        print(f"inventory-report: {exc}", file=sys.stderr)
+        return 2
     target = root / REPORT
     if args.check:
         current = target.read_bytes() if target.is_file() else b""

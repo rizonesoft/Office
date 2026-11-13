@@ -297,6 +297,50 @@ class Rerun(unittest.TestCase):
         self.assertEqual(code, 1, out)
         self.assertIn("left the table", out)
 
+    def refresh(self, table, prepare):
+        """A run over a copy of the committed Word inventory that `prepare(folder)` edited first: (exit code, what
+        it printed, the command records and the shortcut records it left on disk)."""
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "word"
+            out.mkdir()
+            for name in ("baseline.json", "ribbon.json", "shortcuts.json", "commands.json"):
+                (out / name).write_bytes((WORD_DIR / name).read_bytes())
+            prepare(out)
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                code = wc.main([], lister=lambda: (table, BUILD, EFFECTIVE), build=lambda: BUILD,
+                               installed=lambda: BUILD, out=out, unmatched_path=Path(tmp) / "u.txt")
+            read = {name: json.loads((out / name).read_text(encoding="utf-8"))
+                    for name in ("commands.json", "shortcuts.json")}
+            return code, stdout.getvalue() + stderr.getvalue(), read["commands.json"], read["shortcuts.json"]
+
+    def test_a_refresh_keeps_the_dispositions_written_by_hand(self):
+        # D02 T01 §28: the table holds no disposition, so both files carry it over from the committed records.
+        decided = {"disposition": "excluded", "dispositionReason": "Depends on a Microsoft cloud assistant."}
+        marked = {"commands.json": "word.command.ask-copilot", "shortcuts.json": "word.shortcut.bold"}
+
+        def prepare(out):
+            for name, rid in marked.items():
+                recs = json.loads((out / name).read_text(encoding="utf-8"))
+                next(r for r in recs if r["id"] == rid).update(decided)
+                (out / name).write_text(wc.render(recs), encoding="utf-8")
+        table = committed_table() + [["Zzz Brand New Command", "", ""]]
+        code, out, commands, shortcuts = self.refresh(table, prepare)
+        self.assertEqual(code, 0, out)
+        for recs, rid in ((commands, marked["commands.json"]), (shortcuts, marked["shortcuts.json"])):
+            kept = next(r for r in recs if r["id"] == rid)
+            self.assertEqual({k: kept.get(k) for k in decided}, decided, rid)
+            self.assertEqual([r["id"] for r in recs if "disposition" in r or "dispositionReason" in r], [rid])
+        self.assertTrue(any(r["label"] == "Zzz Brand New Command" for r in commands))  # new to the table: neither field
+        # A command the owner decided about and the table no longer lists stops the refresh, and nothing is written.
+        label = next(r["label"] for r in commands if r["id"] == marked["commands.json"])
+        code, out, commands, _ = self.refresh([row for row in committed_table() if row[0] != label], prepare)
+        self.assertEqual(code, 1, out)
+        self.assertIn("committed command records that carry a disposition left the table; reconcile them by hand "
+                      "first: word.command.ask-copilot", out)
+        self.assertTrue(any(r["id"] == marked["commands.json"] and r.get("disposition") == "excluded"
+                            for r in commands))
+
     def test_a_shared_chord_keeps_the_row_word_runs_and_refuses_when_word_names_none(self):
         rows = [["Open or Close Up Para", "Ctrl+", "0"], ["Zoom100", "Ctrl+", "0"]]
         commands, shortcuts, _, shadowed = wc.records(rows, BUILD, set(), effective={"Ctrl+0": "Zoom100"})

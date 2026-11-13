@@ -109,6 +109,19 @@ class Records(unittest.TestCase):
         captured = [{"id": "a"}, {"id": "new"}]
         self.assertEqual(wb.carry_behaviours(existing, captured), [{"id": "a", "behaviour": "Does a."}, {"id": "new"}])
 
+    def test_a_recapture_keeps_a_disposition_and_refuses_to_lose_one(self):
+        # D02 T01 §28: a disposition is written by hand, as a behaviour is, and no capture produces it.
+        decided = {"disposition": "excluded", "dispositionReason": "No equivalent is possible."}
+        existing = [dict({"id": "a", "behaviour": "Does a."}, **decided), {"id": "b", "disposition": "build"},
+                    {"id": "gone", "behaviour": "Was there."}]
+        captured = [{"id": "a"}, {"id": "b"}, {"id": "new"}]
+        self.assertEqual(wb.carry_behaviours(existing, captured),
+                         [dict({"id": "a", "behaviour": "Does a."}, **decided), {"id": "b", "disposition": "build"},
+                          {"id": "new"}])
+        with self.assertRaises(wb.Invalid) as ctx:  # the capture no longer shows a record the owner decided about
+            wb.carry_behaviours(existing + [dict({"id": "lost"}, **decided)], captured)
+        self.assertIn("carry a disposition; reconcile them by hand first: lost", str(ctx.exception))
+
     def test_label_map_gives_ids_to_controls_ui_automation_shows_without_one(self):
         recs = [{"id": "word.backstage.share", "kind": "backstagePage", "idMso": "TabShare", "label": "Share"},
                 {"id": "word.backstage.share.share.email", "kind": "control", "label": "Email"}]
