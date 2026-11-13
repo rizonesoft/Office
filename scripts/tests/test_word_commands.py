@@ -72,7 +72,7 @@ class Fake:
 class Records(unittest.TestCase):
     def test_every_row_is_one_command_and_keyed_rows_are_shortcuts(self):
         table = wc.parse_table(table_text(TABLE), len(TABLE), 3)
-        commands, shortcuts, unmatched = wc.records(table, BUILD, {"Bold", "Zoom200"})
+        commands, shortcuts, unmatched, _ = wc.records(table, BUILD, {"Bold", "Zoom200"})
         self.assertEqual(len(commands), len(TABLE) - 1)
         self.assertEqual([c["id"] for c in commands][1:3], ["word.command.align-left", "word.command.align-left-2"])
         self.assertEqual([(s["shortcut"], s["target"]) for s in shortcuts],
@@ -80,13 +80,13 @@ class Records(unittest.TestCase):
                           ("F1", "word.command.help")])
         self.assertEqual([c.get("idMso") for c in commands if c.get("idMso")], ["Bold", "Bold", "Zoom200"])
         self.assertEqual(unmatched, ["About", "Align Left", "Align Left", "Help"])
-        dashed, _, left = wc.records([["B-old", "", ""]], BUILD, {"Bold"})
+        dashed, _, left, _ = wc.records([["B-old", "", ""]], BUILD, {"Bold"})
         self.assertNotIn("idMso", dashed[0])
         self.assertEqual(left, ["B-old"])
         self.assertEqual({c["source"] for c in commands + shortcuts}, {f"listcommands:{BUILD}"})
 
     def test_records_pass_the_inventory_checker(self):
-        commands, shortcuts, _ = wc.records(wc.parse_table(table_text(TABLE), len(TABLE), 3), BUILD, set())
+        commands, shortcuts, _, _ = wc.records(wc.parse_table(table_text(TABLE), len(TABLE), 3), BUILD, set())
         with tempfile.TemporaryDirectory() as tmp:
             inv = Path(tmp) / "inventory" / "word"
             inv.mkdir(parents=True)
@@ -96,7 +96,7 @@ class Records(unittest.TestCase):
 
     def test_ids_are_unique_even_against_natural_suffixes(self):
         rows = [["Foo", "Ctrl+", "F"], ["Foo", "", ""], ["Foo 2", "Alt+", "F"]]
-        commands, shortcuts, _ = wc.records(rows, BUILD, set())
+        commands, shortcuts, _, _ = wc.records(rows, BUILD, set())
         ids = [c["id"] for c in commands]
         self.assertEqual(len(set(ids)), 3, ids)
         self.assertEqual(len({s["id"] for s in shortcuts}), 2)
@@ -105,9 +105,9 @@ class Records(unittest.TestCase):
 
     def test_every_chord_splits_back_into_its_modifiers_and_key(self):
         rows = [["Bold", "Ctrl+Shift+", "B"], ["Help", "", "F1"], ["Zoom In", "Alt+Ctrl+", "Num +"], ["Plus", "Ctrl+", "+"]]
-        commands, _, _ = wc.records(rows, BUILD, set())
-        for rec, row in zip(commands, rows):
-            self.assertEqual(wc.split_chord(rec["shortcut"]), (row[1], row[2]))
+        commands, _, _, _ = wc.records(rows, BUILD, set())
+        for rec, row in zip(commands, rows):  # a `+` key is written Plus, so no separator is ever a key
+            self.assertEqual(wc.split_chord(rec["shortcut"]), (row[1], {"+": "Plus"}.get(row[2], row[2])))
         for row in (["Odd", "Ctrl", "B"], ["Twice", "Ctrl+", "Shift+B"], ["Spaced", "Ctrl+", " B "]):
             with self.assertRaises(wc.Refused):
                 wc.records([row], BUILD, set())
@@ -173,7 +173,7 @@ class Records(unittest.TestCase):
             ["Format", "", ""],
             ["Partial", "", ""],
         ]
-        commands, _, unmatched = wc.records(rows, BUILD, set(), ribbon_records=ribbon)
+        commands, _, unmatched, _ = wc.records(rows, BUILD, set(), ribbon_records=ribbon)
         by_id = {c["id"]: c for c in commands}
         self.assertEqual(by_id["word.command.increase-font-size"].get("idMso"), "FontSizeIncreaseWord")
         self.assertEqual(by_id["word.command.keep-text-only"].get("idMso"), "PasteTextOnly")
@@ -205,11 +205,12 @@ class Instance(unittest.TestCase):
             seen.append(app)
             return proc
 
-        table, build = wc.list_commands(dispatch=lambda prog: fake, owner=owner, wait=5)
+        table, build, effective = wc.list_commands(dispatch=lambda prog: fake, owner=owner, wait=5)
         self.assertEqual(seen, [fake])  # the process comes from the dispatched instance, not a process list
         self.assertEqual(len(table), len(TABLE) - 1)
         self.assertTrue(fake.quit and proc.closed)
         self.assertEqual((fake.closed, proc.waited, build), (2, 5, "16.0.20527"))
+        self.assertEqual(effective, {})  # no chord in the fake table has two rows
 
     def test_a_customised_instance_is_refused_and_still_quit(self):
         for fake in (Fake(bindings=3), Fake(addins=1)):
@@ -246,6 +247,66 @@ class Instance(unittest.TestCase):
         self.assertTrue(fake.quit)
 
 
+WORD_DIR = SCRIPTS.parent / "design" / "inventory" / "word"
+# The rows of Word's table whose chord another row's command takes (Word runs that command; D02 T01 §17).
+SHADOWED = {"word.command.open-or-close-up-para": ("Ctrl+", "0"), "word.command.paste-special": ("Alt+Ctrl+", "V"),
+            "word.command.show-all-headings-2": ("Alt+Shift+", "A")}
+EFFECTIVE = {"Ctrl+0": "Zoom100", "Ctrl+Alt+V": "PasteFormat", "Alt+Shift+A": "ShowAllHeadings"}
+
+
+def committed_table():
+    """Word's key table as the committed command catalogue records it, with the shadowed rows' keys put back."""
+    rows = []
+    for rec in json.loads((WORD_DIR / "commands.json").read_text(encoding="utf-8")):
+        mods, key = wc.split_chord(rec["shortcut"]) if "shortcut" in rec else SHADOWED.get(rec["id"], ("", ""))
+        rows.append([rec["label"], mods, {"Comma": ",", "Plus": "+"}.get(key, key)])
+    return rows
+
+
+class Rerun(unittest.TestCase):
+    """D02 T01 §17: rerunning the producer keeps what the section adds by hand, and stops when a binding moves."""
+
+    def rerun(self, table):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "word"
+            out.mkdir()
+            for name in ("baseline.json", "ribbon.json", "shortcuts.json"):
+                (out / name).write_bytes((WORD_DIR / name).read_bytes())
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                code = wc.main([], lister=lambda: (table, BUILD, EFFECTIVE), build=lambda: BUILD,
+                               installed=lambda: BUILD, out=out, unmatched_path=Path(tmp) / "u.txt")
+            return code, stdout.getvalue() + stderr.getvalue(), (out / "shortcuts.json").read_bytes()
+
+    def test_a_rerun_over_the_committed_file_gives_the_same_file(self):
+        code, out, written = self.rerun(committed_table())
+        self.assertEqual(code, 0, out)
+        self.assertEqual(written, (WORD_DIR / "shortcuts.json").read_bytes())
+        self.assertIn("Word runs another command for it: Open or Close Up Para (Ctrl+0)", out)
+
+    def test_a_moved_binding_stops_the_run_and_writes_nothing(self):
+        table = committed_table()
+        bold = next(row for row in table if row[0] == "Bold" and row[2] == "B" and row[1] == "Ctrl+")
+        bold[1] = "Alt+Ctrl+"  # Word now gives Bold another chord
+        code, out, written = self.rerun(table)
+        self.assertEqual(code, 1, out)
+        self.assertIn("word.shortcut.bold (Ctrl+B -> Alt+Ctrl+B)", out)
+        self.assertEqual(written, (WORD_DIR / "shortcuts.json").read_bytes())
+        table.remove(bold)
+        code, out, _ = self.rerun(table)
+        self.assertEqual(code, 1, out)
+        self.assertIn("left the table", out)
+
+    def test_a_shared_chord_keeps_the_row_word_runs_and_refuses_when_word_names_none(self):
+        rows = [["Open or Close Up Para", "Ctrl+", "0"], ["Zoom100", "Ctrl+", "0"]]
+        commands, shortcuts, _, shadowed = wc.records(rows, BUILD, set(), effective={"Ctrl+0": "Zoom100"})
+        self.assertEqual([s["label"] for s in shortcuts], ["Zoom100"])
+        self.assertNotIn("shortcut", commands[0])
+        self.assertEqual(shadowed, ["Open or Close Up Para (Ctrl+0)"])
+        with self.assertRaises(wc.Refused):
+            wc.records(rows, BUILD, set(), effective={"Ctrl+0": "SomethingElse"})
+
+
 class Main(unittest.TestCase):
     def run_main(self, lister, build=BUILD, installed=BUILD):
         with tempfile.TemporaryDirectory() as tmp:
@@ -262,7 +323,7 @@ class Main(unittest.TestCase):
 
     def test_writes_both_files_with_counts(self):
         table = wc.parse_table(table_text(TABLE), len(TABLE), 3)
-        code, out, files = self.run_main(lambda: (table, "16.0.20527"))
+        code, out, files = self.run_main(lambda: (table, "16.0.20527", {}))
         self.assertEqual(code, 0, out)
         self.assertEqual(len(json.loads(files["commands.json"])), 7)
         self.assertEqual(len(json.loads(files["shortcuts.json"])), 3)
@@ -270,7 +331,7 @@ class Main(unittest.TestCase):
 
     def test_an_installed_build_other_than_the_reference_is_refused(self):
         table = wc.parse_table(table_text(TABLE), len(TABLE), 3)
-        code, out, files = self.run_main(lambda: (table, "16.0.20500"), installed="16.0.20500.20000")
+        code, out, files = self.run_main(lambda: (table, "16.0.20500", {}), installed="16.0.20500.20000")
         self.assertEqual(code, 1, out)
         self.assertEqual(sorted(files), ["baseline.json"])
 
@@ -341,7 +402,7 @@ class Main(unittest.TestCase):
         table = wc.parse_table(table_text(TABLE), len(TABLE), 3)
         odd = [["Odd", "Ctrl", "B"]]
         for lister, build, want in ((refused, BUILD, 1), (broken, BUILD, 2),
-                                    (lambda: (table, "16.0.19000"), BUILD, 1), (lambda: (odd, "16.0.20527"), BUILD, 1)):
+                                    (lambda: (table, "16.0.19000", {}), BUILD, 1), (lambda: (odd, "16.0.20527", {}), BUILD, 1)):
             code, out, files = self.run_main(lister, build)
             self.assertEqual(code, want, out)
             self.assertEqual(sorted(files), ["baseline.json"])

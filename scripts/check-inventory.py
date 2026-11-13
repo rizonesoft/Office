@@ -95,6 +95,27 @@ def is_word_backstage(path, inventory=INVENTORY):
         p.resolve() == (INVENTORY / "word" / "backstage.json").resolve()
 
 
+def is_word_shortcuts(path, inventory=INVENTORY):
+    """Whether `path` is the repository's Word shortcut inventory (`design/inventory/word/shortcuts.json`)."""
+    return Path(inventory).resolve() == INVENTORY.resolve() and \
+        Path(path).resolve() == (INVENTORY / "word" / "shortcuts.json").resolve()
+
+
+def check_word_shortcuts(f, data):
+    """Problems in word/shortcuts.json beyond the record schema (D02 T01 §17): every record on the checklist with a
+    scope and a behaviour, and every row of the checklist covered. The rules are scripts/lib/word_shortcuts.py's."""
+    sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+    import word_shortcuts
+    return [f"{f}: {p}" for p in word_shortcuts.validate(data if isinstance(data, list) else [])]
+
+
+def chord_problems(records):
+    """Unreadable chords, unknown scopes and one chord given twice in one scope of one app (D02 T01 §17)."""
+    sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+    import shortcuts
+    return shortcuts.problems(records)
+
+
 def check_word_backstage(f, data, require_behaviour):
     """Problems in word/backstage.json beyond the record schema (D02 T01 §6): the baseline reconciliation, the
     navigation actions, no add-in or private record, and, with --require-behaviour, a behaviour on every actionable
@@ -505,6 +526,10 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             if isinstance(rec, dict) and isinstance(rec.get("id"), str):
                 seen.setdefault(rec["id"], []).append(f"{f}[{i}]")
                 kinds[rec["id"]] = rec.get("kind")
+    named_ids = {rec.get("id") for r in named_resolved for rec in records.get(r, []) if isinstance(rec, dict)}
+    for p in chord_problems([rec for recs in records.values() for rec in recs]):
+        if p.split(": ", 1)[0] in named_ids:  # chords conflict across the app's files; each is reported once
+            problems.append(f"shortcut {p}")
     # A parent chain is followed only through ids defined once; an ambiguous parent is reported on its own.
     parents = {}
     for resolved, f in universe.items():
@@ -587,6 +612,8 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             problems += check_word_ribbon(f, data)
         if is_word_backstage(f, inventory):  # D02 T01 §6: behaviour is part of the Backstage checkpoint, flag or not
             problems += check_word_backstage(f, data, True)
+        if is_word_shortcuts(f, inventory):  # D02 T01 §17: scope, behaviour and the checklist, flag or not
+            problems += check_word_shortcuts(f, data)
         # The schema refuses links in its typed fields; links() covers every other string and reports once. The
         # locations the schema already reported are gathered once per file, not once per record.
         reported = {p.split(": ", 1)[0] for p in schema_problems}

@@ -14,6 +14,13 @@ Names repeat, either for a second shortcut or for a different command sharing th
 the two apart, so each row becomes one `command` record (repeats get -2, -3 in the id) and each row with a key also
 becomes a `shortcut` record targeting it. A command whose name, with spaces removed, is a Word identifier in the
 baseline carries that `idMso`; the rest are listed in build/word-commands-unmatched.txt for review.
+A chord the table gives more than one row keeps its shortcut only on the row whose command Word itself runs for it
+(asked of the same instance through FindKey); the others keep their command record without a shortcut and are
+listed (D02 T01 §17). A key that is itself `,` or `+` is written `Comma` or `Plus` (scripts/lib/shortcuts.py).
+The shortcut file also holds what D02 T01 §17 adds by hand: each record's `scope`, `condition` and `behaviour` are
+carried to the record of the same id, and every `published:` record is kept. A binding of the committed file that
+moves to another chord or leaves the table stops the run before anything is written, naming it, so it is
+reconciled by hand.
 Both files are published together: if either cannot be written, both keep their previous contents. The run is a
 capture of the reference build only (design/inventory/REFERENCE.md, Builds), compared component by component.
 Exit 0 written; 1 when the instance is customised, the table is not the expected shape, the build is not the
@@ -28,6 +35,8 @@ import tempfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import office_com  # noqa: E402,F401  (tests reach the shared helpers through it)
+import shortcuts as chords  # noqa: E402  (scripts/lib is put on the path just above)
+import word_shortcuts  # noqa: E402
 from office_com import (REFERENCE, OwnProcess, Refused, baseline_identifiers, installed_build,  # noqa: E402,F401
                         own_process, publish, reference_build, same_build, write_atomic)
 
@@ -74,9 +83,54 @@ def ribbon_label_identifiers(ribbon_records):
     }
 
 
-def records(table, build, identifiers, ribbon_records=()):
-    """Command and shortcut records for the table rows, in table order, and the names with no identifier."""
-    commands, shortcuts, unmatched, taken = [], [], [], set()
+def word_chord(modifiers, key):
+    """The chord as the shortcut file writes it: the row's own modifiers and key, a `,` or `+` key by its name."""
+    return modifiers + chords.LITERAL.get(key, key)
+
+
+def canonical(name, modifiers, key):
+    """The row's chord in canonical form; Refused, naming the row, when it cannot be read as one."""
+    try:
+        return chords.canonical(word_chord(modifiers, key))
+    except chords.Malformed as exc:
+        raise Refused(f"{name.strip()}: {exc}") from None
+
+
+def shared_chords(table):
+    """The chords (canonical) the table gives more than one row."""
+    seen, shared = set(), set()
+    for name, modifiers, key in table:
+        if key:
+            c = canonical(name, modifiers, key)
+            (shared if c in seen else seen).add(c)
+    return shared
+
+
+def winners(table, effective):
+    """For each chord the table gives several rows, the row Word runs for it: the first whose name, spaces removed,
+    is the command FindKey named. Raises Refused when Word named none of them."""
+    rows = {}
+    for order, (name, modifiers, key) in enumerate(table):
+        if key:
+            rows.setdefault(canonical(name, modifiers, key), []).append((order, name.strip()))
+    out = {}
+    for chord, entries in rows.items():
+        if len(entries) < 2:
+            continue
+        command = (effective or {}).get(chord)
+        match = next((order for order, name in entries if name.replace(" ", "") == command), None)
+        if match is None:
+            raise Refused(f"Word's table gives {chord} to {', '.join(n for _, n in entries)}, and Word runs "
+                          f"{command!r} for it")
+        out[chord] = match
+    return out
+
+
+def records(table, build, identifiers, ribbon_records=(), effective=None):
+    """Command and shortcut records for the table rows, in table order, the names with no identifier, and the rows
+    whose shortcut another row's command takes (`effective`: what Word runs for each shared chord)."""
+    commands, shortcuts, unmatched, taken, shadowed = [], [], [], set(), []
+    winner = winners(table, effective)
     source = f"listcommands:{build}"
     name_counts = {}
     for row in table:
@@ -103,8 +157,12 @@ def records(table, build, identifiers, ribbon_records=()):
         cid = f"word.command.{final}"
         rec = {"id": cid, "app": "word", "kind": "command", "label": name, "order": order,
                "source": source, "capturedFrom": build}
-        if key:
-            rec["shortcut"] = modifiers + key  # the row's modifiers end in "+", so this is the chord as listed
+        chord = word_chord(modifiers, key) if key else ""
+        if chord and winner.get(canonical(name, modifiers, key), order) != order:
+            shadowed.append(f"{name} ({chord})")
+            chord = ""  # Word runs another row's command for this chord
+        if chord:
+            rec["shortcut"] = chord  # the row's modifiers end in "+", so this is the chord as listed
         compact = name.replace(" ", "")
         if compact in identifiers:
             rec["idMso"] = compact
@@ -113,11 +171,29 @@ def records(table, build, identifiers, ribbon_records=()):
         else:
             unmatched.append(name)
         commands.append(rec)
-        if key:
+        if chord:
             shortcuts.append({"id": cid.replace("word.command.", "word.shortcut.", 1), "app": "word",
-                              "kind": "shortcut", "label": name, "shortcut": modifiers + key, "target": cid,
+                              "kind": "shortcut", "label": name, "shortcut": chord, "target": cid,
                               "source": source, "capturedFrom": build})
-    return commands, shortcuts, unmatched
+    return commands, shortcuts, unmatched, shadowed
+
+
+HAND = ("scope", "condition", "behaviour")  # what D02 T01 §17 writes on a shortcut record; the table never does
+
+
+def carry(existing, fresh):
+    """The fresh shortcut records with the hand-written fields of the committed records of the same id, then every
+    committed `published:` record. Raises Refused, naming each, when a committed binding moved or left the table."""
+    old = {r["id"]: r for r in existing if str(r.get("source", "")).startswith("listcommands:")}
+    new = {r["id"]: r for r in fresh}
+    moved = [f"{rid} ({rec['shortcut']} -> {new[rid]['shortcut']})" for rid, rec in old.items()
+             if rid in new and chords.canonical(new[rid]["shortcut"]) != chords.canonical(rec["shortcut"])]
+    gone = sorted(rid for rid in old if rid not in new)
+    if moved or gone:
+        raise Refused("committed bindings changed; reconcile them by hand first: " +
+                      "; ".join(moved + [f"{rid} left the table" for rid in gone]))
+    out = [dict(r, **{k: old[r["id"]][k] for k in HAND if k in old.get(r["id"], {})}) for r in fresh]
+    return out + [r for r in existing if str(r.get("source", "")).startswith("published:")]
 
 
 MODIFIERS = ("Ctrl+", "Alt+", "Shift+")
@@ -148,7 +224,13 @@ def list_commands(dispatch=None, owner=own_process, wait=60.0):
                           "add-ins), so its map is not Word's default")
         app.ListCommands(True)
         table = app.ActiveDocument.Tables(1)
-        result = parse_table(table.Range.Text, table.Rows.Count, table.Columns.Count), str(app.Build)
+        rows = parse_table(table.Range.Text, table.Rows.Count, table.Columns.Count)
+        effective = {}
+        for chord in sorted(shared_chords(rows)):  # which of the rows sharing a chord Word runs
+            (mods, key), = chords.steps(chord)
+            code = word_shortcuts.key_code(mods, key)
+            effective[chord] = None if code is None else str(app.FindKey(code).Command)
+        result = rows, str(app.Build), effective
     finally:
         try:
             for doc in list(app.Documents):
@@ -192,7 +274,7 @@ def main(argv=None, lister=list_commands, build=reference_build, installed=insta
               "reference first", file=sys.stderr)
         return 1
     try:
-        table, word_build = lister()
+        table, word_build, effective = lister()
     except Refused as exc:
         print(f"word-commands: {exc}", file=sys.stderr)
         return 1
@@ -212,10 +294,17 @@ def main(argv=None, lister=list_commands, build=reference_build, installed=insta
             return 1
         if isinstance(loaded_ribbon, list):
             ribbon_records = loaded_ribbon
+    shortcut_path = Path(out) / "shortcuts.json"
     try:
-        commands, shortcuts, unmatched = records(
-            table, expected, baseline_identifiers(Path(out) / "baseline.json"), ribbon_records=ribbon_records
-        )
+        existing = json.loads(shortcut_path.read_text(encoding="utf-8")) if shortcut_path.is_file() else []
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        print(f"word-commands: {shortcut_path} could not be read ({exc})", file=sys.stderr)
+        return 1
+    try:
+        commands, shortcuts, unmatched, shadowed = records(
+            table, expected, baseline_identifiers(Path(out) / "baseline.json"), ribbon_records=ribbon_records,
+            effective=effective)
+        shortcuts = carry(existing if isinstance(existing, list) else [], shortcuts)
     except Refused as exc:
         print(f"word-commands: {exc}", file=sys.stderr)
         return 1
@@ -223,6 +312,8 @@ def main(argv=None, lister=list_commands, build=reference_build, installed=insta
     write_atomic(Path(unmatched_path), "\n".join(unmatched) + "\n")  # a review list, outside the inventory
     print(f"{len(table)} rows: {len(commands)} command records ({len(commands) - len(unmatched)} with an idMso), "
           f"{len(shortcuts)} shortcut records; {len(unmatched)} unmatched names in {unmatched_path}")
+    for row in shadowed:
+        print(f"shortcut not recorded, Word runs another command for it: {row}")
     return 0
 
 
