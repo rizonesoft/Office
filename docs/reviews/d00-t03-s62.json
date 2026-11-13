@@ -1,0 +1,86 @@
+{
+  "ref": "D00 T03 \u00a762",
+  "title": "Graph Reads Batch Their Git Calls",
+  "implementation_sha": "e2132c741ddc70f44e335a70477da56e53e1d4fc",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T03-s62.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_todo_graph.py\" -> Ran 114 tests, OK",
+    "python -m unittest discover -s scripts/tests -p \"test_todo_stamp.py\" -> Ran 103 tests, OK",
+    "python -m unittest discover -s scripts/tests -p \"test_three_pass.py\" -> Ran 37 tests, OK",
+    "python scripts/todo-graph.py validate -> valid: 173 sections (median 2.27 s over five runs, 19.18 s before; 2 git processes a read, 350 before)"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T03-s62.md",
+    "verdict": "complete",
+    "candidate": "e2132c741ddc70f44e335a70477da56e53e1d4fc",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T03-s62.md",
+    "candidate": "451cbe0768ad6fbf68986d4d70594745c478ed1f",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "451cbe0768ad6fbf68986d4d70594745c478ed1f",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}
