@@ -68,7 +68,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 27 | §27 | Checker mutation sweep | §23 | [x] |
 | 28 | §28 | Record dispositions | §18, §22, §23 | [x] |
 | 29 | §29 | Inventory layout tables | §22 | [x] |
-| 30 | §30 | Built-app layout check | §3 | [ ] |
+| 30 | §30 | Built-app layout check | §3 | [x] |
 | 31 | §31 | Word Options settings | §6 | [ ] |
 | 32 | §32 | Word task panes | §5 | [ ] |
 | 33 | §33 | Word status bar | §5 | [ ] |
@@ -878,9 +878,12 @@ The plan's acceptance bar is that every element works in its app at its inventor
 - [x] Add `--no-bounds` for a parent whose layout `design/SPEC.md` modernises (Outlook, Visio and Project; `docs/specs/2026-10-23-campaign-scope-design.md`, decision 5): presence, label, type and order are still compared. Done when: a test with a moved control passes under `--no-bounds` and still fails on a missing one.
 - [x] Print one line per finding and a last line with the counts, and exit 0 only when nothing is missing, renamed, retyped, reordered, moved or resized. Done when: the tests above assert the lines and the exit codes. **Corrected 2026-11-13 (fact check at start):** the exit code is decided before a line is printed and the findings go to stderr, the counts to stdout (lesson `the-verdict-is-decided-before-it-is-printed`); text read from either file is printed escaped. **Corrected 2026-11-13 (plan review, gap 3):** the exit is 0 only when nothing is missing, renamed, retyped, reordered, moved, resized or unmeasured; `extra` alone exits 0.
 - [x] Document the command in `design/inventory/REFERENCE.md` under a `## Layout check` heading: its inputs, each finding and the tolerance. Done when: `python scripts/check-design-doc.py design/inventory/REFERENCE.md --require "Layout check"` exits 0.
-- [ ] Commit: `inventory: compare a built app's layout with the inventory`
+- [x] Commit: `inventory: compare a built app's layout with the inventory`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_layout.py"` passes, with a matching fixture exiting 0 and a moved, a missing and a retyped fixture each exiting 1.
+
+> **Verified:** 2026-11-13 | §30 | 0af589844d68b2c8b4caa71c4f360f6007555fd8
+> **Review:** `docs/reviews/d02-t01-s30.json`
 
 ## 31. Word Options Settings
 

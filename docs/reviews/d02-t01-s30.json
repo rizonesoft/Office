@@ -1,0 +1,84 @@
+{
+  "ref": "D02 T01 \u00a730",
+  "title": "Built-App Layout Check",
+  "implementation_sha": "0af589844d68b2c8b4caa71c4f360f6007555fd8",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/D02-T01-s30.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_check_layout.py\" -> Ran 17 tests, OK",
+    "python scripts/check-design-doc.py design/inventory/REFERENCE.md --require \"Layout check\" -> exit 0"
+  ],
+  "completion": {
+    "report": "docs/reviews/02-interface/D02-T01-s30.md",
+    "verdict": "complete",
+    "candidate": "0af589844d68b2c8b4caa71c4f360f6007555fd8",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/02-interface/D02-T01-s30.md",
+    "candidate": "7811d83e62666d197a8cb11fe0cf22ae06d48db6",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "7811d83e62666d197a8cb11fe0cf22ae06d48db6",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}
