@@ -105,6 +105,17 @@ def period_start(state: dict, today: datetime.date) -> datetime.date:
     return start
 
 
+def sent_today(state: dict, today: datetime.date) -> bool:
+    """Whether a digest whose period ends today has gone out or may have: delivered, or still being settled. A weekly
+    run that finds one is a relaunch of the run that sent it (Task Scheduler restarts a task that exited non-zero,
+    D00 T07 §4), not a new week, so it declares nothing due (D00 T03 §53, reconciliation 11)."""
+    attempt = state["attempt"]
+    candidates = [state["delivered"], *state["open"]]
+    if attempt and attempt["stage"] in ("sending", "unsure"):
+        candidates.append(attempt)
+    return any(a and a.get("end") == today.isoformat() for a in candidates)
+
+
 def supersede(state: dict) -> None:
     """A digest goes out while the last attempt is still being settled: that attempt joins `open`, settled on its
     own, and the new digest starts after its period."""

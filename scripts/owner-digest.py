@@ -518,10 +518,17 @@ def deliver(args, root, rows, today, alert, opener, runner, sent, now):
         # decides it at the next run). Nothing is sent and nothing changed.
         return 0
     if not args.retry and not state["due"]:
-        # Owed from here until it is sent, so any failure before the send leaves the retry a digest to send.
-        state["due"] = True
-        if not stored():
-            return 1
+        if digest_state.sent_today(state, today):
+            # A relaunch of the weekly run whose digest already went out today, or may have (the scheduler restarts
+            # a task that exited non-zero): one email a week, so nothing new is due. A failed attempt is still owed.
+            if not owed:
+                print("owner-digest: today's digest already went out or is being settled; nothing is sent again")
+                return 0
+        else:
+            # Owed from here until it is sent, so any failure before the send leaves the retry a digest to send.
+            state["due"] = True
+            if not stored():
+                return 1
     if unsettled:
         digest_state.supersede(state)  # the weekly digest goes out; the unsettled one is settled on its own
     if digest_state.tries_today(state, today) >= digest_state.MAX_TRIES:

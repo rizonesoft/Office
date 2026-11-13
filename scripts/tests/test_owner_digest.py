@@ -665,7 +665,8 @@ class Delivery(Send):
         self.assertFalse(self.state()["delivered"]["confirmed"])  # the expired one is counted, unconfirmed
 
     def test_an_expired_attempt_is_named_in_the_next_digest(self):
-        self.put({"attempt": self.attempt("unsure", {"days": 6})})
+        # Last week's digest, six days ago: its period ended then, not today.
+        self.put({"attempt": self.attempt("unsure", {"days": 6}, start="2026-11-03", end="2026-11-10")})
         self.activity = OSError("history gone")
         self.go()
         self.assertIn("could not be confirmed delivered", " ".join(self.sends[-1]["text_body"].split()))
@@ -1029,6 +1030,17 @@ class Notices(Send):
             encoding="utf-8").splitlines()]
         return ids, second[0], queue
 
+    def next_week(self):
+        """The next weekly run: every period already sent or being settled ends a week earlier, so the next run is a
+        new week's digest and not a relaunch of the same day's (D00 T03 §53, reconciliation 11)."""
+        state_path = self.root / "build/automations/owner-digest.json"
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+        for record in [state.get("delivered"), state.get("attempt"), *state.get("open", [])]:
+            for key in ("start", "end"):
+                if record and record.get(key):
+                    record[key] = (datetime.date.fromisoformat(record[key]) - datetime.timedelta(days=7)).isoformat()
+        state_path.write_text(json.dumps(state), encoding="utf-8")
+
     def age_claims(self, hours):
         """Move every claim's time back by `hours`, as if the digest that made it ran that long ago."""
         import datetime
@@ -1039,14 +1051,21 @@ class Notices(Send):
                 at = datetime.datetime.strptime(notice["claimed"]["at"], "%Y-%m-%dT%H:%M:%SZ")
                 notice["claimed"]["at"] = (at - datetime.timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
         path.write_text("".join(json.dumps(n) + "\n" for n in notices), encoding="utf-8")
-        # The digest's own attempt record is the same fact (D00 T07 §3): that digest ran `hours` ago.
+        # The digest's own attempt record is the same fact (D00 T07 §3): that digest ran `hours` ago. The next run is
+        # the next weekly digest, not a relaunch of the same day's (D00 T03 §53, reconciliation 11), so the periods
+        # already sent or being settled end on an earlier day: at least one day earlier, however few the hours.
         state_path = self.root / "build/automations/owner-digest.json"
         if state_path.exists():
             state = json.loads(state_path.read_text(encoding="utf-8"))
+            days = datetime.timedelta(days=max(1, -(-hours // 24)))
             if state.get("attempt"):
                 at = datetime.datetime.strptime(state["attempt"]["at"], "%Y-%m-%dT%H:%M:%SZ")
                 state["attempt"]["at"] = (at - datetime.timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
-                state_path.write_text(json.dumps(state), encoding="utf-8")
+            for record in [state.get("delivered"), state.get("attempt"), *state.get("open", [])]:
+                for key in ("start", "end"):
+                    if record and record.get(key):
+                        record[key] = (datetime.date.fromisoformat(record[key]) - days).isoformat()
+            state_path.write_text(json.dumps(state), encoding="utf-8")
 
     def assert_sent_again_in_full(self, ids, request, queue):
         self.assertIn("Notices since the last digest (1):", request["text_body"])
@@ -1128,6 +1147,7 @@ class Notices(Send):
         queue = [json.loads(line) for line in (self.root / "build/automations/notices.jsonl").read_text(
             encoding="utf-8").splitlines()]
         self.assertEqual([n["id"] for n in queue if n["reported"]], ids)  # delivered and recorded by this digest
+        self.next_week()
         code, _, third = self.run_main([])
         self.assertEqual(code, 0)
         self.assertNotIn("could not be confirmed", third[0]["text_body"])  # once, and never again
@@ -1158,6 +1178,7 @@ class Notices(Send):
         queue = [json.loads(line) for line in (self.root / "build/automations/notices.jsonl").read_text(
             encoding="utf-8").splitlines()]
         self.assertEqual([n["id"] for n in queue if n["reported"]], ids)  # closed only after that delivery
+        self.next_week()
         code, _, fourth = self.run_main([])
         self.assertNotIn("could not be confirmed", fourth[0]["text_body"])  # and never again
 
@@ -1179,6 +1200,40 @@ class Notices(Send):
         queue = [json.loads(line) for line in (self.root / "build/automations/notices.jsonl").read_text(
             encoding="utf-8").splitlines()]
         self.assertEqual([n["id"] for n in queue if n["reported"]], ids)
+
+    def test_a_relaunch_of_the_weekly_run_after_a_delivered_digest_sends_nothing(self):
+        # Reconciliation 11: the send succeeds, the mark fails, the run exits 1, and Task Scheduler restarts the task
+        # (three more launches ten minutes apart, D00 T07 §4). One email a week: the relaunches send nothing.
+        self.queue(1)
+        self.delivered_then_mark_fails()
+        sends = []
+        for _ in range(3):
+            code, out, sent = self.run_main([])
+            self.assertEqual(code, 0, out)
+            self.assertIn("today's digest already went out or is being settled", out)
+            sends += sent
+        self.assertEqual(sends, [])
+
+    def test_a_relaunch_still_sends_a_digest_whose_send_surely_failed(self):
+        self.queue(1)
+
+        def refuse(request, timeout=None):
+            raise digest.load_alert(self.root).Refused("SMTP2GO refused the message")
+        code, _, _ = self.run_main([], opener=refuse)
+        self.assertEqual(code, 1)
+        code, out, sent = self.run_main([])
+        self.assertEqual(code, 0, out)
+        self.assertEqual(len(sent), 1)  # a failed attempt is owed: the relaunch sends it
+
+    def test_a_weekly_run_on_another_day_is_due_as_before(self):
+        self.queue(1)
+        self.assertEqual(self.run_main([])[0], 0)
+        state_path = self.root / "build/automations/owner-digest.json"
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+        state["delivered"]["end"] = "2000-01-03"  # last week's digest
+        state_path.write_text(json.dumps(state), encoding="utf-8")
+        code, _, sent = self.run_main([])
+        self.assertEqual((code, len(sent)), (0, 1))
 
     def test_the_labelled_repeat_is_sent_even_when_the_old_record_cannot_be_removed(self):
         # Round 1 (D00 T03 §56): a scanner holding the old record of acceptance open must not cost the digest.
@@ -1218,6 +1273,7 @@ class Notices(Send):
         queue = [json.loads(line) for line in (self.root / "build/automations/notices.jsonl").read_text(
             encoding="utf-8").splitlines()]
         self.assertEqual([n["id"] for n in queue if n["reported"]], ids)
+        self.next_week()
         code, _, after = self.run_main([])
         self.assertEqual(code, 0)
         self.assertNotIn("could not be confirmed", after[0]["text_body"])  # delivered and recorded: never again
@@ -1231,6 +1287,7 @@ class Notices(Send):
             raise KeyboardInterrupt
         with self.assertRaises(KeyboardInterrupt):
             self.run_main([], opener=interrupted)
+        self.next_week()
         code, _, second = self.run_main([])  # at once: the young claim is kept, a new digest goes out
         self.assertEqual(code, 0)
         self.age_claims(hours=2)
