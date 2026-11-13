@@ -53,12 +53,14 @@ PANES = (
                   ("Revisions", "listBox"))},
     {"slug": "editor", "title": "Editor", "command": "WritingAssistanceCheckDocument",
      "openedBy": "word.home.editor.editor", "docks": SIDES,
-     # Editor asks its service and redraws: on the capture's blank document it first shows its groups of checks
-     # (Corrections, Refinements) and then settles to its statistics alone. `settle` is how many seconds apart two
-     # reads must agree, so that what is recorded is the pane at rest and the same on every run. The groups of
-     # checks show for a document with text, which this capture never sends to the service.
+     # Editor asks its service and redraws: it can show its statistics alone before its checks are there.
+     # `settle` is how many seconds apart two reads must agree, and the pane is read until it also shows every
+     # control below, so that what is recorded is the pane at rest, whole, and the same on every run. They are its
+     # checks for the capture's blank document; a document with text can show more, which this capture never
+     # sends to the service.
      "settle": 5.0,
-     "required": (("Document statistics", "button"),)},
+     "required": (("Spelling", "button"), ("Grammar", "button"), ("Conciseness", "button"),
+                  ("Document statistics", "button"), ("Tell us what you think about Editor", "button"))},
     {"slug": "selection", "title": "Selection", "command": "SelectionPane",
      "openedBy": "word.layout.arrange.selection-pane", "docks": SIDES,
      "required": (("Show All", "button"), ("Hide All", "button"), ("Bring Forward", "button"),

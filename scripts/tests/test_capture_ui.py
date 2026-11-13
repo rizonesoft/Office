@@ -5877,7 +5877,40 @@ class WordPanes(unittest.TestCase):
         self.assertIn("Word's panes could not be put back after the capture stopped (NavigationPaneShowHide); Word "
                       "is left running so that they can be put right", str(ctx.exception))
         self.assertIsNotNone(launched._pane_snapshot)
-        self.assertLessEqual(len(ran), 16)  # it tries, and stops trying
+        self.assertEqual(ran, ["NavigationPaneShowHide"] * 2)  # it tries, and stops trying
+
+    def test_the_parent_attempts_every_repair_and_names_only_what_it_could_not_put_back(self):
+        # One command that does not obey, and a shape that cannot be deleted, do not keep the other panes from
+        # being put back.
+        found = {"NavigationPaneShowHide": True, "SelectionPane": False, "ReviewReviewingPaneVertical": False,
+                 "ReviewReviewingPaneHorizontal": True}
+        pressed = dict(found)
+        launched, ran, deleted, doc = self.stopped_word(pressed)
+        launched._word_action_impl("pane_snapshot")
+        bars = launched.app.CommandBars
+        obey = type(bars).ExecuteMso
+
+        def stubborn(self, command):
+            if command == "NavigationPaneShowHide":
+                ran.append(command)
+                raise RuntimeError("Word refuses this now")
+            obey(self, command)
+        type(bars).ExecuteMso = stubborn
+
+        def no_delete():
+            raise RuntimeError("the shape is locked")
+        doc.Shapes.items[1].Delete = no_delete
+        pressed.update(NavigationPaneShowHide=False, SelectionPane=True, ReviewReviewingPaneVertical=True,
+                       ReviewReviewingPaneHorizontal=False)
+        with self.assertRaises(cu.Refused) as ctx:
+            launched._restore_panes_impl()
+        # Selection and the Reviewing pane's form are back although Navigation and the shape are not.
+        self.assertEqual({k: v for k, v in pressed.items() if k != "NavigationPaneShowHide"},
+                         {k: v for k, v in found.items() if k != "NavigationPaneShowHide"})
+        self.assertIn("could not be put back after the capture stopped (the capture's shape could not be deleted "
+                      "(RuntimeError), NavigationPaneShowHide); Word is left running", str(ctx.exception))
+        self.assertEqual(ran.count("NavigationPaneShowHide"), 2)
+        self.assertIsNotNone(launched._pane_snapshot)
         # The worker's own word that the panes are back is checked against the object model too.
         with self.assertRaises(cu.Refused) as ctx:
             launched._word_action_impl("pane_restored")

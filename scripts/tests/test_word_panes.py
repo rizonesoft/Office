@@ -81,9 +81,15 @@ class Rules(unittest.TestCase):
         self.refused(records, "word.panes.selection: the Selection pane must show Hide All (button)")
         self.assertNotIn("holds", str(self.failure(records)))
         # The title bar is held the same way.
-        records = [r for r in self.changed("word.panes.editor", itemCount=2)
+        records = [r for r in self.changed("word.panes.editor", itemCount=6)
                    if r["id"] != "word.panes.editor.close-pane"]
         self.refused(records, "word.panes.editor: the Editor pane must show Close pane (button)")
+        # Editor is held to the checks the committed file and the reference record of it, each one.
+        for label in ("Spelling", "Grammar", "Conciseness", "Document statistics",
+                      "Tell us what you think about Editor"):
+            rid = f"word.panes.editor.{wp.slug(label)}"
+            records = [r for r in self.changed("word.panes.editor", itemCount=6) if r["id"] != rid]
+            self.refused(records, f"word.panes.editor: the Editor pane must show {label} (button)")
         # The right label with another type is not the control.
         self.refused(self.changed("word.panes.navigation.search", controlType="button"),
                      "the Navigation pane must show Search (splitButton)")

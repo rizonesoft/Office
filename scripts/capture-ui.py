@@ -2085,16 +2085,27 @@ class Launched:
         pane cannot be put back the close is refused and Word is left running, so that it can be put right."""
         if getattr(self, "_pane_snapshot", None) is None:
             return
-        self._drop_pane_shape()
-        bars = self.app.CommandBars
-        for _ in range(2 * len(word_panes.COMMANDS)):
-            differing = self._panes_differing()
-            if not differing:
+        unresolved = []
+        try:
+            self._drop_pane_shape()
+        except Exception as exc:  # COM's own errors: said below, after the panes have had their turn
+            unresolved.append(f"the capture's shape could not be deleted ({type(exc).__name__})")
+        bars, tried = self.app.CommandBars, {}
+        # Each toggle that differs is pressed, twice at most, and a command that does not obey does not keep the
+        # others from their turn. Pressing one form of the Reviewing pane changes the other, so what differs is
+        # asked again after every press.
+        while True:
+            pending = [command for command in self._panes_differing() if tried.get(command, 0) < 2]
+            if not pending:
                 break
-            bars.ExecuteMso(differing[0])
-        differing = self._panes_differing()
-        if differing:
-            raise Refused("Word's panes could not be put back after the capture stopped (" + ", ".join(differing) +
+            tried[pending[0]] = tried.get(pending[0], 0) + 1
+            try:
+                bars.ExecuteMso(pending[0])
+            except Exception:  # a command Word refuses now: it stays in what differs, and is named below
+                continue
+        unresolved += self._panes_differing()
+        if unresolved:
+            raise Refused("Word's panes could not be put back after the capture stopped (" + ", ".join(unresolved) +
                           "); Word is left running so that they can be put right")
         self._pane_snapshot = None
 
