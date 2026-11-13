@@ -346,6 +346,39 @@ class Inventory(unittest.TestCase):
         self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour="Zoom: sets 1.5 line spacing.")])
         self.assertEqual(self.problems(), [])
 
+    def test_a_hyphenated_dotted_call_must_complete_at_any_depth(self):
+        # D02 T01 §27: noHost's pattern counts parentheses only to a fixed depth; from about 20 nested calls an
+        # unclosed or prose-interrupted call passed it. The checker now counts them at any depth up to maxLength.
+        refused = []
+        for n in (20, 40, 120):
+            refused += ["=1-REGISTER.ID(" + "SUM(" * n + "1" + ")" * n + " \"help desk\"",
+                        "=1-REGISTER.ID(" + "SUM(" * n + "1" + ")" * (n - 1) + " help desk",
+                        "=1-REGISTER.ID(" + "SUM(" * n + "\"help" + ")" * n + ")",
+                        "=1-REGISTER.ID(" + "SUM(" * n + "\"help\" desk" + ")" * n + ")"]
+        for text in refused:
+            self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour=text)])
+            self.assertTrue(any(".behaviour" in p and "host name or address" in p for p in self.problems()),
+                            text[:40] + "..." + text[-20:])
+        for n in (20, 40, 120):
+            for text in ("=1-REGISTER.ID(" + "SUM(" * n + "1" + ")" * n + ")",
+                         "=1-REGISTER.ID(" + "SUM(" * n + "\"a \"\"b\"\"\"" + ")" * n + ") is a lookup.",
+                         "=1-STDEV.S(" + "SUM(" * n + "1, 2" + ")" * n + "+1)"):
+                self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour=text)])
+                self.assertEqual(self.problems(), [], text[:40] + "..." + text[-20:])
+
+    def test_the_unfinished_call_scan_reads_strings_and_boundaries(self):
+        f = ci.unfinished_call
+        self.assertIsNone(f("=1-STDEV.S(1,2) and prose after the call"))
+        self.assertIsNone(f('=1-REGISTER.ID(SUM("a""b"), 2)'))
+        self.assertEqual(f('=1-REGISTER.ID(SUM("a""b) x'), "1-REGISTER.ID(")
+        self.assertIsNone(f("=1-REGISTER.ID(SUM(1) desk)"))  # the intersection operator, as noHost's pattern reads it
+        self.assertIsNone(f("=1-STDEV.S((Table1[[#Data],[Amount]]) January)"))
+        for glued in ('=1-REGISTER.ID(SUM(1) "desk")', "=1-REGISTER.ID(SUM(1) .x)", "=1-REGISTER.ID(SUM(1) [x])",
+                      "=1-REGISTER.ID(SUM(1)desk)", '=1-REGISTER.ID("help" desk)'):
+            self.assertEqual(f(glued), "1-REGISTER.ID(", glued)
+        self.assertIsNone(f("=1-REGISTER.ID(SUM(1) )"))
+        self.assertIsNone(f("No call here: STDEV.S without a hyphen before it."))
+
     def test_unicode_host_names_are_refused(self):
         # Audit round 6, finding 1: host names with the full-stop forms IDNA normalises, and in other scripts.
         for text in ("support。microsoft。com", "office．microsoft．com", "a｡example｡org",

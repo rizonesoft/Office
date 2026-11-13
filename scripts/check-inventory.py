@@ -242,10 +242,58 @@ def ecma(pattern):
     return _PATTERNS[pattern]
 
 
+# A hyphenated dotted-function call, as noHost's exemption reads one: `1-REGISTER.ID(`, `x - NORM.S.DIST(`.
+HYPHENATED_CALL = re.compile(r"[A-Za-z0-9_]+\s*-\s*[A-Z0-9]+\.[A-Z0-9.]+\(")
+AFTER_ARGUMENT = set("),;+-*/^&=<>%:#!\\}")  # what may follow a completed inner call or a string, as noHost's pattern allows
+# After a space, a completed inner call may also meet the next reference or name: Excel's intersection operator.
+INTERSECTED = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789$'(@_\\")
+
+
+def unfinished_call(text):
+    """The first hyphenated dotted-function call in `text` that is not a completed call, or None (D02 T01 §27).
+    noHost exempts the dot of such a call from the host rule, but a regular expression can count its parentheses only
+    to a fixed depth, so this counts them at any depth: the call must close, an Excel string inside it ("" is a quote
+    in one) must close, and a completed inner call or string may be followed only by another argument, an operator or
+    the call's own end (and, after a space, an inner call by the next reference, as the intersection operator reads),
+    never by a string, a stray dot or bracket, or prose glued to it, as noHost's pattern holds at the depth it
+    counts."""
+    for match in HYPHENATED_CALL.finditer(text):
+        i, depth = match.end(), 1
+        while depth:
+            if i >= len(text):
+                return match.group(0)
+            c = text[i]
+            if c == '"':
+                i += 1
+                while i < len(text) and not (text[i] == '"' and text[i + 1:i + 2] != '"'):
+                    i += 2 if text[i] == '"' else 1
+                if i >= len(text):
+                    return match.group(0)  # a string that never closes
+            elif c == "(":
+                depth += 1
+            elif c == ")":
+                depth -= 1
+            if depth and c in '")':  # a completed inner call or string: what follows it must be formula
+                k = i + 1
+                while k < len(text) and text[k] in " \t":
+                    k += 1
+                spaced = k > i + 1
+                if k < len(text) and text[k] not in AFTER_ARGUMENT and not (
+                        c == ")" and spaced and text[k] in INTERSECTED):
+                    return match.group(0)
+            i += 1
+    return None
+
+
 def validate(value, schema, root, path="$"):
     """The subset of JSON Schema 2020-12 that schema.json uses. Returns a list of problems."""
     if "$ref" in schema:
-        return validate(value, resolve_ref(root, schema["$ref"]), root, path)
+        problems = validate(value, resolve_ref(root, schema["$ref"]), root, path)
+        if schema["$ref"] == "#/$defs/noHost" and isinstance(value, str) and not problems:
+            call = unfinished_call(value)  # the depth noHost's pattern cannot count (D02 T01 §27)
+            if call:
+                problems.append(f"{path}: host name or address (the call {call} is not completed)")
+        return problems
     problems = []
     if "type" in schema and not type_ok(value, schema["type"]):
         return [f"{path}: expected {schema['type']}"]
