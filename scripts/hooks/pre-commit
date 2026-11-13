@@ -1,15 +1,23 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Rizonesoft
-# Refuse a commit that would turn CI's plan-gates red: one that stages TODO changes while todo/implementation-plan.md
-# is stale or the TODO graph is invalid. Enabled per clone with `git config core.hooksPath scripts/hooks`
-# (AGENTS.md). Ticking a checklist item changes the generated plan, so every TODO edit needs `plan --sync`.
-git diff --cached --name-only -- todo/ | grep -q . || exit 0
+# Refuse a commit that would turn CI's gates red: one that stages TODO changes while todo/implementation-plan.md
+# is stale or the TODO graph is invalid, and one that stages TODO or inventory changes while
+# design/inventory/COVERAGE.md is stale (D02 T01 §18: a new record, or a stamp that changes what is implemented).
+# Enabled per clone with `git config core.hooksPath scripts/hooks` (AGENTS.md).
+todo=
+inventory=
+git diff --cached --name-only -- todo/ | grep -q . && todo=1
+git diff --cached --name-only -- design/inventory/ | grep -q . && inventory=1
+[ -n "$todo$inventory" ] || exit 0
 
-# The check reads the working tree, so the TODO files and the review receipts and findings they cite
-# (docs/reviews/) must be exactly what is being committed: nothing unstaged and nothing untracked, ignored files
-# included, since the check reads those too.
-for dir in todo/ docs/reviews/; do
+# The checks read the working tree, so what they read must be exactly what is being committed: nothing unstaged and
+# nothing untracked, ignored files included, since the checks read those too. The plan check reads the TODO files and
+# the review receipts and findings they cite (docs/reviews/); the coverage check reads the TODO files and the
+# inventory with its report.
+dirs="todo/ design/inventory/"
+[ -n "$todo" ] && dirs="todo/ docs/reviews/ design/inventory/"
+for dir in $dirs; do
     if ! git diff --quiet -- "$dir" || [ -n "$(git ls-files --others -- "$dir")" ]; then
         echo "pre-commit: $dir has unstaged or untracked changes; stage them (or stash them) so the plan check sees what is committed" >&2
         exit 1
@@ -29,7 +37,13 @@ if [ -z "$python" ]; then
     echo "pre-commit: Python is needed to check the TODO graph" >&2
     exit 1
 fi
-if ! "$python" "$root/scripts/todo-graph.py" validate >/dev/null || ! "$python" "$root/scripts/todo-graph.py" plan --check; then
-    echo "pre-commit: run 'python scripts/todo-graph.py plan --sync', stage todo/implementation-plan.md, and commit again" >&2
+if [ -n "$todo" ]; then
+    if ! "$python" "$root/scripts/todo-graph.py" validate >/dev/null || ! "$python" "$root/scripts/todo-graph.py" plan --check; then
+        echo "pre-commit: run 'python scripts/todo-graph.py plan --sync', stage todo/implementation-plan.md, and commit again" >&2
+        exit 1
+    fi
+fi
+if ! "$python" "$root/scripts/inventory-report.py" --check; then
+    echo "pre-commit: run 'python scripts/inventory-report.py', stage design/inventory/COVERAGE.md, and commit again" >&2
     exit 1
 fi

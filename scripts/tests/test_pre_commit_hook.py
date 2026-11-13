@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Rizonesoft
 """scripts/hooks/pre-commit: a commit that stages TODO changes with a stale plan is refused before CI sees it."""
+import json
 import pathlib
 import shutil
 import subprocess
@@ -20,7 +21,8 @@ class PreCommitHook(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = pathlib.Path(self.tmp.name)
         for rel in ("scripts/todo-graph.py", "scripts/lib/todo_graph.py", "scripts/review-dispatch.py",
-                    "scripts/hooks/pre-commit"):
+                    "scripts/hooks/pre-commit", "scripts/inventory-report.py", "scripts/lib/inventory_claims.py",
+                    "scripts/lib/word_absences.py", "scripts/lib/word_backstage.py"):
             (self.root / rel).parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / rel, self.root / rel)
         (self.root / "scripts/hooks/pre-commit").chmod(0o755)  # git runs only an executable hook on Linux
@@ -30,6 +32,8 @@ class PreCommitHook(unittest.TestCase):
         (todo / "INDEX.md").write_text("# Index\n- TODO-01-a.md\n", encoding="utf-8")
         (self.root / "todo/TODO-00-INDEX.md").write_text("# Index\n- 00-workspace/TODO-01-a.md\n", encoding="utf-8")
         self.sync()
+        self.record("word.home", "tab")
+        self.report()
         for args in (["init", "-q"], ["config", "user.email", "t@example.com"], ["config", "user.name", "T"],
                      ["config", "core.autocrlf", "false"], ["add", "-A"], ["commit", "-qm", "seed"],
                      ["config", "core.hooksPath", "scripts/hooks"]):
@@ -43,6 +47,18 @@ class PreCommitHook(unittest.TestCase):
 
     def sync(self):
         subprocess.run([sys.executable, str(self.root / "scripts/todo-graph.py"), "plan", "--sync"], check=True,
+                       capture_output=True)
+
+    def record(self, rid, kind):
+        """Add one record to the fixture's Word inventory."""
+        path = self.root / "design/inventory/word/ribbon.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        records = json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
+        path.write_text(json.dumps(records + [{"id": rid, "app": "word", "kind": kind, "label": rid}]),
+                        encoding="utf-8")
+
+    def report(self):
+        subprocess.run([sys.executable, str(self.root / "scripts/inventory-report.py")], check=True,
                        capture_output=True)
 
     def commit(self):
@@ -95,6 +111,40 @@ class PreCommitHook(unittest.TestCase):
         mode = subprocess.run(["git", "-C", str(ROOT), "ls-files", "-s", "scripts/hooks/pre-commit"],
                               capture_output=True, text=True, check=True).stdout.split()[0]
         self.assertEqual(mode, "100755")
+
+    def test_a_new_record_without_its_report_is_refused(self):
+        self.record("word.insert", "tab")
+        self.git("add", "design/inventory/word/ribbon.json")
+        result = self.commit()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("design/inventory/COVERAGE.md is stale", result.stderr)
+
+    def test_a_regenerated_report_left_unstaged_is_refused(self):
+        self.record("word.insert", "tab")
+        self.report()
+        self.git("add", "design/inventory/word/ribbon.json")  # the report regenerated but not staged
+        result = self.commit()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("design/inventory/ has unstaged or untracked changes", result.stderr)
+
+    def test_a_new_record_with_its_regenerated_report_is_committed(self):
+        self.record("word.insert", "tab")
+        self.report()
+        self.git("add", "design/inventory/")
+        self.assertEqual(self.commit().returncode, 0)
+
+    def test_a_todo_commit_is_refused_while_the_report_is_stale(self):
+        # A stamp changes what is implemented without touching the inventory; the report is checked for TODO
+        # commits too. A stale report is committed past the hook, then an ordinary TODO commit is refused.
+        self.record("word.insert", "tab")
+        self.git("add", "design/inventory/word/ribbon.json")
+        self.git("commit", "-qm", "stale", "--no-verify")
+        self.tick()
+        self.sync()
+        self.git("add", "todo/")
+        result = self.commit()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("design/inventory/COVERAGE.md is stale", result.stderr)
 
     def test_a_commit_without_todo_changes_is_not_checked(self):
         (self.root / "notes.txt").write_text("x\n", encoding="utf-8")
