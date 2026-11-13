@@ -346,6 +346,36 @@ class Owners(Fixture):
                 self.assertEqual((code, out), (2, ""), (expected, argv))  # no state is printed, pending least of all
                 self.assertIn("authoring.json: " + expected, err, argv)
 
+    def test_a_reader_that_stops_listening_does_not_change_the_verdict(self):
+        # Round 1, finding 1: with the pipe to its reader closed, a failing check still exits 1 and its refusals
+        # still reach stderr; only a report with nothing to refuse ends 0.
+        class Closed(io.StringIO):
+            def write(self, text):
+                raise BrokenPipeError(32, "Broken pipe")
+
+        class Full(io.StringIO):
+            def write(self, text):
+                raise OSError(28, "No space left on device")
+
+        def run(*argv, stream=Closed):
+            err, stand_in = io.StringIO(), stream()
+            with contextlib.redirect_stdout(stand_in), contextlib.redirect_stderr(err):
+                code = ir.main(["--owners", *argv], root=self.root)
+                replaced = sys.stdout
+            if replaced is not stand_in:
+                replaced.close()  # the report pointed stdout at the null device; give the handle back
+            return code, err.getvalue()
+        code, err = run("--check", "--all")
+        self.assertEqual(code, 1)
+        self.assertIn("refused: word: 8 record(s) no section claims on an Implements line\n", err)
+        self.assertIn("refused: excel has no captured record", err)
+        self.assertEqual(run("--check"), (0, ""))  # every app pending: the check passes, closed pipe or not
+        self.assertEqual(run(), (0, ""))           # and the plain report has nothing to fail
+
+        code, err = run(stream=Full)
+        self.assertEqual(code, 1)  # a report that could not be written is not a report
+        self.assertIn("the report could not be written", err)
+
     def test_owners_takes_no_other_mode_and_all_goes_with_the_check(self):
         for argv in (("--owners", "--missing"), ("--owners", "--kind", "tab"), ("--owners", "--control-types"),
                      ("--owners", "--cited-in", str(self.report))):
@@ -565,6 +595,29 @@ class Committed(unittest.TestCase):
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             code = ir.main(["--check"])
         self.assertEqual(code, 0, err.getvalue())
+
+    def test_a_failing_check_exits_1_into_a_closed_pipe(self):
+        # Round 1, finding 1, as the reviewer ran it: the gate over Word, whose records nobody claims yet, with its
+        # output piped to a reader that has already gone.
+        process = subprocess.Popen([sys.executable, "-B", str(SCRIPTS / "inventory-report.py"), "--owners", "--check",
+                                    "--all", "--app", "word"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process.stdout.close()
+        try:
+            refusals = process.stderr.read().decode("utf-8", "replace")
+            code = process.wait(timeout=120)
+        finally:
+            if process.poll() is None:
+                process.kill()
+            process.stderr.close()
+        rows, _, _ = ir.ownership(ir.ROOT, ir.load_inventory(ir.ROOT)[0], ir.read_sections(ir.ROOT), "word")
+        unowned = sum(len(pair[1]) for pair in rows[0][3].values())
+        if unowned:
+            self.assertEqual(code, 1, refusals)
+            self.assertIn(f"refused: word: {unowned} record(s) no section claims on an Implements line", refusals)
+        else:  # once every Word record has its owner the same command passes, pipe or no pipe
+            self.assertEqual(code, 0, refusals)
+        self.assertNotIn("Traceback", refusals)
+        self.assertNotIn("Exception ignored", refusals)
 
     def test_the_repositorys_ownership_check_passes_and_names_every_app(self):
         # D02 T01 §22's checkpoint: the report runs on the repository, and the check the hook runs passes there.

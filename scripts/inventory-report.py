@@ -35,6 +35,7 @@ every app as enforced, so an app with no captured record is refused too: the gat
 one app, and with --owners refuses a name that is no app folder. Refusals go to stderr, states and counts to stdout.
 """
 import argparse
+import errno
 import json
 import os
 from pathlib import Path
@@ -145,6 +146,15 @@ def gather(root):
 OWNERS_SHOWN = 50  # unowned ids a refusal names for one app before counting the rest
 
 
+def stop_writing():
+    """Point stdout at the null device, so what it still holds is dropped quietly now and when Python flushes it at
+    exit, instead of failing a second time there (which would replace the exit code with Python's own 120)."""
+    try:
+        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+    except (OSError, ValueError, AttributeError):  # stdout is not a real file: a stand-in with no descriptor
+        sys.stdout = open(os.devnull, "w", encoding="utf-8")
+
+
 def shown(text):
     """text with anything that is not printable written as an escape: a claim is whatever a TODO file backticked."""
     return "".join(ch if ch.isprintable() else ascii(ch)[1:-1] for ch in str(text))
@@ -182,9 +192,11 @@ def ownership(root, records, sections, app=None):
     return rows, unknown, doubled
 
 
-def owners_report(root, app=None, check=False, hold_all=False, out=None, err=None):
-    """Print the ownership report and return the exit code: 0, or 1 when `check` finds a refusal."""
-    out, err = out or sys.stdout, err or sys.stderr
+def owners_report(root, app=None, check=False, hold_all=False):
+    """The ownership report, decided before a line of it is written: (the exit code, 0 or 1 when `check` finds a
+    refusal; the lines for stdout, states and counts; the lines for stderr, refusals). Nothing is printed here, so
+    the verdict cannot depend on whether its reader is still listening."""
+    out, err = [], []
     records, _ = load_inventory(root)
     rows, unknown, doubled = ownership(root, records, read_sections(root), app)
     refusals = 0
@@ -192,35 +204,35 @@ def owners_report(root, app=None, check=False, hold_all=False, out=None, err=Non
         owned = sum(len(pair[0]) for pair in kinds.values())
         unowned = [(kind, rid) for kind, pair in kinds.items() for rid in pair[1]]
         if state == "pending inventory":
-            print(f"{name}: pending inventory (no captured record; {ref} authors it)", file=out)
+            out.append(f"{name}: pending inventory (no captured record; {ref} authors it)")
         else:
             waits = "is stamped" if state == "enforced" else "is open"
-            print(f"{name}: {state} ({ref} {waits}): {owned} of {owned + len(unowned)} records owned", file=out)
+            out.append(f"{name}: {state} ({ref} {waits}): {owned} of {owned + len(unowned)} records owned")
             for kind, pair in kinds.items():
-                print(f"  {kind}: {len(pair[0])} of {len(pair[0]) + len(pair[1])}", file=out)
+                out.append(f"  {kind}: {len(pair[0])} of {len(pair[0]) + len(pair[1])}")
         held_to = hold_all or state == "enforced"
         if check and held_to and state == "pending inventory":
             refusals += 1
-            print(f"refused: {name} has no captured record, and --all holds every app", file=err)
+            err.append(f"refused: {name} has no captured record, and --all holds every app")
         elif check and held_to and unowned:
             refusals += 1
-            print(f"refused: {name}: {len(unowned)} record(s) no section claims on an Implements line", file=err)
+            err.append(f"refused: {name}: {len(unowned)} record(s) no section claims on an Implements line")
             for kind, rid in unowned[:OWNERS_SHOWN]:
-                print(f"  unowned {kind} {shown(rid)}", file=err)
+                err.append(f"  unowned {kind} {shown(rid)}")
             if len(unowned) > OWNERS_SHOWN:
-                print(f"  and {len(unowned) - OWNERS_SHOWN} more", file=err)
+                err.append(f"  and {len(unowned) - OWNERS_SHOWN} more")
         elif not check:
             for kind, rid in unowned:
-                print(f"  unowned {kind} {shown(rid)}", file=out)
+                out.append(f"  unowned {kind} {shown(rid)}")
     for rid, refs in unknown:
         refusals += 1
-        print(f"{'refused: ' if check else ''}unknown claim: {shown(rid)}, claimed by {', '.join(refs)}, is not a "
-              f"record of the inventory", file=err if check else out)
+        (err if check else out).append(f"{'refused: ' if check else ''}unknown claim: {shown(rid)}, claimed by "
+                                       f"{', '.join(refs)}, is not a record of the inventory")
     for rid, refs in doubled:
         refusals += 1
-        print(f"{'refused: ' if check else ''}double claim: {shown(rid)} is claimed by {' and '.join(refs)}",
-              file=err if check else out)
-    return 1 if check and refusals else 0
+        (err if check else out).append(f"{'refused: ' if check else ''}double claim: {shown(rid)} is claimed by "
+                                       f"{' and '.join(refs)}")
+    return (1 if check and refusals else 0), out, err
 
 
 def render(records, baselines, implemented):
@@ -286,14 +298,28 @@ def main(argv=None, root=ROOT, write=todo_graph.atomic):
             print("inventory-report: --owners takes --check, --all and --app only", file=sys.stderr)
             return 2
         try:
-            return owners_report(root, args.app, args.check, args.all)
-        except BrokenPipeError:
-            # The reader of a long list (`--owners | head`) closed the pipe: nothing more to say, and nothing failed.
-            sys.stdout = open(os.devnull, "w", encoding="utf-8")
-            return 0
+            code, lines, refusals = owners_report(root, args.app, args.check, args.all)
         except (Unreadable, OSError, UnicodeDecodeError) as exc:
             print(f"inventory-report: {exc}", file=sys.stderr)
             return 2
+        # The verdict is decided; the refusals go out first, and nothing that happens to stdout can change it.
+        for line in refusals:
+            print(line, file=sys.stderr)
+        try:
+            for line in lines:
+                print(line)
+            sys.stdout.flush()
+        except OSError as exc:
+            # A reader that stopped listening (`--owners | head`) is a broken pipe, which Windows reports as an
+            # invalid argument: there is nobody left to write to, so the rest is dropped, here and at exit, and the
+            # exit code is still the check's. Anything else (a full disk) is a report that was not written.
+            gone = isinstance(exc, BrokenPipeError) or exc.errno == errno.EPIPE or (
+                os.name == "nt" and exc.errno == errno.EINVAL)
+            stop_writing()
+            if not gone:
+                print(f"inventory-report: the report could not be written ({exc})", file=sys.stderr)
+                return code or 1
+        return code
     try:
         records, baselines, implemented = gather(root)
         text = args.cited_in.read_text(encoding="utf-8") if args.cited_in else None
