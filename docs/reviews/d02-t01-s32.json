@@ -1,0 +1,85 @@
+{
+  "ref": "D02 T01 \u00a732",
+  "title": "Word Task Panes",
+  "implementation_sha": "2bef27b1966114679fd8246957a59f7677b192dd",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/D02-T01-s32.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_capture_ui.py\" -> Ran 104 tests, OK",
+    "python scripts/check-inventory.py design/inventory/word -> exit 0",
+    "design/inventory/word/panes.json holds 8 pane records"
+  ],
+  "completion": {
+    "report": "docs/reviews/02-interface/D02-T01-s32.md",
+    "verdict": "reconciled",
+    "candidate": "2bef27b1966114679fd8246957a59f7677b192dd",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/02-interface/D02-T01-s32.md",
+    "candidate": "88a4941a772b74cd433775b5be5582ef296f2d5d",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "88a4941a772b74cd433775b5be5582ef296f2d5d",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 5,
+  "pass_cap": 33
+}
