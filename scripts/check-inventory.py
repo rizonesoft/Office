@@ -114,7 +114,7 @@ def chord_problems(records, named_ids):
     where either record is named, so checking one file still sees a conflict with another (D02 T01 §17)."""
     sys.path.insert(0, str(ROOT / "scripts" / "lib"))
     import shortcuts
-    named = [r for r in records if isinstance(r, dict) and r.get("id") in named_ids]
+    named = [r for r in records if isinstance(r, dict) and isinstance(r.get("id"), str) and r["id"] in named_ids]
     clashes = [f"{later}: {chord} in {scope} is already {earlier}'s"
                for later, earlier, chord, scope in shortcuts.conflicts(records)
                if later in named_ids or earlier in named_ids]

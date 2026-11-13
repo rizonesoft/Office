@@ -143,6 +143,20 @@ class Checklist(unittest.TestCase):
                     problems = "\n".join(ci.check([str(named)], inventory=inventory))
                     self.assertIn("Ctrl+B in document is already", problems, named.name)
 
+    def test_the_whole_checker_reports_fields_of_the_wrong_type(self):
+        for field, value, want in (("scope", [], "no scope, or one outside the set"),
+                                   ("id", {"a": 1}, "a shortcut's id is text")):
+            recs = copy.deepcopy(self.records)  # completion review: the helper was tested, not the checker
+            next(r for r in recs if r.get("id") == "word.shortcut.bold")[field] = value
+            with tempfile.TemporaryDirectory() as tmp:
+                inventory = Path(tmp) / "inventory"
+                shutil.copytree(ci.INVENTORY, inventory)
+                named = inventory / "word" / "shortcuts.json"
+                named.write_text(json.dumps(recs), encoding="utf-8")
+                with mock.patch.object(ci, "INVENTORY", inventory):
+                    problems = "\n".join(ci.check([str(named)], inventory=inventory))  # raises nothing
+            self.assertIn(want, problems, field)
+
     def test_a_dialog_key_is_its_own_record_not_the_documents(self):
         row = ws.COVERAGE["function-keys"][5]  # F6 and its combinations
         dialog = [r for r in self.records if r["id"] in row and r["scope"] == "dialog"]

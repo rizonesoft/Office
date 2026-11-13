@@ -483,7 +483,7 @@ def validate(records: list) -> list:
     behaviour, a scope outside the set, a record the checklist does not list, an id it lists that the file lacks, and a
     table with a row no record covers or a row count other than the list's."""
     out = []
-    ids = {r.get("id") for r in records if isinstance(r, dict)}
+    ids = {r["id"] for r in records if isinstance(r, dict) and isinstance(r.get("id"), str)}
     listed = set(KEY_TABLE_ONLY)
     for name, rows in COVERAGE.items():
         if len(rows) != ROWS.get(name):
@@ -496,7 +496,10 @@ def validate(records: list) -> list:
         if not isinstance(rec, dict) or rec.get("kind") != "shortcut":
             continue
         rid = rec.get("id")
-        if rec.get("scope") not in SCOPES:
+        if not isinstance(rid, str):
+            out.append(f"{rid!r}: a shortcut's id is text")
+            continue
+        if not isinstance(rec.get("scope"), str) or rec["scope"] not in SCOPES:
             out.append(f"{rid}: no scope, or one outside the set")
         if not str(rec.get("behaviour", "")).strip():
             out.append(f"{rid}: no behaviour")
