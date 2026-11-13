@@ -853,3 +853,284 @@ KILLED       34 failing, 1 erroring   schema /$defs/noColon/not pattern
 rules: 271, killed: 271, other outcomes: 0
 survivors: 0
 ```
+
+## Fourth run
+
+`python -B scripts/mutation-sweep-inventory.py` on commit `19d69ac` (2026-11-13, through `bosun`, 64 minutes with four workers): every rule killed, no survivor and no other outcome; exit 0. The checker, its schema and its tests are those of the third run (`ee2e913`); what changed is the sweep's own report (completion review, gap 1): each line now says how every test of that removal ended and how many ran of how many were discovered, so this record shows for each of the 271 removals, and for the unmutated run, that all 133 tests were discovered and run. A removal is killed by its failing tests; the erroring ones beside them are tests that raise once the rule is gone.
+
+```text
+unmutated: 133 tests pass in 57 s (0 failing, 0 erroring, 133 passing, 0 skipped, 133 of 133 run); 271 rules
+KILLED       1 failing, 3 erroring, 129 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:335 if groups is None
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:339 if depth >= counted_depth(name, host)
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:345 if host.search(utf16(alone))
+KILLED       64 failing, 0 erroring, 69 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:354 if '$ref' in schema
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:357 if schema['$ref'] == '#/$defs/noHost' and isinstance(value, str) and (not problems)
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:359 if pattern
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:361 if reason
+KILLED       9 failing, 0 erroring, 124 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:365 if 'type' in schema and (not type_ok(value, schema['type']))
+KILLED       24 failing, 0 erroring, 109 passing, 0 skipped, 133 of 133 run     guard check-inventory.py:367 if 'const' in schema and value != schema['const']
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:369 if 'enum' in schema and value not in schema['enum']
+KILLED       44 failing, 0 erroring, 89 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:371 if isinstance(value, str)
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:372 if len(value) < schema.get('minLength', 0)
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:374 if len(value) > schema.get('maxLength', len(value))
+KILLED       41 failing, 1 erroring, 91 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:377 if 'pattern' in schema and (not ecma(schema['pattern']).search(utf16(value)))
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:379 if isinstance(value, (int, Decimal)) and (not isinstance(value, bool)) and (value < schema.ge
+KILLED       64 failing, 0 erroring, 69 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:381 if isinstance(value, list) and 'items' in schema
+KILLED       63 failing, 0 erroring, 70 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:384 if isinstance(value, dict)
+KILLED       11 failing, 0 erroring, 122 passing, 0 skipped, 133 of 133 run     guard check-inventory.py:386 if key not in value
+KILLED       72 failing, 0 erroring, 61 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:390 if key in props
+KILLED       4 failing, 0 erroring, 129 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:392 if schema.get('additionalProperties', True) is False
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:395 if key in value
+KILLED       27 failing, 1 erroring, 105 passing, 0 skipped, 133 of 133 run     guard check-inventory.py:397 if 'not' in schema and (not validate(value, schema['not'], root, path))
+KILLED       4 failing, 0 erroring, 129 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:400 if 'if' in sub
+KILLED       4 failing, 0 erroring, 129 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:401 if not validate(value, sub['if'], root, path)
+KILLED       4 failing, 0 erroring, 129 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:429 if isinstance(item, str)
+KILLED       4 failing, 0 erroring, 129 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:433 if hit
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:435 if found <= LINKS_SHOWN
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:445 if found > LINKS_SHOWN
+KILLED       1 failing, 1 erroring, 131 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:468 if own and len(pinned) != 1
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:561 if entry.is_symlink() or (hasattr(entry, 'is_junction') and entry.is_junction())
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:598 if not data['rows']
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:600 if sources and data['source'] != f"baseline:{sources.get('commit')}"
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:604 if data['columns'] != expected
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:609 if len(row) != len(expected)
+KILLED       1 failing, 1 erroring, 131 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:613 if name == 'window' and (not isinstance(cell, str))
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:616 if name == 'window' and sources and (cell not in windows)
+KILLED       1 failing, 1 erroring, 131 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:668 if manifest and (not (isinstance(sources, dict) and isinstance(sources.get('commit'), str) an
+KILLED       5 failing, 0 erroring, 128 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:673 if manifest
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:678 if reference_commit and sources['commit'] != reference_commit
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:683 if bad or not hex40.fullmatch(sources['commit'])
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:691 if missing or extra or (not windows)
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:701 if whole and sources is not None
+KILLED       1 failing, 3 erroring, 129 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:704 if not path.is_file()
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:706 if app == 'outlook' and sources
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:715 if absent
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:720 if is_baseline(f)
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:728 if is_shell_chrome(f, data)
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:730 if is_word_ribbon(f, inventory)
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:732 if is_word_backstage(f, inventory)
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:734 if is_word_shortcuts(f, inventory)
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:745 if isinstance(rid, str)
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:746 if len(seen.get(rid, [])) > 1
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:751 if isinstance(rec.get('app'), str) and rid.split('.', 1)[0] != rec['app']
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:753 if isinstance(rid, str) and rid in parents
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:755 if loop
+KILLED       4 failing, 0 erroring, 129 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:758 if isinstance(profile, str) and profile not in profiles
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:760 if isinstance(build, str) and build not in builds
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:765 if pinned and (not baseline_commit.startswith(pinned.group(1)))
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:768 if stamped and stamped.group(1) not in builds
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:770 if stamped and isinstance(build, str) and (stamped.group(1) != build)
+KILLED       1 failing, 6 erroring, 126 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:773 if isinstance(parent, str) and parent not in seen
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:775 if isinstance(parent, str) and len(seen[parent]) > 1
+KILLED       5 failing, 0 erroring, 128 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:778 if isinstance(target, str)
+KILLED       1 failing, 6 erroring, 126 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:779 if target not in kinds
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:781 if len(seen[target]) > 1
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:783 if kinds[target] not in TARGET_KINDS and (not (rec.get('kind') == 'backstagePage' and kinds[t
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:787 if require_behaviour and rec.get('kind') in ('contextualTab', 'control', 'menuItem')
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      guard check-inventory.py:788 if not str(rec.get('behaviour', '')).strip(ECMA_SPACE)
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema / type
+KILLED       64 failing, 0 erroring, 69 passing, 0 skipped, 133 of 133 run      schema / items
+KILLED       64 failing, 0 erroring, 69 passing, 0 skipped, 133 of 133 run      schema /items $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record type
+KILLED       5 failing, 0 erroring, 128 passing, 0 skipped, 133 of 133 run      schema /$defs/record required
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      schema /$defs/record additionalProperties
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record dependentRequired
+KILLED       4 failing, 0 erroring, 129 passing, 0 skipped, 133 of 133 run      schema /$defs/record allOf
+KILLED       40 failing, 1 erroring, 92 passing, 0 skipped, 133 of 133 run      schema /$defs/record properties.id
+KILLED       34 failing, 2 erroring, 97 passing, 0 skipped, 133 of 133 run      schema /$defs/record properties.app
+KILLED       34 failing, 1 erroring, 98 passing, 0 skipped, 133 of 133 run      schema /$defs/record properties.kind
+KILLED       53 failing, 0 erroring, 80 passing, 0 skipped, 133 of 133 run      schema /$defs/record properties.label
+KILLED       30 failing, 1 erroring, 102 passing, 0 skipped, 133 of 133 run     schema /$defs/record properties.parent
+KILLED       35 failing, 1 erroring, 97 passing, 0 skipped, 133 of 133 run      schema /$defs/record properties.order
+KILLED       22 failing, 1 erroring, 110 passing, 0 skipped, 133 of 133 run     schema /$defs/record properties.controlType
+KILLED       23 failing, 1 erroring, 109 passing, 0 skipped, 133 of 133 run     schema /$defs/record properties.size
+KILLED       25 failing, 1 erroring, 107 passing, 0 skipped, 133 of 133 run     schema /$defs/record properties.keytip
+KILLED       26 failing, 1 erroring, 106 passing, 0 skipped, 133 of 133 run     schema /$defs/record properties.shortcut
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record properties.scope
+KILLED       7 failing, 0 erroring, 126 passing, 0 skipped, 133 of 133 run      schema /$defs/record properties.condition
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      schema /$defs/record properties.itemCount
+KILLED       8 failing, 0 erroring, 125 passing, 0 skipped, 133 of 133 run      schema /$defs/record properties.target
+KILLED       7 failing, 0 erroring, 126 passing, 0 skipped, 133 of 133 run      schema /$defs/record properties.menuPath
+KILLED       25 failing, 1 erroring, 107 passing, 0 skipped, 133 of 133 run     schema /$defs/record properties.bounds
+KILLED       25 failing, 1 erroring, 107 passing, 0 skipped, 133 of 133 run     schema /$defs/record properties.captureProfile
+KILLED       18 failing, 0 erroring, 115 passing, 0 skipped, 133 of 133 run     schema /$defs/record properties.behaviour
+KILLED       26 failing, 1 erroring, 106 passing, 0 skipped, 133 of 133 run     schema /$defs/record properties.idMso
+KILLED       9 failing, 0 erroring, 124 passing, 0 skipped, 133 of 133 run      schema /$defs/record properties.uiaId
+KILLED       29 failing, 1 erroring, 103 passing, 0 skipped, 133 of 133 run     schema /$defs/record properties.source
+KILLED       27 failing, 1 erroring, 105 passing, 0 skipped, 133 of 133 run     schema /$defs/record properties.capturedFrom
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record properties.baselineMissing
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/id type
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/id maxLength
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/id pattern
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/id allOf
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/id/allOf/0 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/id/allOf/1 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/id/allOf/2 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/app enum
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/kind enum
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/label type
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/label minLength
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/label maxLength
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/label pattern
+KILLED       24 failing, 0 erroring, 109 passing, 0 skipped, 133 of 133 run     schema /$defs/record/properties/label allOf
+KILLED       5 failing, 0 erroring, 128 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/label/allOf/0 $ref
+KILLED       5 failing, 0 erroring, 128 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/label/allOf/1 $ref
+KILLED       16 failing, 0 erroring, 117 passing, 0 skipped, 133 of 133 run     schema /$defs/record/properties/label/allOf/2 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/parent type
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/parent minLength
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/parent maxLength
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/parent allOf
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/parent/allOf/0 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/parent/allOf/1 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/parent/allOf/2 $ref
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/order type
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/order minimum
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/controlType enum
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/size enum
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/keytip type
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/keytip minLength
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/keytip maxLength
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/keytip pattern
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/keytip allOf
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/keytip/allOf/0 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/keytip/allOf/1 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/keytip/allOf/2 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/shortcut type
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/shortcut minLength
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/shortcut maxLength
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/shortcut pattern
+KILLED       4 failing, 0 erroring, 129 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/shortcut allOf
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/shortcut/allOf/0 $ref
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/shortcut/allOf/1 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/shortcut/allOf/2 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/scope enum
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/condition type
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/condition minLength
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/condition maxLength
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/condition pattern
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/condition allOf
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/condition/allOf/0 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/condition/allOf/1 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/condition/allOf/2 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/itemCount type
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/itemCount minimum
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/target type
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/target minLength
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/target maxLength
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/target allOf
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/target/allOf/0 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/target/allOf/1 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/target/allOf/2 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/menuPath type
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/menuPath minLength
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/menuPath maxLength
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/menuPath pattern
+KILLED       4 failing, 0 erroring, 129 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/menuPath allOf
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/menuPath/allOf/0 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/menuPath/allOf/1 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/menuPath/allOf/2 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/bounds type
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/bounds required
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/bounds additionalProperties
+KILLED       21 failing, 1 erroring, 111 passing, 0 skipped, 133 of 133 run     schema /$defs/record/properties/bounds properties.x
+KILLED       21 failing, 1 erroring, 111 passing, 0 skipped, 133 of 133 run     schema /$defs/record/properties/bounds properties.y
+KILLED       22 failing, 1 erroring, 110 passing, 0 skipped, 133 of 133 run     schema /$defs/record/properties/bounds properties.width
+KILLED       21 failing, 1 erroring, 111 passing, 0 skipped, 133 of 133 run     schema /$defs/record/properties/bounds properties.height
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/bounds/properties/x type
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/bounds/properties/y type
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/bounds/properties/width type
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/bounds/properties/width minimum
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/bounds/properties/height type
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/bounds/properties/height minimum
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/captureProfile type
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/captureProfile minLength
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/captureProfile maxLength
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/captureProfile allOf
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/captureProfile/allOf/0 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/captureProfile/allOf/1 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/captureProfile/allOf/2 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/behaviour type
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/behaviour minLength
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/behaviour maxLength
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/behaviour pattern
+KILLED       7 failing, 1 erroring, 125 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/behaviour allOf
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/behaviour/allOf/0 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/behaviour/allOf/1 $ref
+KILLED       4 failing, 1 erroring, 128 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/behaviour/allOf/2 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/idMso type
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/idMso minLength
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/idMso maxLength
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/idMso pattern
+KILLED       4 failing, 0 erroring, 129 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/idMso allOf
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/idMso/allOf/0 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/idMso/allOf/1 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/idMso/allOf/2 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/uiaId type
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/uiaId minLength
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/uiaId maxLength
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/uiaId pattern
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/uiaId allOf
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/uiaId/allOf/0 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/uiaId/allOf/1 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/uiaId/allOf/2 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/source type
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/source maxLength
+KILLED       6 failing, 0 erroring, 127 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/source pattern
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/source allOf
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/source/allOf/0 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/source/allOf/1 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/capturedFrom type
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/capturedFrom minLength
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/capturedFrom maxLength
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/capturedFrom allOf
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/capturedFrom/allOf/0 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/capturedFrom/allOf/1 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/capturedFrom/allOf/2 $ref
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/properties/baselineMissing type
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/allOf/0 if
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/allOf/0 then
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/allOf/0/if required
+KILLED       24 failing, 0 erroring, 109 passing, 0 skipped, 133 of 133 run     schema /$defs/record/allOf/0/if properties.kind
+KILLED       24 failing, 0 erroring, 109 passing, 0 skipped, 133 of 133 run     schema /$defs/record/allOf/0/if/properties/kind const
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/record/allOf/0/then required
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/allOf/1 if
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/allOf/1 then
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/allOf/1/if required
+KILLED       24 failing, 0 erroring, 109 passing, 0 skipped, 133 of 133 run     schema /$defs/record/allOf/1/if properties.kind
+KILLED       24 failing, 0 erroring, 109 passing, 0 skipped, 133 of 133 run     schema /$defs/record/allOf/1/if/properties/kind const
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/allOf/1/then required
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/allOf/2 if
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/allOf/2 then
+KILLED       24 failing, 0 erroring, 109 passing, 0 skipped, 133 of 133 run     schema /$defs/record/allOf/2/if required
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/allOf/2/if properties.source
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/allOf/2/if/properties/source pattern
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/record/allOf/2/then required
+KILLED       3 failing, 99 erroring, 31 passing, 0 skipped, 133 of 133 run      schema /$defs/noLink not
+KILLED       10 failing, 100 erroring, 23 passing, 0 skipped, 133 of 133 run    schema /$defs/noLink/not pattern
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/noLink/not pattern alternative 1 of 7: [A-Za-z][A-Za-z0-9+.-]*://
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/noLink/not pattern alternative 2 of 7: [Ww][Ww][Ww]\.
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/noLink/not pattern alternative 3 of 7: [Mm][Aa][Ii][Ll][Tt][Oo]:
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/noLink/not pattern alternative 4 of 7: [A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+/
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/noLink/not pattern alternative 5 of 7: [A-Za-z0-9-]+\.([Cc][Oo][Mm]|[Oo][Rr][Gg]|[Nn][Ee][Tt]|[Gg][
+KILLED       3 failing, 0 erroring, 130 passing, 0 skipped, 133 of 133 run      schema /$defs/noLink/not pattern alternative 6 of 7: [\\/][\\/][^\s\\/]
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/noLink/not pattern alternative 7 of 7: [A-Za-z][A-Za-z0-9+.-]*:[\\/]
+KILLED       5 failing, 1 erroring, 127 passing, 0 skipped, 133 of 133 run      schema /$defs/noControl not
+KILLED       34 failing, 3 erroring, 96 passing, 0 skipped, 133 of 133 run      schema /$defs/noControl/not pattern
+KILLED       6 failing, 0 erroring, 127 passing, 0 skipped, 133 of 133 run      schema /$defs/noControl/not pattern alternative 1 of 2: [\u0000-\u001F\u007F-\u009F\u00AD\u034F\u0600-\u0605\u061C\u
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/noControl/not pattern alternative 2 of 2: [^\u0000-\uFFFF]
+KILLED       19 failing, 4 erroring, 110 passing, 0 skipped, 133 of 133 run     schema /$defs/noHost not
+KILLED       30 failing, 8 erroring, 95 passing, 0 skipped, 133 of 133 run      schema /$defs/noHost/not pattern
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/noHost/not pattern alternative 1 of 9: [\u00aa\u00b2-\u00b3\u00b9-\u00ba\u00bc-\u00be\u0132-\u0133\
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/noHost/not pattern alternative 2 of 9: 0[xX][0-9A-Fa-f]*[.\u2024\u2025\u2026\u2488\u2489\u248a\u248
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/noHost/not pattern alternative 3 of 9: [.\u2024\u2025\u2026\u2488\u2489\u248a\u248b\u248c\u248d\u24
+KILLED       13 failing, 0 erroring, 120 passing, 0 skipped, 133 of 133 run     schema /$defs/noHost/not pattern alternative 4 of 9: (?:^(?:(?:^|(?<=[\s(\[\x22\x27\u201c\u2018]))=[ \t]*(?![ \t]
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/noHost/not pattern alternative 5 of 9: (?<![0-9])[.\u2024\u2025\u2026\u2488\u2489\u248a\u248b\u248c
+KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run      schema /$defs/noHost/not pattern alternative 6 of 9: \d+[.\u2024\u2025\u2026\u2488\u2489\u248a\u248b\u248c\u248d\
+KILLED       3 failing, 1 erroring, 129 passing, 0 skipped, 133 of 133 run      schema /$defs/noHost/not pattern alternative 7 of 9: (?:^(?:(?:^|(?<=[\s(\[\x22\x27\u201c\u2018]))=[ \t]*(?![ \t]
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/noHost/not pattern alternative 8 of 9: [0-9A-Fa-f]{0,4}[:\u2a74\ufe13\ufe55\uff1a][:\u2a74\ufe13\uf
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/noHost/not pattern alternative 9 of 9: [0-9A-Fa-f]{1,4}([:\u2a74\ufe13\ufe55\uff1a][0-9A-Fa-f]{1,4}
+KILLED       1 failing, 0 erroring, 132 passing, 0 skipped, 133 of 133 run      schema /$defs/noColon not
+KILLED       34 failing, 1 erroring, 98 passing, 0 skipped, 133 of 133 run      schema /$defs/noColon/not pattern
+rules: 271, killed: 271, other outcomes: 0
+survivors: 0
+```
