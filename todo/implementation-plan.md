@@ -12,7 +12,7 @@ Sections: 66 | Checklist items: 502
 
 #### Workspace and tooling
 
-Sections: 65 | Checklist items: 494 | Verified: 61
+Sections: 65 | Checklist items: 494 | Verified: 62
 
 | Status | Reference   | Deliverable                                           | Needs                  | Items |
 | ------ | ----------- | ----------------------------------------------------- | ---------------------- | ----- |
@@ -61,7 +61,7 @@ Sections: 65 | Checklist items: 494 | Verified: 61
 | [ ]    | D00 T03 §53 | Automation Notices Go in the Weekly Digest            | none                   | 10    |
 | [x]    | D00 T03 §54 | One Process-Tree Containment for Every Tool           | none                   | 7     |
 | [x]    | D00 T03 §55 | Scheduled Tasks Run in the Shared Process Tree        | none                   | 5     |
-| [ ]    | D00 T03 §56 | Digest Delivery When No Evidence Remains              | none                   | 4     |
+| [x]    | D00 T03 §56 | Digest Delivery When No Evidence Remains              | none                   | 4     |
 | [x]    | D00 T03 §57 | Completion Reviews Leave the Commit Item to the Stamp | none                   | 3     |
 | [x]    | D00 T03 §58 | The Plan Lists Sections, Never TODO Files             | none                   | 8     |
 | [x]    | D00 T03 §59 | A Parked Section Is Neither Ready Nor In Progress     | none                   | 8     |
@@ -288,6 +288,6 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 | [ ]    | D03 T01 §25 | Interoperability Domain Authoring  | 3              |
 | [ ]    | D03 T01 §26 | VBA Domain Authoring               | 4              |
 
-Progress: 91/163 verified sections, 17 ready to run now, 2 parked, 84 TODO files still to author (not counted here).
+Progress: 92/163 verified sections, 16 ready to run now, 2 parked, 84 TODO files still to author (not counted here).
 
-Checklist: 666/1180 items completed (includes Commit items).
+Checklist: 667/1180 items completed (includes Commit items).

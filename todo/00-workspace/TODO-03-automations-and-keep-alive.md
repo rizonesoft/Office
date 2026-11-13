@@ -77,7 +77,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 39 | §53 | Automation notices go in the weekly digest | §35 | [ ] |
 | 40 | §54 | One process-tree containment for every tool | §36 | [x] |
 | 41 | §55 | Scheduled tasks run in the shared process tree | §54 | [x] |
-| 42 | §56 | Digest delivery when no evidence remains | -- | [ ] |
+| 42 | §56 | Digest delivery when no evidence remains | -- | [x] |
 | 43 | §57 | Completion reviews leave the Commit item to the stamp | -- | [x] |
 | 44 | §58 | The plan lists sections, never TODO files | -- | [x] |
 | 45 | §59 | A parked section is neither ready nor in progress | -- | [x] |
@@ -1260,9 +1260,12 @@ Filed 2026-11-12 from the review of §53 (`docs/reviews/00-workspace/D00-T03-s53
 - [x] Record the owner's choice in this section, with the date. Done when: the choice is written here and the `owner-decision` Need is removed.
 - [x] Apply the choice in `settle_claims` of `.conclave/automations/alert.py`: (a) keeps the acceptance record counting as delivery once the log can no longer decide; (b) marks such a claim unconfirmed, so the next digest carries it in full, labelled. Done when: `scripts/tests/test_automations.py` (`test_settling_by_what_the_log_says`) holds the chosen row and `test_owner_digest.py` shows the chosen digest. **Corrected 2026-11-13 (plan review, gap 1):** what the operator reads must say the same as the code: `.conclave/automations/README.md` (the paragraph on the weekly email) and the settlement line `scripts/owner-digest.py` prints (it said such claims are "named, not sent again") are brought to the choice. Done when, in addition: the digest test asserts that line beside the email, and neither text says a past-the-log claim is not sent again.
 - [x] Record the choice and the commit that applies it in §53's findings file, `docs/reviews/00-workspace/D00-T03-s53.md`, under a `## Writer note:` heading, for §53's next reconciliation to read. Done when: the note names the choice, this section and the commit. **Corrected 2026-11-12:** this item ran §53's next reconciliation itself, so this section could not finish before §53 resumed, while §53 is parked until this section is stamped (§59's round 1 found the deadlock). The reconciliation belongs to §53: once this section is stamped, §53's wait is met, `query ready` lists it again, and its reconciliation runs on the tree that holds this section's change.
-- [ ] Commit: `automations: the digest follows the owner's choice where no evidence remains`
+- [x] Commit: `automations: the digest follows the owner's choice where no evidence remains`
 
 **Test checkpoint:** `python scripts/run-tests.py -p "test_automations.py"` and `-p "test_owner_digest.py"` pass with the chosen behaviour.
+
+> **Verified:** 2026-11-13 | §56 | ee5e49672ac82500202fde656771d8cb025f8991
+> **Review:** `docs/reviews/d00-t03-s56.json`
 ## 57. Completion Reviews Leave the Commit Item to the Stamp
 
 > **Started:** 2026-11-12T08:40:10Z
