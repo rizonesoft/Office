@@ -84,6 +84,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 46 | §60 | CI runs the tooling tests in parallel jobs | -- | [x] |
 | 47 | §61 | A reconciliation honours an owner decision | -- | [x] |
 | 48 | §62 | Graph reads batch their git calls | -- | [ ] |
+| 49 | §63 | A plan review may follow plan-only commits | -- | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -1405,6 +1406,7 @@ Filed 2026-11-13 from §53's tenth reconciliation. Two obligations that reviews 
 ## 62. Graph Reads Batch Their Git Calls
 
 > **Started:** 2026-11-13T12:21:55Z
+> **Parked:** 2026-11-13T13:17:53Z until D00 T03 §63: the stamp, which refuses the plan review's candidate `451cbe0` because one commit that changed a single word of this section lies between it and the commit that recorded the Started line (`f7fbfb2`); the build is reviewed complete on `e2132c7`
 
 Filed 2026-11-13T12:15:00Z by the lead, from a measurement made while D02 T01 §22 was being prepared. On this PC, with 172 sections of which 98 are stamped, one read of the TODO graph (`todo_graph.graph()`) takes 24.6 seconds, 22.8 of them in `receipt_data_ok`, which starts 349 `git` processes: 96 `show <commit>:.conclave/reviewers.toml`, 95 `diff --name-only` between two commits, 95 `merge-base --is-ancestor`, and 63 `show <commit>:<TODO file>`. Every `validate`, `plan --check`, `plan --sync`, `query`, `resolve`, `stamp` and `scripts/inventory-report.py` run reads the graph; the pre-commit hook reads it three times, so a commit already waits over a minute; and the cost grows with every stamp, so at the plan's full size (84 TODO files are still to be authored) a commit would wait many minutes. Each of those calls reads a fact that can never change (a file as a commit holds it, the files that differ between two commits, whether one commit descends from another), so the answers can come from one long-lived `git cat-file --batch` process, one read of the commit graph, and a comparison of two trees made only where a pass's schedule has a lens that depends on it. No answer is kept between runs: a cache on disk could be stale or edited, and a receipt check that trusts it would no longer be a check.
 
@@ -1426,6 +1428,28 @@ Filed 2026-11-13T12:15:00Z by the lead, from a measurement made while D02 T01 §
 - [ ] Commit: `todo-graph: answer a graph read's git questions from one batch process`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"`, `python -m unittest discover -s scripts/tests -p "test_todo_stamp.py"` and `python -m unittest discover -s scripts/tests -p "test_three_pass.py"` pass, with the process-count and conditional-lens tests among those of `test_todo_stamp.py`, and `python scripts/todo-graph.py validate` prints `valid:`. **Corrected 2026-11-13 (plan review, gap 1):** it named `test_todo_graph.py` alone, which holds none of the receipt tests.
+
+## 63. A Plan Review May Follow Plan-Only Commits
+
+Filed 2026-11-13T13:17:53Z by the lead, from the stamp of D00 T03 §62. `stamp` requires the plan review's candidate to be the commit that first held the section's `> **Started:**` line or an ancestor of it (`plan_record` in `scripts/lib/todo_graph.py`, with `build_start`), as its stand-in for the rule it states in its refusal: review the plan before the build. The stand-in is stricter than the rule. §62's history is `f7fbfb2` (the Started line and the fact-check corrections), `451cbe0` (one word of the section's prose corrected), the plan review of `451cbe0`, `a40a39a` (the plan review's remedies) and only then `56e2389`, the first commit to touch code; the plan was reviewed before the build, and the stamp refuses it because the reviewed commit is one after the Started commit. Nothing in the dispatcher stops a plan review of such a commit, so the refusal arrives only at the stamp, after the build and three review passes. This section makes the stamp hold the rule itself: a plan review's candidate may also be a later commit reached from the Started commit through commits that change nothing outside `todo/` and `docs/`, and the dispatcher refuses a plan review of any other candidate before a reviewer runs. Decision recorded by the lead (unattended rules); reversing it means restoring the ancestor-only comparison, after which §62 would need a fresh review cycle.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Teach `plan_record` in `scripts/lib/todo_graph.py` the rule. Done when: a candidate after the Started commit through plan-only commits stamps, and one after a commit that changed code is refused.
+2. Refuse the wrong candidate when the plan review is dispatched. Done when: `scripts/review-dispatch.py --kind plan` on a section whose candidate lies after a code change since its Started commit exits 2 before a reviewer runs.
+3. Say the rule where it is taught. Done when: the two skills and `todo/README.md` state it as the code holds it.
+
+- [ ] Accept, in `plan_record` of `scripts/lib/todo_graph.py`, a plan review candidate that descends from the commit the build began at when every commit after that one, up to and including the candidate, changes only paths under `todo/` or `docs/` (read with `git log --format= --name-only <start>..<candidate>`, a failure of which refuses), and keep accepting that commit and its ancestors. Done when: tests in `scripts/tests/test_todo_stamp.py` show a three-pass section stamped whose plan was reviewed one and three plan-only commits after its Started commit; the same refused when one of those commits also changed a file outside `todo/` and `docs/`, when the candidate is on a line that diverged from the Started commit, and when the listing cannot be read; and every existing test of that file passes with no expectation changed. Cheaper substitute: comparing the two commits' trees, which would accept code written and reverted between them; or dropping the comparison, which would accept a plan reviewed after its build; both refused.
+- [ ] Word the refusal for what it now checks: the candidate is named with the Started commit and, when a commit between them changed a path outside `todo/` and `docs/`, with that commit and the first such path. Done when: the tests above assert the message of each refusal, and the existing test of a plan reviewed after the build (`is not the commit the build began at`) still passes.
+- [ ] Refuse, in `scripts/review-dispatch.py --kind plan` with `--record` naming a section's findings file, a candidate the stamp would refuse for this reason, with exit 2 and the same sentence, before a reviewer runs, when the section already has a `> **Started:**` line in a commit; a section with no Started line yet (a plan reviewed before the section is started) is dispatched as today. Done when: tests in `scripts/tests/test_three_pass.py` show the refusal for a candidate after a code change since the Started commit, with no reviewer started, and a pass for the Started commit, an ancestor of it and a plan-only descendant. Cheaper substitute: leaving the check to the stamp, which is how a section can be built and reviewed three times before it is refused; refused.
+- [ ] State the rule in `.claude/skills/process-todo-section/SKILL.md` (step 3a), `.claude/skills/review-todo-section/SKILL.md` (the `--plan` paragraph) and `todo/README.md` (Stamps and receipts): the plan review's candidate is the commit that holds the `Started:` line, an earlier one, or a later one reached through commits that change only `todo/` and `docs/`. Done when: each of the three says so and none still says the candidate must be that commit or an earlier one. Cheaper substitute: changing the code alone, which leaves the skills teaching a stricter rule than the tool holds.
+- [ ] Commit: `todo-graph: a plan review may follow plan-only commits after the Started commit`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_stamp.py"` and `python -m unittest discover -s scripts/tests -p "test_three_pass.py"` pass, and `python scripts/todo-graph.py validate` prints `valid:`.
 
 ## Verification
 - `python -m unittest discover -s scripts/tests` passes on a fresh clone.
