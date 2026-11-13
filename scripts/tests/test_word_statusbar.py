@@ -32,16 +32,18 @@ def inventory():
                rec("word.statusbar.left", "region", "Left zone", "word.statusbar", 0),
                rec("word.statusbar.right", "region", "Right zone", "word.statusbar", 1)]
     order, used = {"left": 0, "right": 0}, set()
-    for label, zone, ctype in sb.BAR:
+    for label, zone, ctype, _tick in sb.BAR:
         rid = f"word.statusbar.{zone}.{sb.slug(label)}"
         rid = rid if rid not in used else rid + "-2"
         used.add(rid)
-        records.append(rec(rid, "statusItem", label, f"word.statusbar.{zone}", order[zone], controlType=ctype))
+        records.append(rec(rid, "statusItem", label, f"word.statusbar.{zone}", order[zone], controlType=ctype,
+                           bounds={"x": 4 + 40 * len(used), "y": 1011, "width": 38, "height": 21},
+                           captureProfile="fhd-100"))
         order[zone] += 1
     records.append(rec(sb.MENU_ID, "contextMenu", "Customize Status Bar", "word.statusbar", 2,
                        itemCount=len(sb.LABELS)))
     for at, label in enumerate(sb.LABELS):
-        records.append(rec(f"{sb.MENU_ID}.{sb.slug(label)}", "menuItem", label, sb.MENU_ID, at, checked=at % 2 == 0))
+        records.append(rec(f"{sb.MENU_ID}.{sb.slug(label)}", "menuItem", label, sb.MENU_ID, at, checked=True))
     return records
 
 
@@ -66,7 +68,8 @@ class Rules(unittest.TestCase):
         self.assertIsNone(sb.validate(inventory()))
         self.assertEqual((len(sb.MENU), len(sb.LABELS), len(sb.BAR)), (8, 28, 16))
         self.assertEqual(len(set(sb.LABELS)), 28)
-        self.assertEqual([zone for _label, zone, _type in sb.BAR], ["left"] * 7 + ["right"] * 9)
+        self.assertEqual([entry[1] for entry in sb.BAR], ["left"] * 7 + ["right"] * 9)
+        self.assertFalse([entry for entry in sb.BAR if entry[3] is not None and entry[3] not in sb.LABELS])
 
     def test_the_bars_own_items_are_held_whatever_the_menu_holds(self):
         # One bar record deleted, every menu entry there: the menu does not stand in for the bar.
@@ -81,9 +84,24 @@ class Rules(unittest.TestCase):
         swapped = self.changed("word.statusbar.left.page-number", order=1)
         next(r for r in swapped if r["id"] == "word.statusbar.left.word-count")["order"] = 0
         self.refused(swapped, "the status bar must show Word Count (left) out of its place")
+        # An item is expected by its tick: unticked, it is not expected on the bar; ticked, it is.
+        language = f"{sb.MENU_ID}.language"
+        hidden = [r for r in self.changed(language, checked=False) if r["id"] != "word.statusbar.left.language"]
+        self.assertIsNone(sb.validate(hidden))
+        self.refused([r for r in inventory() if r["id"] != "word.statusbar.left.language"],
+                     "the status bar must show Language (left, button)")
+        views = [r for r in self.changed(f"{sb.MENU_ID}.view-shortcuts", checked=False)
+                 if r["label"] not in ("Read Mode", "Print Layout", "Web Layout")]
+        self.assertIsNone(sb.validate(views))
+        self.assertEqual(len(sb.expected()), 16)
+        self.assertEqual(sb.expected({}), [("Display Settings", "right", "button")])  # the one no tick hides
+        # Where an item stands is part of it.
+        self.refused(self.changed("word.statusbar.left.language", bounds=None),
+                     "word.statusbar.left.language: no bounds, so where it stands on the bar is not recorded")
         # An item the list does not name is recorded and allowed.
         extra = inventory() + [rec("word.statusbar.left.spelling-and-grammar-check", "statusItem",
-                                   "Spelling and Grammar Check", "word.statusbar.left", 7, controlType="button")]
+                                   "Spelling and Grammar Check", "word.statusbar.left", 7, controlType="button",
+                                   bounds={"x": 620, "y": 1011, "width": 30, "height": 21})]
         self.assertIsNone(sb.validate(extra))
         self.refused(self.changed("word.statusbar.left.language", controlType=None), "has a controlType")
         self.refused(self.changed("word.statusbar.left.language", parent="word.statusbar"),

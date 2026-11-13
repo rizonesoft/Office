@@ -2967,16 +2967,15 @@ def capture(args, launched, uia, win):
     if getattr(args, "statusbar", False):
         launched.check_alone()
         check_licensing()
+        if problems:  # where an item stands on the bar is what the capture is for
+            raise Refused("an item's place on the status bar is recorded under the capture profile only: " +
+                          "; ".join(problems))
         records = capture_word_statusbar(launched, uia, win, ctx)
         launched.check_alone()
         check_licensing()
-        if ctx.origin is not None and not same_geometry(state, win.state(launched.hwnd)):
-            ctx.drop_geometry("the window moved or changed size during the capture")
-        if ctx.origin is None:
-            for rec in records:
-                for key in ("bounds", "captureProfile", "size"):
-                    rec.pop(key, None)
-            problems += [why for why in ctx.dropped_reasons if why not in problems]
+        if not same_geometry(state, win.state(launched.hwnd)):
+            raise Refused("the window moved or changed size during the capture, so the places of the status bar's "
+                          "items are not those of the capture profile; nothing is published")
         return records, problems, ctx
     if getattr(args, "panes", False):
         launched.check_alone()
@@ -3820,13 +3819,13 @@ def _status_menu(uia, win, pid, known, ready):
         def walk(el, run, depth):
             for kid in quiet_children(el):
                 if kid.control_type == "MenuItem":
-                    items.append({"name": kid.name, "checked": kid.toggle_state() == 1, "group": run[0]})
+                    items.append({"name": kid.name, "state": kid.toggle_state(), "group": run[0]})
                 elif kid.control_type in ("Menu", "Pane", "Group") and depth < 6:
                     if kid.control_type == "Group":
                         run[0] += 1
                     walk(kid, run, depth + 1)
         walk(uia.element(new[0]), [0], 0)
-        return ((new[0], items), tuple((i["name"], i["checked"], i["group"]) for i in items)) if items else None
+        return ((new[0], items), tuple((i["name"], i["state"], i["group"]) for i in items)) if items else None
     return settled(read, ready)
 
 
@@ -3867,7 +3866,14 @@ def _read_status_menu(uia, win, hwnd, pid, bar, ready):
         found = _status_menu(uia, win, pid, known, ready)
         if found is None:
             raise Refused(f"the Customize Status Bar menu did not open and settle within {ready:.0f} s")
-        return found[1]
+        # A tick is on or off. An item that gives no toggle state, or an undetermined one, was not read: recording
+        # it as off would be a state nobody saw.
+        unread = [word_statusbar.label_of(i["name"], word_statusbar.LABELS)[0] for i in found[1]
+                  if i["state"] not in (word_statusbar.TICKED, word_statusbar.UNTICKED)]
+        if unread:
+            raise Refused("whether these items of the Customize Status Bar menu are ticked could not be read: " +
+                          ", ".join(unread) + "; nothing is published")
+        return [dict(i, checked=i["state"] == word_statusbar.TICKED) for i in found[1]]
     finally:
         _close_status_menu(win, hwnd, pid, known, min(5.0, ready))
 
@@ -3898,8 +3904,23 @@ def capture_word_statusbar(launched, uia, win, ctx, ready=PANE_READY_SECONDS):
         zones = word_statusbar.zones_of([(i["rect"][0], i["rect"][2]) for i in items])
         return [(word_statusbar.label_of(i["name"])[0], zone, word_statusbar.TYPES.get(i["role"]))
                 for i, zone in zip(items, zones)]
+
+    def ticked(menu):
+        return [(word_statusbar.label_of(i["name"], word_statusbar.LABELS)[0], i["checked"]) for i in menu]
+    # The menu first: its ticks say which items the owner's bar shows, and so which the bar must be waited for.
+    there = settled(read, ready)
+    if there is None:
+        raise Refused(f"the status bar was not found, or did not settle, within {ready:.0f} s")
+    first = _read_status_menu(uia, win, hwnd, pid, there[0], ready)
+    again = _read_status_menu(uia, win, hwnd, pid, there[0], ready)
+    changed = sorted({label for (label, was), (_l, now) in zip(ticked(first), ticked(again)) if was != now})
+    if changed or len(first) != len(again):
+        raise Refused("the Customize Status Bar menu was not the same at a second reading (" +
+                      (", ".join(changed) or "its items") + "); nothing is published")
+    shown = dict(ticked(first))
     # The bar fills after the window shows, and an item that reports a check Word runs in the background (the
-    # accessibility checker) can take most of a minute: the bar is read until it is at rest and whole.
+    # accessibility checker) can take most of a minute: the bar is read until it is at rest and shows every item
+    # whose tick is set.
     deadline, lacked = time.monotonic() + ready * word_statusbar.PATIENCE, None
     while True:
         # Word fills such an item in its idle time, and a window that is being read is not idle: before each
@@ -3907,26 +3928,17 @@ def capture_word_statusbar(launched, uia, win, ctx, ready=PANE_READY_SECONDS):
         time.sleep(word_statusbar.IDLE_SECONDS)
         whole = settled(read, max(0.9, deadline - time.monotonic()))
         if whole is None and lacked is None:
-            raise Refused(f"the status bar was not found, or did not settle, within {ready:.0f} s")
+            raise Refused(f"the status bar did not settle within {ready * word_statusbar.PATIENCE:.0f} s")
         if whole is not None:
             bar, items = whole
-            lacking = word_statusbar.missing(found(items))
+            lacking = word_statusbar.missing(found(items), shown)
             if not lacking:
                 break
             lacked = ("the status bar does not show " + ", ".join(lacking) + ", which scripts/lib/word_statusbar.py "
-                      "says it must for a blank document (it shows: " +
+                      "says it must for a blank document with these ticks (it shows: " +
                       ", ".join(label for label, _zone, _type in found(items)) + ")")
         if time.monotonic() >= deadline:
             raise Refused(lacked)
-    first = _read_status_menu(uia, win, hwnd, pid, bar, ready)
-    again = _read_status_menu(uia, win, hwnd, pid, bar, ready)
-
-    def ticked(menu):
-        return [(word_statusbar.label_of(i["name"], word_statusbar.LABELS)[0], i["checked"]) for i in menu]
-    changed = sorted({label for (label, was), (_l, now) in zip(ticked(first), ticked(again)) if was != now})
-    if changed or len(first) != len(again):
-        raise Refused("the Customize Status Bar menu was not the same at a second reading (" +
-                      (", ".join(changed) or "its items") + "); nothing is published")
 
     def base(rid, kind, label, order, node, parent, **extra):
         element = node["_el"] if node is not None else _NoElement()

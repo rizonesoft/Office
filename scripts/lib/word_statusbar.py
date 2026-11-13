@@ -41,22 +41,29 @@ MENU = (
     ("Focus", "View Shortcuts", "Zoom Slider", "Zoom"),
 )
 LABELS = tuple(label for group in MENU for label in group)
-# What stands on the bar for a blank document on the reference build, in order: label, zone, control type. An item
-# that shows only now and then (the spelling check's result) or only for a document in some state is not listed;
-# one the list does not name is recorded and allowed.
+# What stands on the bar for a blank document on the reference build, in order: label, zone, control type, and the
+# item of the menu whose tick shows it (None for an item no tick hides). The bar is the owner's: an item whose tick
+# the owner took away is not expected on it, and is recorded from the menu alone. An item that shows only now and
+# then (the spelling check's result) or only for a document in some state is not listed; one the list does not
+# name is recorded and allowed.
 BAR = (
-    ("Page Number", "left", "button"), ("Word Count", "left", "label"), ("Coauthoring Mode", "left", "button"),
-    ("Language", "left", "button"), ("Text Predictions", "left", "button"), ("Macro Recording", "left", "button"),
-    ("Accessibility Checker", "left", "button"),
-    ("Display Settings", "right", "button"), ("Focus", "right", "button"), ("Read Mode", "right", "button"),
-    ("Print Layout", "right", "button"), ("Web Layout", "right", "button"), ("Zoom Out", "right", "button"),
-    ("Zoom", "right", "slider"), ("Zoom In", "right", "button"), ("Zoom", "right", "button"),
+    ("Page Number", "left", "button", "Page Number"), ("Word Count", "left", "label", "Word Count"),
+    ("Coauthoring Mode", "left", "button", "Coauthoring Mode"), ("Language", "left", "button", "Language"),
+    ("Text Predictions", "left", "button", "Text Predictions"),
+    ("Macro Recording", "left", "button", "Macro Recording"),
+    ("Accessibility Checker", "left", "button", "Accessibility Checker"),
+    ("Display Settings", "right", "button", None), ("Focus", "right", "button", "Focus"),
+    ("Read Mode", "right", "button", "View Shortcuts"), ("Print Layout", "right", "button", "View Shortcuts"),
+    ("Web Layout", "right", "button", "View Shortcuts"), ("Zoom Out", "right", "button", "Zoom Slider"),
+    ("Zoom", "right", "slider", "Zoom Slider"), ("Zoom In", "right", "button", "Zoom Slider"),
+    ("Zoom", "right", "button", "Zoom"),
 )
+TICKED, UNTICKED = 1, 0  # UI Automation's toggle states; anything else is not a tick that was read
 PATIENCE = 6  # how many times the usual wait the bar is given to show every item of BAR
 IDLE_SECONDS = 6.0  # how long the window is left alone before the bar is read, so Word's idle work can run
 # Every label an item can begin with: the menu's, and those of the bar's items the menu does not list one by one
 # (the zoom buttons, the view buttons). The longest that fits is the item's, so `Zoom Out` is not read as `Zoom`.
-KNOWN = tuple(dict.fromkeys(LABELS + tuple(label for label, _zone, _type in BAR)))
+KNOWN = tuple(dict.fromkeys(LABELS + tuple(entry[0] for entry in BAR)))
 TYPES = {"Button": "button", "Text": "label", "Slider": "slider", "SplitButton": "splitButton",
          "MenuItem": "menu", "CheckBox": "checkBox"}
 HINT = re.compile(r"\s*\((?:Ctrl|Alt|Shift)[^)]*\)\s*$")  # the keys a zoom button names after its label
@@ -90,7 +97,7 @@ def zones_of(rects):
 def records(bar, items, menu_items, base):
     """The records of the bar and its menu. `bar` is the bar's plain node; `items` are the bar's items in order,
     each a plain node with `role`, `name` and `rect`; `menu_items` are the menu's in order, each with `name`,
-    `checked` and `group` (which run of the menu it stands in). `base(rid, kind, label, order, node, parent,
+    `checked` (a boolean) and `group` (which run of the menu it stands in). `base(rid, kind, label, order, node, parent,
     **extra)` builds a record. Raises Invalid for a menu that is not `MENU` or an item with no rule."""
     listed = [(label_of(item.get("name"), LABELS)[0], item.get("group")) for item in menu_items]
     expected = [(label, at) for at, group in enumerate(MENU) for label in group]
@@ -134,18 +141,26 @@ def records(bar, items, menu_items, base):
     return out
 
 
-def missing(found: list) -> list:
-    """The items `BAR` says the bar shows for a blank document that are not in `found`, a list of (label, zone,
-    controlType) in order: each must be there, and those that are must stand in `BAR`'s order."""
-    lacking = [f"{label} ({zone}, {ctype})" for label, zone, ctype in BAR if (label, zone, ctype) not in found]
+def expected(ticked=None) -> list:
+    """The items of `BAR` the bar must show, as (label, zone, controlType): every one whose tick in the menu is
+    set, and those no tick hides. `ticked` maps a menu label to whether it is ticked; None asks for every item."""
+    return [(label, zone, ctype) for label, zone, ctype, tick in BAR
+            if tick is None or ticked is None or ticked.get(tick)]
+
+
+def missing(found: list, ticked=None) -> list:
+    """The items the bar must show (`expected`) that are not in `found`, a list of (label, zone, controlType) in
+    order: each must be there, and those that are must stand in `BAR`'s order."""
+    wanted = expected(ticked)
+    lacking = [f"{label} ({zone}, {ctype})" for label, zone, ctype in wanted if (label, zone, ctype) not in found]
     if lacking:
         return lacking
     places, at = [], 0
-    for wanted in BAR:
+    for item in wanted:
         try:
-            at = found.index(wanted, at) + 1
+            at = found.index(item, at) + 1
         except ValueError:
-            places.append(f"{wanted[0]} ({wanted[1]}) out of its place")
+            places.append(f"{item[0]} ({item[1]}) out of its place")
     return places
 
 
@@ -154,9 +169,10 @@ def ticks(menu_records: list) -> dict:
 
 
 def validate(recs: list) -> None:
-    """Refuse a status bar inventory that is not whole: the bar and its two zones; every item of `BAR` in its zone,
-    with its type, in order; the menu with every item of `MENU` in order, each with `checked`, and the `itemCount`
-    that says so; nothing of the owner's. Raises Invalid naming every problem."""
+    """Refuse a status bar inventory that is not whole: the bar and its two zones; every item of `BAR` whose tick
+    is set, in its zone, with its type and its bounds, in order; the menu with every item of `MENU` in order,
+    each with `checked`, and the `itemCount` that says so; nothing of the owner's. Raises Invalid naming every
+    problem."""
     problems, by_id = [], {}
     for rec in recs:
         if not isinstance(rec, dict) or not isinstance(rec.get("id"), str) or not rec["id"]:
@@ -189,10 +205,12 @@ def validate(recs: list) -> None:
             problems.append(f"{rec['id']}: an item of the bar stands in one of its two zones")
         if not rec.get("controlType"):
             problems.append(f"{rec['id']}: an item of the bar has a controlType")
+        if not isinstance(rec.get("bounds"), dict):
+            problems.append(f"{rec['id']}: no bounds, so where it stands on the bar is not recorded")
     found = [(r.get("label"), str(r.get("parent", "")).rsplit(".", 1)[-1], r.get("controlType")) for r in on_bar]
-    for lack in missing(found):
-        problems.append(f"the status bar must show {lack}")
     menu = sorted((r for r in recs if r.get("kind") == "menuItem"), key=lambda r: r.get("order", 0))
+    for lack in missing(found, {r.get("label"): r.get("checked") is True for r in menu}):
+        problems.append(f"the status bar must show {lack}")
     for rec in menu:
         if rec.get("parent") != MENU_ID:
             problems.append(f"{rec['id']}: an item of the menu sits under {MENU_ID}")

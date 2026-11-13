@@ -6069,9 +6069,11 @@ class FakeWordStatusBar:
     Items carry their values in their names, as Word's do. Logs each opening of the menu and where Escape went."""
     MENU = 88
 
-    def __init__(self, items=None, menu=None, opens=True, closes_on="menu", drift=None, blank=True):
+    def __init__(self, items=None, menu=None, opens=True, closes_on="menu", drift=None, blank=True, unread=(),
+                 unticked=()):
         sb = cu.word_statusbar
         self.opens, self.closes_on, self.drift, self.blank = opens, closes_on, drift or {}, blank
+        self.unread, self.unticked = set(unread), set(unticked)
         self.menu_labels = menu if menu is not None else [list(group) for group in sb.MENU]
         self.openings, self.escapes, self.showing = 0, [], False
         self.thumb = Unread("Thumb", "Position 57 of this PC")
@@ -6089,7 +6091,7 @@ class FakeWordStatusBar:
 
     def bar_items(self):
         made, x = [], 4
-        for label, zone, ctype in cu.word_statusbar.BAR:
+        for label, zone, ctype, _tick in cu.word_statusbar.BAR:
             if zone == "right" and x < 1400:
                 x = 1441
             role = {"button": "Button", "label": "Text", "slider": "Slider"}[ctype]
@@ -6105,14 +6107,15 @@ class FakeWordStatusBar:
         self.openings += 1
         if not self.opens:
             return
-        ticked = set(TICKED) ^ set(self.drift.get(self.openings, ()))
+        ticked = (set(cu.word_statusbar.LABELS) - self.unticked if self.unticked else set(TICKED))
+        ticked ^= set(self.drift.get(self.openings, ()))
         groups = []
         for labels in self.menu_labels:
             kids = []
             for label in labels:
                 value = MENU_VALUES.get(label, "")
                 item = E("MenuItem", f"{label} {value}" if value else label, kids=[E("Text", value)])
-                item.toggle_state = lambda label=label: 1 if label in ticked else 0
+                item.toggle_state = lambda label=label: None if label in self.unread else int(label in ticked)
                 kids.append(item)
             groups.append(E("Group", " ", kids=kids))
         inner = E("Menu", "Context Menu", kids=[E("Pane", "", kids=[E("Menu", "", kids=groups)])])
@@ -6230,13 +6233,60 @@ class WordStatusBar(unittest.TestCase):
         word = FakeWordStatusBar(menu=[list(sb.LABELS)])  # every item, in one run: the dividing lines are gone
         self.refused(word, "its items, their order or their groups differ")
 
+    def test_a_tick_that_could_not_be_read_is_never_recorded_as_off(self):
+        # An item that gives no toggle state was not read. Both readings would agree on a state nobody saw.
+        word = FakeWordStatusBar(unread=("Section", "Track Changes"))
+        self.refused(word, "whether these items of the Customize Status Bar menu are ticked could not be read: "
+                     "Section, Track Changes; nothing is published")
+        self.assertFalse(word.showing)
+        word = FakeWordStatusBar(unread=set(cu.word_statusbar.LABELS))  # the whole menu gave none
+        self.refused(word, "could not be read: Formatted Page Number, Section, Page Number")
+
+    def test_the_bar_is_expected_by_the_owners_own_ticks(self):
+        # Every item is ticked but Language, which the owner took off the bar: the bar is whole without it, and
+        # Language is recorded from the menu alone.
+        word = FakeWordStatusBar(unticked=("Language",))
+        word.bar.kids = [i for i in word.bar.kids if not i.name.startswith("Language")]
+        records, _ = self.run_capture(word)
+        by_id = {r["id"]: r for r in records}
+        self.assertNotIn("word.statusbar.left.language", by_id)
+        self.assertIs(by_id["word.statusbar.customize.language"]["checked"], False)
+        self.assertEqual(sum(1 for r in records if r["kind"] == "statusItem"), 15)
+        cu.word_statusbar_check(records)
+        # The view buttons go with View Shortcuts, and the slider's three parts with Zoom Slider.
+        word = FakeWordStatusBar(unticked=("View Shortcuts", "Zoom Slider"))
+        gone = ("Read Mode", "Print Layout", "Web Layout", "Zoom Out", "Zoom In")
+        word.bar.kids = [i for i in word.bar.kids if not i.name.startswith(gone) and i.control_type != "Slider"]
+        records, _ = self.run_capture(word)
+        self.assertEqual([r["label"] for r in records if r.get("parent") == "word.statusbar.right"],
+                         ["Display Settings", "Focus", "Zoom"])
+        cu.word_statusbar_check(records)
+        # Ticked and not on the bar is a bar that is not whole.
+        word = FakeWordStatusBar(unticked=("Section",))
+        word.bar.kids = [i for i in word.bar.kids if not i.name.startswith("Language")]
+        self.refused(word, "the status bar does not show Language (left, button)")
+
+    def test_an_item_without_its_place_is_not_published(self):
+        # A window that moved loses the capture profile, and with it every position: such records are refused.
+        fresh, captured = self.run_capture(FakeWordStatusBar())
+        stripped = [{k: v for k, v in r.items() if k not in ("bounds", "captureProfile")} for r in fresh]
+        with self.assertRaises(cu.Refused) as ctx:
+            cu.word_statusbar_check(stripped)
+        self.assertIn("word.statusbar.left.page-number: no bounds, so where it stands on the bar is not recorded",
+                      str(ctx.exception))
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "statusbar.json"
+            code, _, err = self.run_main(out, lambda *a: (stripped, ["the window moved"], captured), merge=False)
+            self.assertEqual((code, out.exists()), (1, False))
+            self.assertIn("no bounds", err)
+
     def test_a_bar_that_is_not_whole_refuses_the_capture(self):
         word = FakeWordStatusBar()
         word.bar.kids = [i for i in word.bar.kids if not i.name.startswith("Language")]
         said = self.refused(word, "the status bar does not show Language (left, button)", "it shows: Page Number, "
                             "Word Count, Coauthoring Mode, Text Predictions")
         self.assertNotIn("1 of 1", said)  # the refusal names labels, never a value
-        self.assertEqual(word.openings, 0)
+        self.assertEqual(word.openings, 2)  # the menu was read first: its ticks say what the bar must show
         word = FakeWordStatusBar()
         word.bar.kids.insert(2, E("Calendar", "Today", rect=(90, 1011, 100, 1032)))
         self.refused(word, "an item of the status bar is a Calendar, which the capture has no rule for")
@@ -6273,10 +6323,10 @@ class WordStatusBar(unittest.TestCase):
             self.assertIs(written["word.statusbar.customize.section"]["checked"], False)  # a fact: the fresh one
             before = out.read_bytes()
             # A capture that is not whole, a failed one, and a merge the schema refuses publish nothing.
-            broken = [r for r in copy.deepcopy(fresh) if r["id"] != "word.statusbar.right.focus"]
+            broken = [r for r in copy.deepcopy(fresh) if r["id"] != "word.statusbar.left.language"]
             code, _, err = self.run_main(out, lambda *a: (broken, [], ctx))
             self.assertEqual(code, 1)
-            self.assertIn("the status bar capture is not whole: the status bar must show Focus (right, button)", err)
+            self.assertIn("the status bar capture is not whole: the status bar must show Language (left, button)", err)
             word = FakeWordStatusBar(opens=False)
             code, _, err = self.run_main(out, lambda *a: (self.run_capture(word)[0], [], None))
             self.assertEqual(code, 1)
