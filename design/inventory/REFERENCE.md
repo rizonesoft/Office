@@ -114,6 +114,28 @@ Verified on 2026-11-13 (`D02 T01 §31`) against Word `16.0.20527.20150` (`fhd-10
 - A button that opens a further dialog (AutoCorrect Options, Trust Center Settings) is recorded and never pressed here: `D02 T01 §34` opens those dialogs from these records.
 - A category is read whole: a control below the pane's edge is recorded without `bounds`, and the pane is scrolled to its end and read again to see that nothing more shows. Positions are measured from the dialog's own top left corner. The checker holds every `itemCount` against the records present, so a file that lost a category, a control or a choice fails, and the capture asks the checker's schema before it publishes.
 
+## Word task panes
+
+Verified on 2026-11-13 (`D02 T01 §32`) against Word `16.0.20527.20150` (`fhd-100`). `python scripts/capture-ui.py --app word --panes` opens each task pane alone in the tool's own Word instance by its own command (`CommandBars.ExecuteMso`), reads it and closes it with its own Close button, and writes `design/inventory/word/panes.json`: 71 records, eight of them `pane` records. A `pane` carries `dock` (the side of the window it docks at, or `floating`), `bounds` (its place and its width and height under the capture profile), `openedBy` (the record of `design/inventory/word/ribbon.json` whose command opens it) and `itemCount` (every heading and control recorded under it). Under it are its title bar's two controls, then its own top-level controls in order, a heading as a `group` with its controls as children, and the fixed choices of a menu as `menuItem` records. `--merge` carries the hand-written fields by id, keeps every captured fact fresh and no record the capture did not see, and what it made is checked again before it is published.
+
+| Pane | Docks | Opened by | Command |
+| ---- | ----- | --------- | ------- |
+| Navigation | left, 350 wide | `word.view.show.navigation-pane` | `NavigationPaneShowHide` |
+| Styles | floating, or as last left | `word.home.styles.styles-stylespane` | `StylesPane` |
+| Clipboard | left, 272 wide | `word.home.clipboard.office-clipboard` | `ShowClipboard` |
+| Revisions, vertical | left, 270 wide | `...reviewing-pane-vertical` | `ReviewReviewingPaneVertical` |
+| Revisions, horizontal | bottom, 270 high | `...reviewing-pane-horizontal` | `ReviewReviewingPaneHorizontal` |
+| Editor | right, 350 wide | `word.home.editor.editor` | `WritingAssistanceCheckDocument` |
+| Selection | right, 250 wide | `word.layout.arrange.selection-pane` | `SelectionPane` |
+| Format Shape | right, 285 wide | `word.shape-format.shape-styles.format-object` | `ObjectFormatDialog` |
+
+- The list is written by hand, not taken from the capture: `PANES` in `scripts/lib/word_panes.py` names each pane's command, its opener, where it may dock and the controls it must show, read from the live panes of this build. The capture is refused, and the checker fails, when a pane is missing, docks elsewhere, names another opener or lacks one of those controls, whatever its own `itemCount` says; a control the list does not name is recorded and allowed. The Reviewing pane (titled Revisions) is two records, one for each of its commands, and the horizontal command's pane must dock along the bottom or the top.
+- Nothing of the owner's is read: a pane's texts are its data and its state (what was copied, how many changes) and none is fetched; a list, tree, grid or document view (the clipboard's entries, the styles, the tracked changes, the shapes) is one `listBox` control whose entries are never walked into; the pane is reached step by step and never searched. A control Word gives no name (the three icon buttons and the list of the Styles pane, the Clipboard's list, the Selection pane's tree) takes its label from `UNNAMED` in the same file, in the order shown, and a nameless control with no label there refuses the capture.
+- Word is left as it was found, on every path: the panes that were showing show again where they were (the Reviewing pane in the form it had), no other pane stays open, and the shape that Format Shape needs (it exists only for a selected shape, so the capture adds one to its own blank document) is deleted. A pane that will not open, close or go back refuses the run, names itself and publishes nothing; a pane the capture has no command for, showing at the start, refuses the run before anything is touched.
+- A menu of a pane is opened, read and closed again with nothing chosen (the Clipboard's Options). The title bar's Task Pane Options menu is recorded without its choices: it shows them in a window of its own that gives none of them to UI Automation.
+- Editor is a connected pane and redraws while its service answers, so it is read until two reads five seconds apart agree. On the capture's blank document, which holds no text to send, it shows the checks Spelling, Grammar and Conciseness; a document with text can show more. The full list of checks is the Grammar Settings dialog behind the Proofing category's Settings button (`design/inventory/word/options.json`), which `D02 T01 §34` records.
+- Styles opens floating on this PC, where it was last left, and its `bounds` are that place; the list allows it floating or docked at a side. A control's `controlType` is `tab` for a tab of a pane (Headings, Pages, Results) and `galleryItem` for a section switch of Format Shape.
+
 ## Word shortcuts
 
 Verified on 2026-11-13 (`D02 T01 §17`) against Word `16.0.20527.20150`. `design/inventory/word/shortcuts.json` holds 353 `shortcut` records from two sources, each record naming its own:

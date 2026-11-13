@@ -114,6 +114,28 @@ def check_word_options(f, data):
     return []
 
 
+def is_word_panes(path, inventory=INVENTORY):
+    """Whether `path` is the repository's Word task pane inventory (`design/inventory/word/panes.json`)."""
+    return (Path(inventory).resolve() == INVENTORY.resolve()
+            and Path(path).resolve() == (INVENTORY / "word" / "panes.json").resolve())
+
+
+def check_word_panes(f, data):
+    """Problems in word/panes.json beyond the record schema (D02 T01 §32): every pane the hand-written list names
+    is there, docked where it may, opened by a record of the ribbon inventory, with the controls it must show.
+    The rules are scripts/lib/word_panes.py's."""
+    sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+    import word_panes
+    try:
+        ribbon = json.loads((INVENTORY / "word" / "ribbon.json").read_text(encoding="utf-8"))
+        word_panes.validate(data, {r.get("id") for r in ribbon if isinstance(r, dict)})
+    except (OSError, ValueError) as exc:
+        return [f"{f}: the ribbon inventory cannot be read: {exc}"]
+    except word_panes.Invalid as exc:
+        return [f"{f}: {exc}"]
+    return []
+
+
 def is_word_shortcuts(path, inventory=INVENTORY):
     """Whether `path` is the repository's Word shortcut inventory (`design/inventory/word/shortcuts.json`)."""
     return Path(inventory).resolve() == INVENTORY.resolve() and \
@@ -778,6 +800,8 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             problems += check_word_ribbon(f, data)
         if is_word_backstage(f, inventory):  # D02 T01 §6: behaviour is part of the Backstage checkpoint, flag or not
             problems += check_word_backstage(f, data, True)
+        if is_word_panes(f, inventory):  # D02 T01 §32: the hand-written list of panes holds
+            problems += check_word_panes(f, data)
         if is_word_options(f, inventory):  # D02 T01 §31: the counts the capture recorded hold
             problems += check_word_options(f, data)
         if is_word_shortcuts(f, inventory):  # D02 T01 §17: scope, behaviour and the checklist, flag or not

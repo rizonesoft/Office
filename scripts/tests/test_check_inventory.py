@@ -1664,7 +1664,8 @@ class Inventory(unittest.TestCase):
             (self.inv / name).write_text((ci.INVENTORY / name).read_text(encoding="utf-8"), encoding="utf-8")
         self.write("shell/chrome.json", [])
         checks = {"ribbon": "check_word_ribbon", "backstage": "check_word_backstage",
-                  "shortcuts": "check_word_shortcuts", "options": "check_word_options"}
+                  "shortcuts": "check_word_shortcuts", "options": "check_word_options",
+                  "panes": "check_word_panes"}
         for name in checks:
             self.write(f"word/{name}.json", [])
         with contextlib.ExitStack() as stack:
@@ -1879,6 +1880,32 @@ class OptionsRules(unittest.TestCase):
             self.assertTrue(problems(setting, enabled=value), repr(value))
         for record in (BOLD, TAB, GROUP):
             self.assertTrue(problems(record, enabled=False), record["id"])
+
+    def test_a_pane_says_where_it_docks_and_what_opens_it_and_nothing_else_does(self):
+        # D02 T01 §32: `dock` and `openedBy` are a pane's; a tab of a pane is a control type.
+        schema = json.loads((Path(__file__).resolve().parents[2] / ci.SCHEMA).read_text(encoding="utf-8"))
+        pane = {"id": "word.panes.navigation", "app": "word", "kind": "pane", "label": "Navigation", "order": 0,
+                "dock": "left", "openedBy": "word.view.show.navigation-pane"}
+        tab = dict(BOLD, id="word.panes.navigation.headings", parent="word.panes.navigation", label="Headings",
+                   controlType="tab")
+        for key in ("size", "shortcut", "idMso", "keytip"):
+            tab.pop(key, None)
+
+        def problems(record, **fields):
+            return ci.validate([dict(record, **fields)], schema, schema)
+        for record in (pane, tab, BOLD, TAB, GROUP):
+            self.assertEqual(problems(record), [], record["id"])
+        for dock in ("left", "right", "top", "bottom", "floating"):
+            self.assertEqual(problems(pane, dock=dock), [], dock)
+        for dock in ("middle", "Left", "", 1, None):
+            self.assertTrue(problems(pane, dock=dock), repr(dock))
+        for opener in ("", 7, None, "x" * 201, "word.home:styles", "see http://x.example", "word.home" + chr(1)):
+            self.assertTrue(problems(pane, openedBy=opener), repr(opener))
+        for value in (7, None, ["word.home"]):  # an id is text, and the schema says so in those words
+            self.assertEqual(problems(pane, openedBy=value), ["$[0].openedBy: expected string"], repr(value))
+        for record in (BOLD, TAB, GROUP):  # each field on its own belongs to a pane
+            self.assertTrue(problems(record, dock="left"), record["id"])
+            self.assertTrue(problems(record, openedBy="word.view.show.navigation-pane"), record["id"])
 
 
 if __name__ == "__main__":

@@ -5552,5 +5552,354 @@ class WordOptions(unittest.TestCase):
         self.assertIn("Word's Options dialog only", str(ctx.exception))
 
 
+def pane_menu(name, *items):
+    """A menu of a pane: closed it holds nothing; opened, a menu of its items under itself. Logs each open and close."""
+    el = E("MenuItem", name)
+    el.log = []
+
+    def expand():
+        el.log.append("expand")
+        el.kids = [E("Menu", name, kids=[E("Pane", "", kids=[E("Menu", "", kids=[
+            E("Group", " ", kids=[E("MenuItem", item) for item in items])])])])]
+
+    def collapse():
+        el.log.append("collapse")
+        el.kids = []
+    el.expand, el.collapse, el.expand_state = expand, collapse, lambda: 0
+    return el
+
+
+PANE_RECTS = {"left": (0, 178, 350, 1010), "right": (1570, 178, 1920, 1010), "bottom": (0, 740, 1920, 1010),
+              "top": (0, 178, 1920, 400), "floating": (100, 100, 311, 328)}
+
+
+class FakeWordPanes:
+    """Word's window with its docks (D02 T01 §32). A pane's command shows that pane where `docks` says; its own
+    Close button closes it. `bodies` maps a pane's slug to the controls its body shows (the required ones when not
+    given). Logs every Word action asked of it."""
+
+    def __init__(self, bodies=None, docks=None, showing=(), unopenable=(), stuck=()):
+        self.specs = {spec["slug"]: spec for spec in cu.word_panes.PANES}
+        self.bodies, self.docks = dict(bodies or {}), dict(docks or {})
+        self.unopenable, self.stuck = set(unopenable), set(stuck)
+        self.open, self.shape, self.log, self.bars = [], False, [], {}
+        self.root = E("Window", "Document1 - Word", rect=(0, 0, 1920, 1040))
+        for slug in showing:
+            self.show(slug)
+        self.layout()
+
+    def dock_of(self, slug):
+        return self.docks.get(slug, self.specs[slug]["docks"][0])
+
+    def body(self, slug):
+        if slug in self.bodies:
+            return self.bodies[slug]
+        made, unnamed = [], {role: list(labels) for role, labels in cu.word_panes.UNNAMED.get(slug, {}).items()}
+        roles = {"button": "Button", "editBox": "Edit", "splitButton": "SplitButton", "tab": "TabItem",
+                 "checkBox": "CheckBox", "menu": "MenuItem"}
+        for label, ctype in self.specs[slug]["required"]:
+            role = next((r for r, labels in unnamed.items() if label in labels), None)
+            if role:
+                made.append(E(role, "", kids=[Unread("ListItem", "an entry of this PC")] if role != "Button" else []))
+            elif ctype == "listBox":
+                made.append(E("Document", label))
+            elif ctype == "menu":
+                made.append(pane_menu(label, "First choice", "Second choice"))
+            else:
+                made.append(E(roles[ctype], label))
+        return made
+
+    def bar(self, slug):
+        title, close = self.specs[slug]["title"], E("Button", "Close pane")
+
+        def press():
+            if slug not in self.stuck:
+                self.open.remove(slug)
+                self.layout()
+        close.invoke = press
+        host = E("Pane", title, cls="NetUINativeHWNDHost", kids=[E("Pane", "", kids=[E("TitleBar", "", kids=[
+            E("MenuItem", "Task Pane Options"), close])])])
+        work = E("Window", title, cls="MsoWorkPane", kids=[E("Pane", "", kids=[E("Pane", "", kids=[
+            E("Custom", title, kids=self.body(slug))])])])
+        return E("ToolBar", "", cls="MsoCommandBar", rect=PANE_RECTS[self.dock_of(slug)], kids=[host, work])
+
+    def show(self, slug):
+        twin = {"reviewing-vertical": "reviewing-horizontal", "reviewing-horizontal": "reviewing-vertical"}.get(slug)
+        if twin in self.open:  # one Reviewing pane, in one form at a time
+            self.open.remove(twin)
+        if slug not in self.open:
+            self.open.append(slug)
+            self.bars[slug] = self.bar(slug)
+
+    def layout(self):
+        status = E("ToolBar", "", cls="MsoCommandBar", kids=[E("Pane", "", cls="NUIPane", kids=[E("Button", "Zoom")])])
+        kids = [E("Pane", "MsoDockTop", cls="MsoCommandBarDock", kids=[E("ToolBar", "", cls="MsoCommandBar")])]
+        for side in ("left", "right", "top", "bottom"):
+            bars = [self.bars[s] for s in self.open if self.dock_of(s) == side]
+            if side == "bottom":
+                bars.append(status)
+            if bars:
+                kids.append(E("Pane", "MsoDock" + side.title(), cls="MsoCommandBarDock", kids=bars))
+        kids += [self.bars[s] for s in self.open if self.dock_of(s) == "floating"]
+        self.root.kids = kids + [E("Pane", "", cls="_WwF")]
+
+    def word_action(self, action, **kwargs):
+        self.log.append((action, kwargs.get("command")) if kwargs else (action,))
+        if action == "pane_shape":
+            self.shape = True
+        elif action == "drop_pane_shape":
+            self.shape = False
+        elif action == "run_mso":
+            slug = next(s for s, spec in self.specs.items() if spec["command"] == kwargs["command"])
+            if self.specs[slug].get("shape") and not self.shape:
+                raise cu.Refused(f"Word's command {kwargs['command']} is not available now")
+            if slug not in self.unopenable:
+                self.show(slug)
+                self.layout()
+        return {"hwnd": 5}
+
+    def showing(self):
+        return sorted((self.specs[s]["title"], self.dock_of(s)) for s in self.open)
+
+
+class WordPanes(unittest.TestCase):
+    """The --panes capture against a fake Word (D02 T01 §32)."""
+
+    def run_capture(self, word, ready=0.3):
+        uia = type("U", (), {"element": lambda self, h: word.root})()
+        launched = type("L", (), {"hwnd": 5, "check_alone": lambda self: None,
+                                  "word_action": lambda self, action, **kw: word.word_action(action, **kw)})()
+        ctx = cu.Context("word", BUILD, set(), origin=(0, 0))
+        real_sleep, cu.time.sleep = cu.time.sleep, lambda s: None
+        try:
+            return cu.capture_word_panes(launched, uia, None, ctx, ready=ready), ctx
+        finally:
+            cu.time.sleep = real_sleep
+
+    def refused(self, word, *said):
+        with self.assertRaises(cu.Refused) as ctx:
+            self.run_capture(word)
+        for text in said:
+            self.assertIn(text, str(ctx.exception))
+
+    def test_each_pane_is_opened_alone_by_its_command_recorded_and_closed(self):
+        status, entry = Unread("Text", "3 of 24 items of this PC"), Unread("ListItem", "Copied text of the owner")
+        options = pane_menu("Options", "Show Office Clipboard Automatically", "Collect Without Showing")
+        word = FakeWordPanes(bodies={"clipboard": [
+            E("Button", "Paste All"), E("Button", "Clear All"), status, E("List", "", kids=[entry]), options,
+            E("ScrollBar", "")]})
+        records, ctx = self.run_capture(word)
+        panes = [r for r in records if r["kind"] == "pane"]
+        self.assertEqual([(r["id"], r["label"], r["dock"], r["order"]) for r in panes], [
+            ("word.panes.navigation", "Navigation", "left", 0), ("word.panes.styles", "Styles", "floating", 1),
+            ("word.panes.clipboard", "Clipboard", "left", 2),
+            ("word.panes.reviewing-vertical", "Revisions", "left", 3),
+            ("word.panes.reviewing-horizontal", "Revisions", "bottom", 4),
+            ("word.panes.editor", "Editor", "left", 5), ("word.panes.selection", "Selection", "left", 6),
+            ("word.panes.format-shape", "Format Shape", "left", 7)])
+        by_id = {r["id"]: r for r in records}
+        self.assertEqual(by_id["word.panes.navigation"]["bounds"], {"x": 0, "y": 178, "width": 350, "height": 832})
+        self.assertEqual(by_id["word.panes.reviewing-horizontal"]["bounds"],
+                         {"x": 0, "y": 740, "width": 1920, "height": 270})  # along the bottom, as wide as the window
+        self.assertEqual(by_id["word.panes.styles"]["bounds"]["width"], 211)
+        for spec in cu.word_panes.PANES:
+            self.assertEqual(by_id[cu.word_panes.pane_id(spec)]["openedBy"], spec["openedBy"])
+            self.assertNotIn("parent", by_id[cu.word_panes.pane_id(spec)])
+        clip = [(r["id"][len("word.panes.clipboard."):], r["kind"], r.get("controlType"), r["order"])
+                for r in records if r["id"].startswith("word.panes.clipboard.")]
+        self.assertEqual(clip, [
+            ("task-pane-options", "control", "menu", 0), ("close-pane", "control", "button", 1),
+            ("paste-all", "control", "button", 2), ("clear-all", "control", "button", 3),
+            ("clipboard-items", "control", "listBox", 4), ("options", "control", "menu", 5),
+            ("options.show-office-clipboard-automatically", "menuItem", None, 0),
+            ("options.collect-without-showing", "menuItem", None, 1)])
+        self.assertEqual(by_id["word.panes.clipboard"]["itemCount"], 6)  # its controls; a choice is not one
+        self.assertEqual(by_id["word.panes.clipboard.options"]["itemCount"], 2)
+        self.assertNotIn("itemCount", by_id["word.panes.clipboard.task-pane-options"])  # recorded closed, by rule
+        self.assertNotIn("size", by_id["word.panes.clipboard.paste-all"])
+        self.assertNotIn("bounds", by_id["word.panes.clipboard.options.collect-without-showing"])
+        self.assertEqual(options.log, ["expand", "collapse"])
+        # The owner's data in a pane is not read: neither a text nor an entry of a list.
+        self.assertEqual((status.read(), entry.read()), (0, 0))
+        self.assertIn("Clipboard pane (clipboard): 1 text(s) not read (a pane's texts are its data and its state)",
+                      ctx.notes)
+        # Each pane by its own command, the shape only for Format Shape, and Word as it was found.
+        self.assertEqual(word.log, [("run_mso", spec["command"]) for spec in cu.word_panes.PANES[:-1]] + [
+            ("pane_shape",), ("run_mso", "ObjectFormatDialog"), ("drop_pane_shape",)])
+        self.assertEqual((word.showing(), word.shape), ([], False))
+        cu.word_panes_check(records)  # whole by the hand-written list, each opener a record of the ribbon inventory
+        schema = json.loads((ci.INVENTORY / "schema.json").read_text(encoding="utf-8"))
+        self.assertEqual(ci.validate(records, schema, schema), [])
+
+    def test_word_is_put_back_as_it_was_found(self):
+        # Navigation at the side and the Reviewing pane along the bottom were showing: both show again, the
+        # Reviewing pane in its own form and not in the one captured last.
+        word = FakeWordPanes(showing=("navigation", "reviewing-horizontal"), docks={"editor": "right"})
+        found = word.showing()
+        records, _ = self.run_capture(word)
+        self.assertEqual(word.showing(), found)
+        self.assertEqual(found, [("Navigation", "left"), ("Revisions", "bottom")])
+        self.assertEqual({r["id"]: r["dock"] for r in records if r["kind"] == "pane"}["word.panes.editor"], "right")
+        self.assertEqual(word.log[-2:], [("run_mso", "NavigationPaneShowHide"),
+                                         ("run_mso", "ReviewReviewingPaneHorizontal")])
+        # A pane the capture has no command for could not be put back, so nothing is touched.
+        word = FakeWordPanes()
+        word.specs["stranger"] = {"slug": "stranger", "title": "Researcher", "command": "X", "docks": ("right",),
+                                  "required": ()}
+        word.show("stranger")
+        word.layout()
+        self.refused(word, "a pane the capture could not put back is showing (Researcher); close it and run again")
+        self.assertEqual((word.log, word.showing()), ([], [("Researcher", "right")]))
+
+    def test_a_pane_that_fails_refuses_the_capture_and_word_is_still_put_back(self):
+        word = FakeWordPanes(showing=("navigation",), unopenable=("selection",))
+        self.refused(word, "the Selection pane did not open within", "of SelectionPane")
+        self.assertEqual((word.showing(), word.shape), ([("Navigation", "left")], False))
+        # The horizontal form's command showed a pane at the side: that is not the horizontal form.
+        word = FakeWordPanes(docks={"reviewing-horizontal": "left"})
+        self.refused(word, "ReviewReviewingPaneHorizontal showed the Revisions pane docked left, and its pane docks "
+                     "bottom or top")
+        self.assertEqual(word.showing(), [])
+        # A pane without a control the hand-written list says it must show was not captured whole.
+        word = FakeWordPanes(bodies={"selection": [E("Button", "Show All"), E("Tree", "")]})
+        self.refused(word, "the Selection pane does not show Hide All (button), Bring Forward (button), Send Backward "
+                     "(button)", "it shows: Task Pane Options (menu), Close pane (button), Show All (button), Objects "
+                     "(listBox)")
+        self.assertEqual(word.showing(), [])
+        # A control the capture cannot name, or has no rule for, is not dropped without a word.
+        word = FakeWordPanes(bodies={"navigation": [E("Button", "")]})
+        self.refused(word, "a Button in the Navigation pane has no name")
+        word = FakeWordPanes(bodies={"navigation": [E("Calendar", "When")]})
+        self.refused(word, "is a Calendar, which the pane capture has no rule for")
+        # A pane that will not close, and one that cannot be put back.
+        word = FakeWordPanes(stuck=("styles",))
+        self.refused(word, "the Styles pane could not be closed; Word is left as it is and nothing is published")
+        word = FakeWordPanes(showing=("clipboard",))
+        word.unopenable.add("clipboard")  # it shows now and will not open again
+        self.refused(word, "the Clipboard pane did not open within")
+        # The shape Format Shape needed is dropped when its pane fails.
+        word = FakeWordPanes(bodies={"format-shape": [E("Button", "Fill")]})
+        self.refused(word, "the Format Shape pane does not show Line (button)")
+        self.assertEqual((word.shape, word.showing()), (False, []))
+
+    def run_main(self, out, capture, merge=True):
+        launched = type("L", (), {"hwnd": 5, "close": lambda self: None})()
+        real, cu.capture = cu.capture, capture
+        try:
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                code = cu.main(["--app", "word", "--panes", "--out", str(out)] + (["--merge"] if merge else []),
+                               launcher=lambda app: launched, uia_factory=lambda: None, win_factory=lambda: None)
+        finally:
+            cu.capture = real
+        return code, stdout.getvalue(), stderr.getvalue()
+
+    def test_a_merge_publishes_the_fresh_facts_with_the_sentences_written_by_hand(self):
+        fresh, ctx = self.run_capture(FakeWordPanes(docks={"editor": "right"}))
+        sentence = "Opens the Navigation pane. Always available."
+        old = copy.deepcopy(fresh)
+        for rec in old:
+            if rec["id"] == "word.panes.editor":
+                rec.update(dock="left", itemCount=9)  # where it docked, and what it held, at the last capture
+            if rec["id"] == "word.panes.navigation":
+                rec["behaviour"] = sentence
+        gone = dict(next(r for r in old if r["id"] == "word.panes.editor.document-statistics"),
+                    id="word.panes.editor.gone-since", label="Gone since")
+        old = [r for r in old if r["id"] != "word.panes.navigation.results"] + [gone]  # one added since, one removed
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "panes.json"
+            out.write_text(cu.render(old), encoding="utf-8")
+            code, said, _ = self.run_main(out, lambda *a: (copy.deepcopy(fresh), [], ctx))
+            self.assertEqual(code, 0)
+            written = {r["id"]: r for r in json.loads(out.read_text(encoding="utf-8"))}
+        self.assertEqual(written["word.panes.editor"]["dock"], "right")
+        self.assertEqual(written["word.panes.editor"]["itemCount"],
+                         next(r for r in fresh if r["id"] == "word.panes.editor")["itemCount"])
+        self.assertIn("word.panes.navigation.results", written)
+        self.assertNotIn("word.panes.editor.gone-since", written)
+        self.assertEqual(written["word.panes.navigation"]["behaviour"], sentence)
+        self.assertEqual(len(written), len(fresh))
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "panes.json"
+            # A capture that is not whole publishes nothing, on its own or merged.
+            broken = [r for r in copy.deepcopy(fresh) if not r["id"].startswith("word.panes.selection")]
+            code, _, err = self.run_main(out, lambda *a: (broken, [], ctx), merge=False)
+            self.assertEqual((code, out.exists()), (1, False))
+            self.assertIn("the pane capture is not whole: the Selection pane (word.panes.selection) is not recorded",
+                          err)
+            # Nor does a merge that carries in a hand-written field the schema refuses.
+            long = [dict(r, behaviour="x" * 1001) if r["id"] == "word.panes.navigation" else r
+                    for r in copy.deepcopy(fresh)]
+            out.write_text(cu.render(long), encoding="utf-8")
+            before = out.read_bytes()
+            code, _, err = self.run_main(out, lambda *a: (copy.deepcopy(fresh), [], ctx))
+            self.assertEqual(code, 1)
+            self.assertIn("merged with the capture breaks the inventory's schema", err)
+            self.assertEqual(out.read_bytes(), before)
+
+    def test_a_failed_capture_publishes_nothing(self):
+        word = FakeWordPanes(unopenable=("editor",))
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "panes.json"
+            out.write_text("previous\n", encoding="utf-8")
+            code, _, err = self.run_main(out, lambda *a: (self.run_capture(word)[0], [], None))
+            self.assertEqual(code, 1)
+            self.assertIn("the Editor pane did not open", err)
+            self.assertEqual(out.read_text(encoding="utf-8"), "previous\n")
+
+    def test_words_own_actions_run_a_panes_command_only_and_leave_no_shape(self):
+        ran, deleted = [], []
+
+        class Shape:
+            def __init__(self, name):
+                self.Name = name
+
+            def Select(self):
+                ran.append(("select", self.Name))
+
+            def Delete(self):
+                deleted.append(self.Name)
+
+        class Shapes:
+            def __init__(self):
+                self.items = [Shape("Operator's own")]
+                self.Count = 1
+
+            def AddShape(self, *args):
+                self.items.append(Shape(""))
+                self.Count = len(self.items)
+                return self.items[-1]
+
+            def __call__(self, index):
+                return self.items[index - 1]
+        doc = type("Doc", (), {"Shapes": Shapes(), "Saved": False})()
+        bars = type("Bars", (), {"GetEnabledMso": lambda self, c: c != "SelectionPane",
+                                 "ExecuteMso": lambda self, c: ran.append(("mso", c))})()
+        launched = object.__new__(cu.Launched)
+        launched.key, launched.hwnd, launched.created = "word", 5, [doc]
+        launched.app = type("App", (), {"CommandBars": bars})()
+        launched._check_alone_impl = lambda: None
+        launched._word_action_impl("run_mso", command="StylesPane")
+        self.assertEqual(ran, [("mso", "StylesPane")])
+        for command, said in (("FileSave", "run_mso runs the command of a task pane only, not 'FileSave'"),
+                              ("SelectionPane", "Word's command SelectionPane is not available now")):
+            with self.assertRaises(cu.Refused) as ctx:
+                launched._word_action_impl("run_mso", command=command)
+            self.assertIn(said, str(ctx.exception))
+        launched._word_action_impl("pane_shape")
+        self.assertEqual(ran[-1], ("select", "PaneCaptureShape"))
+        launched._word_action_impl("drop_pane_shape")
+        self.assertEqual((deleted, doc.Saved), (["PaneCaptureShape"], True))  # its own shape, and no other
+        launched.created = []
+        with self.assertRaises(cu.Refused):
+            launched._word_action_impl("pane_shape")
+
+    def test_the_mode_is_word_only_and_refuses_before_touching_the_app(self):
+        args = type("A", (), {"app": "excel", "panes": True})()
+        with self.assertRaises(cu.Refused) as ctx:
+            cu.capture(args, None, None, None)  # nothing launched, read or pressed
+        self.assertIn("Word's task panes only", str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

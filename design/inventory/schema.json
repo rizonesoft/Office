@@ -129,7 +129,8 @@
             "box",
             "buttonGroup",
             "listBox",
-            "slider"
+            "slider",
+            "tab"
           ]
         },
         "size": {
@@ -368,6 +369,33 @@
           "type": "boolean",
           "description": "true when the live build shows it but the 2024 baseline lacks it"
         },
+        "dock": {
+          "enum": [
+            "left",
+            "right",
+            "top",
+            "bottom",
+            "floating"
+          ],
+          "description": "on a pane: the side of the window it docks at when its command opens it, or floating"
+        },
+        "openedBy": {
+          "type": "string",
+          "minLength": 1,
+          "description": "on a pane: the id of the ribbon record whose command opens it",
+          "allOf": [
+            {
+              "$ref": "#/$defs/noLink"
+            },
+            {
+              "$ref": "#/$defs/noControl"
+            },
+            {
+              "$ref": "#/$defs/noColon"
+            }
+          ],
+          "maxLength": 200
+        },
         "enabled": {
           "const": false,
           "description": "on a setting of a dialog, or a choice of one: false when the control was disabled when it was captured (it depends on another setting or on a selection). Never written for a control that was enabled"
@@ -516,6 +544,36 @@
               }
             },
             "description": "enabled is recorded on a setting or a choice only"
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "dock"
+            ]
+          },
+          "then": {
+            "properties": {
+              "kind": {
+                "const": "pane"
+              }
+            },
+            "description": "dock is recorded on a pane only"
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "openedBy"
+            ]
+          },
+          "then": {
+            "properties": {
+              "kind": {
+                "const": "pane"
+              }
+            },
+            "description": "openedBy is recorded on a pane only"
           }
         }
       ],

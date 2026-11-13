@@ -8,6 +8,7 @@
     python scripts/capture-ui.py --app word --all-tabs --expand --merge      # keep hand-written fields
     python scripts/capture-ui.py --app word --all-tabs --layout simplified   # ribbon-simplified.json
     python scripts/capture-ui.py --app word --options                        # design/inventory/word/options.json
+    python scripts/capture-ui.py --app word --panes                          # design/inventory/word/panes.json
 
 The tool acts only on a window it opened itself. Word and Excel run as a separate instance of their own (COM
 DispatchEx), so the operator's open documents are never touched; an app that allows one instance only is launched
@@ -44,6 +45,7 @@ import zlib
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import word_backstage  # noqa: E402  (scripts/lib, on the path above)
 import word_options  # noqa: E402
+import word_panes  # noqa: E402
 from word_absences import WORD_RECONCILED_ABSENT_TABS  # noqa: E402
 from office_com import (INVENTORY, OwnProcess, Refused, installed_build, publish, reference_build,  # noqa: E402
                         same_build, transacted_replace, transacted_restore, transacted_unlink)
@@ -2358,6 +2360,30 @@ class Launched:
             except Exception:
                 pass
             return {"hwnd": int(self.hwnd or 0)}
+        if action == "run_mso":  # D02 T01 §32: a pane's own command, and no other
+            command = kwargs.get("command")
+            if command not in word_panes.COMMANDS:
+                raise Refused(f"run_mso runs the command of a task pane only, not {command!r}")
+            bars = app.CommandBars
+            if not bars.GetEnabledMso(command):
+                raise Refused(f"Word's command {command} is not available now")
+            bars.ExecuteMso(command)
+            return {"hwnd": int(self.hwnd or 0)}
+        if action in ("pane_shape", "drop_pane_shape"):  # D02 T01 §32: Format Shape exists for a selected shape
+            doc = self.created[0] if self.created else None
+            if doc is None:
+                raise Refused("the capture has no document of its own to put a shape in")
+            if action == "pane_shape":
+                shape = doc.Shapes.AddShape(1, 50, 50, 60, 40)
+                shape.Name = "PaneCaptureShape"
+                shape.Select()
+            else:
+                for index in range(int(doc.Shapes.Count), 0, -1):
+                    shape = doc.Shapes(index)
+                    if shape.Name == "PaneCaptureShape":
+                        shape.Delete()
+                doc.Saved = True  # the capture's own blank document, as it was: nothing of it is kept
+            return {"hwnd": int(self.hwnd or 0)}
         if action == "options_sample":  # D02 T01 §31: read before and after an Options capture, never printed
             options, sample = app.Options, {}
             for name in word_options.SAMPLE:
@@ -2812,6 +2838,8 @@ def capture(args, launched, uia, win):
         raise Refused("--backstage captures Word's Backstage view only (D02 T01 §6)")
     if getattr(args, "options", False) and args.app != "word":
         raise Refused("--options captures Word's Options dialog only (D02 T01 §31)")
+    if getattr(args, "panes", False) and args.app != "word":
+        raise Refused("--panes captures Word's task panes only (D02 T01 §32)")
     row = APPS[args.app][0]
     expected = reference_build(app=row)
     if installed_build() != expected:
@@ -2858,6 +2886,18 @@ def capture(args, launched, uia, win):
                 for key in ("bounds", "captureProfile", "size"):
                     rec.pop(key, None)
             problems += [why for why in ctx.dropped_reasons if why not in problems]
+        return records, problems, ctx
+    if getattr(args, "panes", False):
+        launched.check_alone()
+        check_licensing()
+        if problems:  # a pane's width and height are what the capture is for
+            raise Refused("a pane's size is recorded under the capture profile only: " + "; ".join(problems))
+        records = capture_word_panes(launched, uia, win, ctx)
+        launched.check_alone()
+        check_licensing()
+        if not same_geometry(state, win.state(launched.hwnd)):
+            raise Refused("the window moved or changed size during the capture, so the panes' sizes are not those "
+                          "of the capture profile; nothing is published")
         return records, problems, ctx
     if getattr(args, "options", False):
         launched.check_alone()
@@ -3441,6 +3481,212 @@ def schema_check(records, what):
     if problems:
         raise Refused(f"{what} breaks the inventory's schema, so nothing is published: " + "; ".join(problems[:5]) +
                       (f"; and {len(problems) - 5} more" if len(problems) > 5 else ""))
+
+
+# ------------------------------------------------------------------------------ Word task panes (D02 T01 §32)
+PANE_READY_SECONDS = 15.0
+
+
+def _first(element, control_type, class_name=None):
+    """An element's own first child of one type (and class), or None: a step, never a search."""
+    if element is None:
+        return None
+    return next((k for k in quiet_children(element) if k.control_type == control_type
+                 and (class_name is None or k.class_name == class_name)), None)
+
+
+def showing_panes(uia, hwnd):
+    """Every task pane now showing in Word's window, in the window's order: its title, where it docks, and its
+    bar, its title's host and its body's window. A pane is a command bar, in one of the window's docks or floating,
+    that holds a titled host and a work pane of the same title; the status bar and the ribbon are not."""
+    found = []
+    for kid in quiet_children(uia.element(hwnd)):
+        if kid.class_name == "MsoCommandBarDock":
+            bars = [(word_panes.dock_of(kid.name), bar) for bar in quiet_children(kid)
+                    if bar.class_name == "MsoCommandBar"]
+        elif kid.class_name == "MsoCommandBar":
+            bars = [("floating", kid)]
+        else:
+            continue
+        for dock, bar in bars:
+            host = _first(bar, "Pane", "NetUINativeHWNDHost")
+            work = _first(bar, "Window", "MsoWorkPane")
+            title = word_panes.clean(host.name) if host is not None else ""
+            if title and work is not None and word_panes.clean(work.name) == title:
+                found.append({"title": title, "dock": dock, "bar": bar, "host": host, "work": work})
+    return found
+
+
+def pane_tree(element, depth=0, limit=10):
+    """A plain tree of one element of a pane for word_panes.record_pane. A text is never read: a pane's texts are
+    its data and its state. Only a container is walked into, so a list's, a tree's or a document view's entries
+    are never reached."""
+    node = {"role": element.control_type, "class_name": element.class_name,
+            "enabled": bool(getattr(element, "is_enabled", True)), "_el": element}
+    if element.control_type != "Text":
+        node["name"] = element.name
+    walked = element.control_type in word_panes.CONTAINERS and element.class_name not in word_panes.SKIPPED_CLASSES
+    if walked and depth < limit:
+        node["children"] = [pane_tree(k, depth + 1, limit) for k in quiet_children(element)]
+    return node
+
+
+def _pane_signature(nodes):
+    return tuple((n["role"], n.get("name"), n["enabled"], _pane_signature(n.get("children", []))) for n in nodes
+                 if n["role"] not in word_panes.SKIPPED)
+
+
+def _pane_parts(pane):
+    """The elements of a pane's title bar and of its body, reached step by step; None for a layout not known."""
+    bar = _first(_first(pane["host"], "Pane"), "TitleBar")
+    body = _first(_first(_first(pane["work"], "Pane"), "Pane"), "Custom")
+    if bar is None or body is None:
+        return None
+    return quiet_children(bar), quiet_children(body)
+
+
+def close_pane(uia, hwnd, title, seconds, attempts=3):
+    """Close the pane of one title with its own Close button and see that it is gone."""
+    def there():
+        return [p for p in showing_panes(uia, hwnd) if p["title"] == title]
+    for _ in range(attempts):
+        panes = there()
+        if not panes:
+            return
+        parts = _pane_parts(panes[0])
+        bar = parts[0] if parts else []
+        button = next((k for k in bar if k.control_type == "Button" and k.name == "Close pane"), None)
+        if button is not None:
+            button.invoke()
+        if wait_for(lambda: not there(), seconds=seconds):
+            return
+    raise Refused(f"the {title} pane could not be closed; Word is left as it is and nothing is published")
+
+
+def _open_pane(launched, uia, hwnd, spec, ready):
+    """Run a pane's command and return the pane it shows, docked where that command's pane docks."""
+    launched.word_action("run_mso", command=spec["command"])
+
+    def opened():
+        panes = [p for p in showing_panes(uia, hwnd) if p["title"] == spec["title"]]
+        return panes[0] if len(panes) == 1 else None
+    pane = wait_for(opened, seconds=ready)
+    if pane is None:
+        raise Refused(f"the {spec['title']} pane did not open within {ready:.0f} s of {spec['command']}")
+    if pane["dock"] not in spec["docks"]:
+        raise Refused(f"{spec['command']} showed the {spec['title']} pane docked {pane['dock']}, and its pane docks "
+                      f"{' or '.join(spec['docks'])}")
+    return pane
+
+
+def _record_pane(uia, hwnd, ctx, spec, order, ready):
+    """The records of the pane now showing. A pane may fill after it opens (Editor asks its service first), so it
+    is read until two reads agree and it shows every control scripts/lib/word_panes.py says it must, or the time
+    is up and the capture is refused, naming what it lacks."""
+    def read():
+        panes = [p for p in showing_panes(uia, hwnd) if p["title"] == spec["title"]]
+        parts = _pane_parts(panes[0]) if len(panes) == 1 else None
+        if parts is None:
+            return None
+        chrome, content = [pane_tree(k) for k in parts[0]], [pane_tree(k) for k in parts[1]]
+        return (panes[0], chrome, content), (panes[0]["dock"], _pane_signature(chrome), _pane_signature(content))
+
+    def base(rid, kind, label, at, node, parent, **extra):
+        made = ctx.base(rid, kind, label, at, node["_el"], parent=parent, **extra)
+        made.pop("size", None)  # a ribbon control's size class means nothing in a pane
+        if node.get("offscreen"):  # a choice of a menu that is closed again
+            made.pop("bounds", None)
+            made.pop("captureProfile", None)
+        return made
+
+    def choices(node):
+        return _options_choices(node, ready)
+    step = spec.get("settle", 0.4)  # how far apart two reads must agree: longer for a pane that redraws
+    deadline, lacked = time.monotonic() + max(ready, step * 8), None
+    while True:
+        read_whole = settled(read, max(step + 0.5, deadline - time.monotonic()), step=step)
+        if read_whole is None and lacked is None:
+            raise Refused(f"the {spec['title']} pane did not show its controls and settle within {ready:.0f} s")
+        if read_whole is not None:
+            pane, chrome, content = read_whole
+            rec = ctx.base(word_panes.pane_id(spec), "pane", spec["title"], order, pane["bar"], parent=None,
+                           dock=pane["dock"], openedBy=spec["openedBy"])
+            notes = []
+            try:
+                records = word_panes.record_pane(spec, rec, chrome, content, base, choices, notes)
+            except word_panes.Invalid as exc:
+                raise Refused(f"the {spec['title']} pane could not be recorded: {exc}") from None
+            lacking = word_panes.missing(spec, records)
+            if not lacking:
+                ctx.notes.extend(notes)
+                return records
+            shown = ", ".join(f"{r['label']} ({r['controlType']})" for r in records if r["kind"] == "control")
+            lacked = (f"the {spec['title']} pane does not show {', '.join(lacking)}, which scripts/lib/word_panes.py "
+                      f"says it must; it was not captured whole (it shows: {shown})")
+        if time.monotonic() >= deadline:
+            raise Refused(lacked)
+        time.sleep(0.5)
+
+
+def capture_word_panes(launched, uia, win, ctx, ready=PANE_READY_SECONDS):
+    """Records of Word's task panes (scripts/lib/word_panes.py lists them): each is opened alone by its own
+    command, read until two reads agree, and closed with its own Close button. Word is then put back as it was
+    found, on every path: the panes that were showing show again where they were, no other pane is left open, and
+    the shape Format Shape needed is gone. When that cannot be done the capture is refused."""
+    hwnd = launched.hwnd
+
+    def now():
+        return sorted((p["title"], p["dock"]) for p in showing_panes(uia, hwnd))
+    initial = now()
+    known = {spec["title"] for spec in word_panes.PANES}
+    strangers = sorted({title for title, _dock in initial if title not in known})
+    if strangers:
+        raise Refused("a pane the capture could not put back is showing (" + ", ".join(strangers) +
+                      "); close it and run again")
+    records, shaped = [], [False]
+
+    def put_back():
+        for title, dock in now():
+            if (title, dock) not in initial:
+                close_pane(uia, hwnd, title, ready)
+        if shaped[0]:
+            launched.word_action("drop_pane_shape")
+            shaped[0] = False
+        for title, dock in initial:
+            if (title, dock) not in now():
+                spec = next(s for s in word_panes.PANES if s["title"] == title and dock in s["docks"])
+                _open_pane(launched, uia, hwnd, spec, ready)
+        if now() != initial:
+            raise Refused("Word's panes could not be put back as they were (" +
+                          ", ".join(f"{t} {d}" for t, d in initial) + "); nothing is published")
+    try:
+        for order, spec in enumerate(word_panes.PANES):
+            for title in sorted({title for title, _dock in now()}):  # each pane is captured alone
+                close_pane(uia, hwnd, title, ready)
+            launched.check_alone()
+            if spec.get("shape"):
+                launched.word_action("pane_shape")
+                shaped[0] = True
+            _open_pane(launched, uia, hwnd, spec, ready)
+            records += _record_pane(uia, hwnd, ctx, spec, order, ready)
+    finally:
+        put_back()
+    return records
+
+
+def word_panes_check(records, what="the pane capture"):
+    """Refuse pane records that are not whole (scripts/lib/word_panes.py's rules, each opener a record of the
+    committed ribbon inventory) or that the inventory's schema would refuse."""
+    try:
+        ribbon = json.loads((INVENTORY / "word" / "ribbon.json").read_text(encoding="utf-8"))
+        ribbon_ids = {r.get("id") for r in ribbon if isinstance(r, dict)}
+    except (OSError, ValueError) as exc:
+        raise Refused(f"the ribbon inventory cannot be read to check the panes' openers ({exc})") from None
+    try:
+        word_panes.validate(records, ribbon_ids)
+    except word_panes.Invalid as exc:
+        raise Refused(f"{what} is not whole: {exc}") from None
+    schema_check(records, what)
 
 
 def word_options_check(records, what="the Options capture"):
@@ -8002,6 +8248,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     which.add_argument("--shell", action="store_true", help="shared shell chrome and per-app shell overrides")
     which.add_argument("--backstage", action="store_true", help="Word's Backstage view (D02 T01 §6)")
     which.add_argument("--options", action="store_true", help="Word's Options dialog (D02 T01 §31)")
+    which.add_argument("--panes", action="store_true", help="Word's task panes (D02 T01 §32)")
     parser.add_argument("--expand", action="store_true", help="open each menu and gallery and record its items")
     parser.add_argument("--layout", choices=("classic", "simplified"), default="classic")
     parser.add_argument("--merge", action="store_true", help="update an existing file, keeping hand-written fields")
@@ -8077,6 +8324,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
         parser.error("the following arguments are required: --app")
     out = Path(args.out) if args.out else INVENTORY / args.app / (
         "backstage.json" if args.backstage else "options.json" if args.options else
+        "panes.json" if args.panes else
         "ribbon-simplified.json" if args.layout == "simplified" else
         "ribbon.json")
     if out.exists() and not args.merge:
@@ -8118,6 +8366,8 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
             word_backstage_check(records, require_behaviour=False)  # the fresh capture alone must be complete
         elif args.options:
             word_options_check(records)
+        elif args.panes:
+            word_panes_check(records)
         elif args.app == "word":
             records, unverified_records = reconcile_word_unverified(records, unverified_records)
             try:
@@ -8137,7 +8387,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
                 raise Refused(f"{out} changed during the capture; re-run to merge cleanly")
             if current_bytes is not None:
                 existing_records = _load_existing_records(out, current_bytes)
-                if args.backstage or args.options:  # only the hand-written fields carry over; no old record survives
+                if args.backstage or args.options or args.panes:  # only hand-written fields carry over
                     try:
                         records = word_backstage.carry_behaviours(existing_records, records)
                     except word_backstage.Invalid as exc:
@@ -8146,6 +8396,8 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
                     merged = f"{out} merged with the capture"
                     if args.options:
                         word_options_check(records, merged)
+                    elif args.panes:
+                        word_panes_check(records, merged)
                     else:
                         schema_check(records, merged)
                 elif args.app == "word" and is_canonical_word_ribbon:
