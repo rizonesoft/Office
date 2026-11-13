@@ -44,7 +44,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 3 | §3 | UIA capture tool | §1, §2, §21 | [x] |
 | 4 | §4 | Shell chrome inventory | §3, §23, §24, §26 | [x] |
 | 5 | §5 | Word ribbon | §3, §19, §23, §24, §26 | [x] |
-| 6 | §6 | Word panes, dialogs | §5 | [ ] |
+| 6 | §6 | Word Backstage pages | §5 | [ ] |
 | 7 | §7 | Excel ribbon | §3, §19, §23, §24, §26 | [ ] |
 | 8 | §8 | Excel panes, dialogs | §7, §17 | [ ] |
 | 9 | §9 | PowerPoint ribbon | §3, §19, §23, §24, §26 | [ ] |
@@ -69,6 +69,11 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 28 | §28 | Record dispositions | §18, §22, §23 | [ ] |
 | 29 | §29 | Inventory layout tables | §22 | [ ] |
 | 30 | §30 | Built-app layout check | §3 | [ ] |
+| 31 | §31 | Word Options settings | §6 | [ ] |
+| 32 | §32 | Word task panes | §5 | [ ] |
+| 33 | §33 | Word status bar | §5 | [ ] |
+| 34 | §34 | Word dialogs | §5 | [ ] |
+| 35 | §35 | Word context menus and mini toolbar | §5 | [ ] |
 
 ## 1. Inventory Schema Checker
 
@@ -218,9 +223,11 @@ Every built-in Word tab (Home, Insert, Draw, Design, Layout, References, Mailing
 > **Verified:** 2026-11-09 | §5 | 07550e9edf3de4b62d059abda3dc3a941f01ee24
 > **Review:** `docs/reviews/d02-t01-s5.json`
 
-## 6. Word Panes, Dialogs
+## 6. Word Backstage Pages
 
-Word beyond the ribbon: Backstage pages (Home, New, Open, Info, Save, Save As, Print, Share, Export, Transform, Close, Account, Feedback, Options), task panes (Navigation, Styles, Clipboard, Reviewing, Editor, Format Shape, Selection), status bar items, views, and every dialog reachable from a ribbon dialog launcher or Backstage.
+> **Started:** 2026-11-13T01:15:23Z
+
+Word beyond the ribbon, part one: the Backstage view behind File, its pages (Home, New, Open, Info, Save, Save As, Print, Share, Export, Transform, Close, Account, Feedback, Options) and the sections each page shows. **Corrected 2026-11-13:** split from §6, which bundled six capture surfaces, each needing its own capture mode in `scripts/capture-ui.py` (the tool knew only the ribbon and the shell); one surface per section.
 
 **Phase:** 2
 **Needs:** office, windows-host, display-session
@@ -228,18 +235,14 @@ Word beyond the ribbon: Backstage pages (Home, New, Open, Info, Save, Save As, P
 
 **Build order:**
 
-1. Capture Backstage pages into `design/inventory/word/backstage.json`. Done when: every page named above has a record with its sections.
-2. Capture panes, status bar and dialogs into their files. Done when: all four files pass the checker.
+1. Add the Backstage capture. Done when: its fake-tree test passes.
+2. Capture Word's Backstage. Done when: `design/inventory/word/backstage.json` holds the fourteen pages with their sections and passes the checker.
 
-- [ ] Capture each Backstage page and its sections into `design/inventory/word/backstage.json`. Done when: the fourteen pages named in this section exist with child records. Cheaper substitute: page names only.
-- [ ] Capture the Word Options dialog categories and every setting label in order into `design/inventory/word/backstage.json` under `word.options.*`. Done when: each category lists its settings with control type. Cheaper substitute: category names only.
-- [ ] Capture task panes into `design/inventory/word/panes.json` with docking side, default width and the command that opens each. Done when: the seven panes named in this section exist. Cheaper substitute: panes without their opening command.
-- [ ] Capture the status bar items and the Customize Status Bar menu into `design/inventory/word/statusbar.json`. Done when: every menu item has `order` and default on or off state. Cheaper substitute: only the items visible by default.
-- [ ] Capture each dialog reachable from a Word dialog launcher or Backstage into `design/inventory/word/dialogs.json` with tabs and control labels. Done when: Font, Paragraph, Page Setup, Find and Replace, Insert Table, Symbol, Index, Table of Contents, Bookmark and Mail Merge Recipients exist at minimum. Cheaper substitute: dialog titles without controls.
-- [ ] Capture the Word right-click context menus (text, table, picture, shape, header and footer, hyperlink, spelling error, tracked change, comment) and the mini toolbar into `design/inventory/word/menus.json`, one record per menu item in order. Done when: each context named here has its menu captured with submenus one level deep. Cheaper substitute: the text context menu only.
-- [ ] Commit: `inventory: capture Word Backstage, panes, status bar and dialogs`
+- [ ] Add `--backstage` to `scripts/capture-ui.py` for `--app word`: open File, visit each page in the navigation list in order, and record one `backstagePage` record per page (`order`, label, key tip) with one child record per section, button or list the page shows, then leave Backstage with Escape, written through the tool's existing publish path (temporary file, then replace) and merged with `--merge` like a ribbon capture. Done when: a test in `scripts/tests/test_capture_ui.py` over the file's fake UI Automation tree (`E`, `FakeApp`) produces the pages in order with their children, and leaves the fake in the document view, and a refusal test shows the mode exits non-zero naming the surface when it cannot be opened. Cheaper substitute: a hand-written file, which no capture can check again on a new Office build.
+- [ ] Capture Word's Backstage on this PC with `python scripts/capture-ui.py --app word --backstage` into `design/inventory/word/backstage.json`. Done when: the fourteen pages named in this section exist, each with its child records, and `python scripts/check-inventory.py design/inventory/word` exits 0. Cheaper substitute: page names only.
+- [ ] Commit: `inventory: capture Word Backstage pages`
 
-**Test checkpoint:** `python scripts/check-inventory.py design/inventory/word` exits 0 and `design/inventory/word/dialogs.json` holds at least 10 `dialog` records.
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` passes, `python scripts/check-inventory.py design/inventory/word` exits 0, and `design/inventory/word/backstage.json` holds 14 `backstagePage` records.
 
 ## 7. Excel Ribbon
 
@@ -829,6 +832,101 @@ The plan's acceptance bar is that every element works in its app at its inventor
 - [ ] Commit: `inventory: compare a built app's layout with the inventory`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_check_layout.py"` passes, with a matching fixture exiting 0 and a moved, a missing and a retyped fixture each exiting 1.
+
+## 31. Word Options Settings
+
+The Word Options dialog, reached from Backstage: every category and every setting in each, in order, with its control type, so the product's own Options dialog can match it. **Corrected 2026-11-13:** split from §6, which bundled six capture surfaces, each needing its own capture mode in `scripts/capture-ui.py` (the tool knew only the ribbon and the shell); one surface per section.
+
+**Phase:** 2
+**Needs:** office, windows-host, display-session
+**Surface:** no
+
+**Build order:**
+
+1. Add the Options capture. Done when: its fake-tree test passes.
+2. Capture Word Options. Done when: every category's settings are in `design/inventory/word/backstage.json` under `word.options.*`.
+
+- [ ] Add `--options` to `scripts/capture-ui.py` for `--app word`: open Word Options from Backstage, select each category in order, and record each setting as a `setting` record under `word.options.<category>.*` (`order`, label, control type, enabled state), headings included, then close the dialog with Cancel so no setting changes, written through the tool's existing publish path (temporary file, then replace) and merged with `--merge` like a ribbon capture. Done when: a test in `scripts/tests/test_capture_ui.py` over the file's fake UI Automation tree (`E`, `FakeApp`) produces two categories' settings in order with their control types, and records that the dialog was closed with Cancel, and a refusal test shows the mode exits non-zero naming the surface when it cannot be opened. Cheaper substitute: a hand-written file, which no capture can check again on a new Office build.
+- [ ] Capture Word Options on this PC with `python scripts/capture-ui.py --app word --options --merge` into `design/inventory/word/backstage.json`. Done when: each category Word Options lists has its settings with control types, the checker exits 0, and Word's options are unchanged (the capture compares a sample of settings read before and after). Cheaper substitute: category names only.
+- [ ] Commit: `inventory: capture Word Options settings`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` passes and `python scripts/check-inventory.py design/inventory/word` exits 0 with at least one `setting` record per Options category.
+
+## 32. Word Task Panes
+
+Word's task panes (Navigation, Styles, Clipboard, Reviewing, Editor, Format Shape, Selection): where each docks, its default width, the command that opens it and the controls at its top level. **Corrected 2026-11-13:** split from §6, which bundled six capture surfaces, each needing its own capture mode in `scripts/capture-ui.py` (the tool knew only the ribbon and the shell); one surface per section.
+
+**Phase:** 2
+**Needs:** office, windows-host, display-session
+**Surface:** no
+
+**Build order:**
+
+1. Add the pane capture. Done when: its fake-tree test passes.
+2. Capture Word's panes. Done when: `design/inventory/word/panes.json` holds the seven panes.
+
+- [ ] Add `--panes` to `scripts/capture-ui.py` for `--app word`: open each pane by the ribbon command that opens it (its `idMso` from `design/inventory/word/ribbon.json`), record one `pane` record (docking side, width and height, the opening command) with its top-level controls in order, then close it, written through the tool's existing publish path (temporary file, then replace) and merged with `--merge` like a ribbon capture. Done when: a test in `scripts/tests/test_capture_ui.py` over the file's fake UI Automation tree (`E`, `FakeApp`) produces a pane with its docking side, size, opening command and controls, and a refusal test shows the mode exits non-zero naming the surface when it cannot be opened. Cheaper substitute: a hand-written file, which no capture can check again on a new Office build.
+- [ ] Capture Word's panes on this PC with `python scripts/capture-ui.py --app word --panes` into `design/inventory/word/panes.json`. Done when: the seven panes named in this section exist with their opening commands and the checker exits 0. Cheaper substitute: panes without their opening command.
+- [ ] Commit: `inventory: capture Word task panes`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` passes, `python scripts/check-inventory.py design/inventory/word` exits 0, and `design/inventory/word/panes.json` holds 7 `pane` records.
+
+## 33. Word Status Bar
+
+Word's status bar and its Customize Status Bar menu: every item, its position, and whether it is shown by default. **Corrected 2026-11-13:** split from §6, which bundled six capture surfaces, each needing its own capture mode in `scripts/capture-ui.py` (the tool knew only the ribbon and the shell); one surface per section.
+
+**Phase:** 2
+**Needs:** office, windows-host, display-session
+**Surface:** no
+
+**Build order:**
+
+1. Add the status bar capture. Done when: its fake-tree test passes.
+2. Capture Word's status bar. Done when: `design/inventory/word/statusbar.json` holds every menu item.
+
+- [ ] Add `--statusbar` to `scripts/capture-ui.py` for `--app word`: record each item the status bar shows (`statusItem`, `order`, left or right zone, bounds), then open the Customize Status Bar menu with a right click and record each of its items in order with its checked state as the default, then close the menu with Escape without changing any, written through the tool's existing publish path (temporary file, then replace) and merged with `--merge` like a ribbon capture. Done when: a test in `scripts/tests/test_capture_ui.py` over the file's fake UI Automation tree (`E`, `FakeApp`) produces the bar's items and the menu's items with their default states, and a refusal test shows the mode exits non-zero naming the surface when it cannot be opened. Cheaper substitute: a hand-written file, which no capture can check again on a new Office build.
+- [ ] Capture Word's status bar on this PC with `python scripts/capture-ui.py --app word --statusbar` into `design/inventory/word/statusbar.json`. Done when: every menu item has `order` and a default on or off state, and the checker exits 0. Cheaper substitute: only the items visible by default.
+- [ ] Commit: `inventory: capture Word status bar`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` passes and `python scripts/check-inventory.py design/inventory/word` exits 0 with `design/inventory/word/statusbar.json` holding the Customize Status Bar menu's items.
+
+## 34. Word Dialogs
+
+Every dialog reachable from a Word ribbon dialog launcher or from Backstage: its tabs and its controls in order, with labels and control types. **Corrected 2026-11-13:** split from §6, which bundled six capture surfaces, each needing its own capture mode in `scripts/capture-ui.py` (the tool knew only the ribbon and the shell); one surface per section.
+
+**Phase:** 2
+**Needs:** office, windows-host, display-session
+**Surface:** no
+
+**Build order:**
+
+1. Add the dialog capture. Done when: its fake-tree test passes.
+2. Capture Word's dialogs. Done when: `design/inventory/word/dialogs.json` holds at least the ten named.
+
+- [ ] Add `--dialogs` to `scripts/capture-ui.py` for `--app word`: open each dialog by its launcher (the `dialogLauncher` controls of `design/inventory/word/ribbon.json`) or Backstage entry, record one `dialog` record with a `dialogTab` per tab and its controls in order (label, control type), and close it with Cancel or Escape so nothing in the document changes, written through the tool's existing publish path (temporary file, then replace) and merged with `--merge` like a ribbon capture. Done when: a test in `scripts/tests/test_capture_ui.py` over the file's fake UI Automation tree (`E`, `FakeApp`) produces a dialog with two tabs and their controls, and records the Cancel, and a refusal test shows the mode exits non-zero naming the surface when it cannot be opened. Cheaper substitute: a hand-written file, which no capture can check again on a new Office build.
+- [ ] Capture Word's dialogs on this PC with `python scripts/capture-ui.py --app word --dialogs` into `design/inventory/word/dialogs.json`, against a scratch document so a dialog that needs a selection (Insert Table, Bookmark) has one. Done when: Font, Paragraph, Page Setup, Find and Replace, Insert Table, Symbol, Index, Table of Contents, Bookmark and Mail Merge Recipients exist at minimum, with their tabs and controls, and the checker exits 0. Cheaper substitute: dialog titles without controls.
+- [ ] Commit: `inventory: capture Word dialogs`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` passes, `python scripts/check-inventory.py design/inventory/word` exits 0, and `design/inventory/word/dialogs.json` holds at least 10 `dialog` records.
+
+## 35. Word Context Menus and Mini Toolbar
+
+Word's right-click menus (text, table, picture, shape, header and footer, hyperlink, spelling error, tracked change, comment) and the mini toolbar: one record per item in order, submenus one level deep. **Corrected 2026-11-13:** split from §6, which bundled six capture surfaces, each needing its own capture mode in `scripts/capture-ui.py` (the tool knew only the ribbon and the shell); one surface per section.
+
+**Phase:** 2
+**Needs:** office, windows-host, display-session
+**Surface:** no
+
+**Build order:**
+
+1. Add the menu capture. Done when: its fake-tree test passes.
+2. Capture Word's menus. Done when: `design/inventory/word/menus.json` holds each context named.
+
+- [ ] Add `--menus` to `scripts/capture-ui.py` for `--app word`: in the contextual fixture document (`--fixture`), select each kind of content in turn, open its context menu with Shift+F10, record one `contextMenu` record with its `menuItem` records in order and each submenu one level deep, record the `miniToolbar` the selection shows, and close the menu with Escape, written through the tool's existing publish path (temporary file, then replace) and merged with `--merge` like a ribbon capture. Done when: a test in `scripts/tests/test_capture_ui.py` over the file's fake UI Automation tree (`E`, `FakeApp`) produces a context menu with a submenu and a mini toolbar, and a refusal test shows the mode exits non-zero naming the surface when it cannot be opened. Cheaper substitute: a hand-written file, which no capture can check again on a new Office build.
+- [ ] Capture Word's menus on this PC with `python scripts/capture-ui.py --app word --menus` into `design/inventory/word/menus.json`. Done when: each context named in this section has its menu captured with submenus one level deep, the mini toolbar is recorded, and the checker exits 0. Cheaper substitute: the text context menu only.
+- [ ] Commit: `inventory: capture Word context menus and mini toolbar`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` passes and `python scripts/check-inventory.py design/inventory/word` exits 0 with `design/inventory/word/menus.json` holding nine `contextMenu` records and a `miniToolbar`.
 
 ## Verification
 

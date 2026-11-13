@@ -1074,7 +1074,9 @@ class PerAppAuthoring(unittest.TestCase):
     """This repository's own tree: an app's sections are authored when its own inventory is done (D03 T01 §30,
     decision 44 of docs/specs/2026-10-23-campaign-scope-design.md)."""
 
-    INVENTORY = {"word": (5, 6), "excel": (7, 8), "powerpoint": (9, 10), "visio": (11, 12), "project": (13, 14),
+    # Word's inventory is the ribbon (§5) and, split on 2026-11-13, Backstage (§6), Options (§31), panes (§32), the
+    # status bar (§33), dialogs (§34) and context menus (§35).
+    INVENTORY = {"word": (5, 6, 31, 32, 33, 34, 35), "excel": (7, 8), "powerpoint": (9, 10), "visio": (11, 12), "project": (13, 14),
                  "outlook": (15, 16)}
     AUTHORING = {19: ("word", 7), 20: ("excel", 8), 21: ("powerpoint", 9), 22: ("outlook", 12), 23: ("visio", 10),
                  24: ("project", 11)}  # authoring section: (the app it writes, its surface chapter in D02 T02)
@@ -1105,11 +1107,15 @@ class PerAppAuthoring(unittest.TestCase):
     def test_each_later_app_reaches_its_own_inventory_and_words_and_no_other(self):
         for number, (app, _) in self.AUTHORING.items():
             reached = self.reach(f"D03 T01 §{number}") & self.inventory(*self.INVENTORY)
-            self.assertEqual(reached, self.inventory(app, "word"), f"D03 T01 §{number}")
+            if app == "word":
+                self.assertEqual(reached, self.inventory("word"), f"D03 T01 §{number}")
+            else:  # its own app's, and the parts of Word's the shared chapters are written from: no other app's
+                self.assertEqual(reached - self.inventory("word"), self.inventory(app), f"D03 T01 §{number}")
+                self.assertLessEqual({"D02 T01 §5", "D02 T01 §6"}, reached, f"D03 T01 §{number}")
 
     def test_the_platform_keeps_what_it_is_written_from(self):
         reached = self.reach("D03 T01 §17")
-        needed = {"D02 T01 §4", "D02 T01 §5", "D02 T01 §6", "D02 T02 §3", "D02 T02 §4", "D02 T02 §5", "D02 T02 §6",
+        needed = {"D02 T01 §4", "D02 T01 §5", "D02 T01 §6", "D02 T01 §31", "D02 T01 §33", "D02 T02 §3", "D02 T02 §4", "D02 T02 §5", "D02 T02 §6",
                   "D03 T01 §12", "D02 T01 §29", "D02 T01 §30"}
         self.assertEqual(needed - reached, set())
 

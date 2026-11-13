@@ -41,9 +41,9 @@ title: "TODO-02 -- Interface Specification"
 | 2 | §2 | Command glyph decision | §1 | [ ] |
 | 3 | §3 | Shell layout chapter | §1, D02 T01 §4 | [ ] |
 | 4 | §4 | Ribbon component chapter | §3, D02 T01 §5 | [ ] |
-| 5 | §5 | Backstage chapter | §3, D02 T01 §6 | [ ] |
-| 6 | §6 | Status bar chapter | §3, D02 T01 §6 | [ ] |
-| 7 | §7 | Word surface chapter | §2, §4, §5, §6, D02 T01 §6 | [ ] |
+| 5 | §5 | Backstage chapter | §3, D02 T01 §6, D02 T01 §31 | [ ] |
+| 6 | §6 | Status bar chapter | §3, D02 T01 §33 | [ ] |
+| 7 | §7 | Word surface chapter | §2, §4, §5, §6, D02 T01 §32, D02 T01 §34, D02 T01 §35 | [ ] |
 | 8 | §8 | Excel surface chapter | §2, §4, §5, §6, D02 T01 §8 | [ ] |
 | 9 | §9 | PowerPoint chapter | §2, §4, §5, §6, D02 T01 §10 | [ ] |
 | 10 | §10 | Visio surface chapter | §2, §4, §5, §6, D02 T01 §12 | [ ] |
