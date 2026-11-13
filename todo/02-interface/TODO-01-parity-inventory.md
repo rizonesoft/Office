@@ -56,7 +56,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 15 | §15 | Outlook ribbons | §3, §19, §23, §24, §26 | [ ] |
 | 16 | §16 | Outlook panes, dialogs | §15, §17 | [ ] |
 | 17 | §17 | Keyboard shortcuts | §1, §20, §23, §26 | [x] |
-| 18 | §18 | Inventory coverage report | §4, §5, §19, §25 | [ ] |
+| 18 | §18 | Inventory coverage report | §4, §5, §19, §25 | [x] |
 | 19 | §19 | Control ID baseline | §1, §21 | [x] |
 | 20 | §20 | Word command catalogue | §1, §2, §21 | [x] |
 | 21 | §21 | Microsoft-free inventory | §1 | [x] |
@@ -545,9 +545,12 @@ The report turns the inventory into the parity scoreboard: counts per app and ki
 - [x] Report an app that has a `baseline.json` and no captured record file as one `pending inventory` row in `scripts/inventory-report.py`, with its baseline count and exit 0, so the report is built and proved on the inventories that exist (the shell's and Word's). Done when: a test over a fixture with one captured app and one baseline-only app prints the captured app's counts and the other app's `pending inventory` row, and exits 0. Cheaper substitute: failing, or printing a row of zeros, for an app nobody has captured yet. **Corrected 2026-11-12:** added by D03 T01 §30 (decision 44 of `docs/specs/2026-10-23-campaign-scope-design.md`): this section depended on every app's inventory (§6, §8, §10, §12, §14, §16) and on §17, none of which the tool reads to be built; it now depends on §4, §5, §19 and §25, and D03 T01 §13 requires a report with no pending app.
 - [x] Add `--check` to `scripts/inventory-report.py`: generate the report again and exit 1, naming `design/inventory/COVERAGE.md`, when the committed file differs; and run it from `scripts/hooks/pre-commit` for commits that stage `design/inventory/`, with a test in `scripts/tests/test_pre_commit_hook.py`. Done when: a test shows a stale `COVERAGE.md` exits 1 and a fresh one exits 0, and staging a new inventory record without the regenerated report refuses the commit. Cheaper substitute: a checklist item in each inventory section asking for the report to be run again, which nothing enforces. **Corrected 2026-11-12:** added by D03 T01 §30, so the report is run again as each inventory lands. **Corrected 2026-11-13 (fact check at start):** the hook now leaves at once unless `todo/` is staged; it is restructured so a commit staging `design/inventory/` runs `inventory-report.py --check`, one staging `todo/` runs the plan check, and one staging both runs both, with the existing hook tests still passing. **Corrected 2026-11-13 (plan review, gaps 2 and 3):** the coverage check also runs for a commit staging `todo/`, since a stamp changes the implemented count; and it reads what is committed: `design/inventory/` (with `COVERAGE.md`) and `todo/` may hold no unstaged or untracked change when it runs. Done when, in addition: tests show stamping and unstamping an implementing section without regenerating the report refused, and a regenerated but unstaged `COVERAGE.md` refused.
 - [x] Write `scripts/tests/test_inventory_report.py`. Done when: the suite passes and fails when the implemented scan is disabled.
-- [ ] Commit: `inventory: add coverage report`
+- [x] Commit: `inventory: add coverage report`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_inventory_report.py"` passes and `python scripts/inventory-report.py` exits 0.
+
+> **Verified:** 2026-11-13 | §18 | c7fda83c4773e05f833aca42cb9aafc23018d2bd
+> **Review:** `docs/reviews/d02-t01-s18.json`
 
 ## 19. Control ID Baseline
 
