@@ -12,12 +12,9 @@ git diff --cached --name-only -- design/inventory/ | grep -q . && inventory=1
 [ -n "$todo$inventory" ] || exit 0
 
 # The checks read the working tree, so what they read must be exactly what is being committed: nothing unstaged and
-# nothing untracked, ignored files included, since the checks read those too. The plan check reads the TODO files and
-# the review receipts and findings they cite (docs/reviews/); the coverage check reads the TODO files and the
-# inventory with its report.
-dirs="todo/ design/inventory/"
-[ -n "$todo" ] && dirs="todo/ docs/reviews/ design/inventory/"
-for dir in $dirs; do
+# nothing untracked, ignored files included, since the checks read those too. Both read the TODO graph, which reads
+# the review receipts and findings the TODO files cite (docs/reviews/); the coverage check reads the inventory too.
+for dir in todo/ docs/reviews/ design/inventory/; do
     if ! git diff --quiet -- "$dir" || [ -n "$(git ls-files --others -- "$dir")" ]; then
         echo "pre-commit: $dir has unstaged or untracked changes; stage them (or stash them) so the plan check sees what is committed" >&2
         exit 1

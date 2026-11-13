@@ -15,8 +15,9 @@ section claims it on a `> **Implements:**` line (scripts/lib/inventory_claims.py
 occurrence of an `idMso` on its `tab` (a row with no `idMso` is counted apart, since nothing can match it): on a
 tab or Backstage page the inventory captured, it is captured when a record with its `idMso` sits under that page's
 record, documented absent when REFERENCE.md lists it
-(scripts/lib/word_absences.py), and unmatched otherwise. A Quick Access Toolbar row matches any record of the app or
-the shell. A row on any other surface is counted as pending until that surface is captured. An app with a baseline
+(scripts/lib/word_absences.py), and unmatched otherwise. A row on no tab is captured when any record of the app or
+the shell holds its `idMso`; otherwise a Quick Access Toolbar row is unmatched and a row of any other placement is
+counted as pending until its surface is captured. An app with a baseline
 and no captured record is one `pending inventory` row. The report holds no value of the run, so writing it twice
 gives the same bytes. A filtered run (--app, --kind, --cited-in, --missing) only prints. Exit 0 written or printed;
 1 when --check finds the report stale or a write fails; 2 when an input cannot be read.
@@ -101,8 +102,10 @@ def baseline_counts(app, rows, app_records, shell_records):
             state = "captured" if (mso, tab) in held else "absent" if mso in absent else "unmatched"
         elif tab and tab in absent:
             state = "absent"  # a row on a tab the reconciliation documents as absent
+        elif not tab and mso in anywhere:
+            state = "captured"  # a row on no tab matches any record of the app or the shell holding its idMso
         elif not tab and placement == "quickAccessToolbar":
-            state = "captured" if mso in anywhere else "unmatched"
+            state = "unmatched"
         else:
             state = "pending"
             pending[placement or "none"] = pending.get(placement or "none", 0) + 1

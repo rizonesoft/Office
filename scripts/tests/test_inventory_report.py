@@ -6,6 +6,8 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import shutil
+import subprocess
 import sys
 import tempfile
 from types import SimpleNamespace
@@ -15,6 +17,8 @@ from unittest import mock
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS / "lib"))
 import inventory_claims  # noqa: E402  (scripts/lib is put on the path just above)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import test_todo_stamp as tts  # noqa: E402  (the stamp tests' fixture makes a real stamped section)
 
 spec = importlib.util.spec_from_file_location("inventory_report", SCRIPTS / "inventory-report.py")
 ir = importlib.util.module_from_spec(spec)
@@ -53,6 +57,7 @@ BASELINE = [row("TabHome", "tab", "coreTab"), row("TabReviewWord", "tab", "coreT
             row("BlockAuthorsMenu", "menu", "coreTab", "TabReviewWord"),
             row("BlockAuthorsMenu", "menu", "coreTab", "TabDeveloper"),
             row("SyntexThing", "button", "coreTab", "TabSyntex"), row("CopyMenu", "button", "contextMenu"),
+            row("Bold", "toggleButton", "contextMenu"),
             row("FileSave", "button", "quickAccessToolbar"), row(None, "button", "coreTab", "TabHome")]
 
 
@@ -104,9 +109,10 @@ class Counts(Fixture):
 
     def test_the_baseline_states(self):
         code, out, _ = self.run_report()
-        # 13 rows: 3 tabs + font, bold, italic, 2 block-authors and the QAT row captured (9); TabSyntex and the row on
-        # it documented absent (2); the context menu row pending (1); the row with no idMso apart (1)
-        self.assertIn("| word | 13 | 9 | 2 | 0 | 1 | 1 |", out)
+        # 14 rows: 3 tabs + font, bold, italic, 2 block-authors, the QAT row and the context menu's Bold (held by the
+        # ribbon's record) captured (10); TabSyntex and the row on it documented absent (2); the context menu row no
+        # record holds pending (1); the row with no idMso apart (1)
+        self.assertIn("| word | 14 | 10 | 2 | 0 | 1 | 1 |", out)
         self.assertIn("| word | contextMenu | 1 |", out)
 
     def test_a_removed_control_is_named_and_a_documented_absence_is_not(self):
@@ -121,9 +127,13 @@ class Counts(Fixture):
         _, out, _ = self.run_report("--missing")
         self.assertEqual(out, "word\tBlockAuthorsMenu\tmenu\tTabDeveloper\n")  # Review's copy still matches
 
-    def test_a_quick_access_row_matches_the_shells_record(self):
+    def test_a_row_on_no_tab_matches_any_record_of_the_app_or_the_shell(self):
         _, out, _ = self.run_report("--missing")
-        self.assertEqual(out, "")
+        self.assertEqual(out, "")  # the QAT's FileSave is the shell's; the context menu's Bold is the ribbon's
+        shell = self.root / "design" / "inventory" / "shell" / "chrome.json"
+        shell.write_text("[]", encoding="utf-8")
+        _, out, _ = self.run_report("--missing")
+        self.assertEqual(out, "word\tFileSave\tbutton\t\n")  # round 1: a row with no tab was matched only on the QAT
 
 
 class Implemented(Fixture):
@@ -239,6 +249,74 @@ class Publication(Fixture):
         self.assertEqual(self.report.read_bytes(), before)
         self.assertEqual(sorted(p.name for p in self.report.parent.iterdir()), ["COVERAGE.md", "excel", "shell",
                                                                                 "word"])  # no temporary left
+
+
+def stamp_fixture():
+    """The stamp tests' fixture (a TODO tree whose section 1 can be stamped for real), with section 1 claiming
+    `word.home`, a Word inventory holding it, and the scripts the pre-commit hook runs. Built here rather than
+    subclassed at module level, so the stamp tests' own tests are not collected again."""
+    class Claiming(tts.Stamp):
+        def write(self, text, *args, **kwargs):
+            text = text.replace("**Test checkpoint:**", "> **Implements:** `word.home`\n\n**Test checkpoint:**", 1)
+            inv = self.root / "design" / "inventory" / "word"
+            inv.mkdir(parents=True, exist_ok=True)
+            (inv / "ribbon.json").write_text(json.dumps([rec("word.home", "tab", idMso="TabHome")]),
+                                             encoding="utf-8")
+            if not (self.root / "scripts").exists():  # the scripts the hook runs, and the reviewer kit they load
+                shutil.copytree(SCRIPTS, self.root / "scripts", ignore=shutil.ignore_patterns("tests", "__pycache__"))
+            (self.root / "scripts/hooks/pre-commit").chmod(0o755)
+            return super().write(text, *args, **kwargs)
+    return Claiming("test_stamp_writes_receipt_and_validates")
+
+
+@unittest.skipUnless(shutil.which("git"), "needs git (which runs the hook with its own shell)")
+class RealStamp(unittest.TestCase):
+    """Round 1: a real stamp and unstamp of a section that claims a record, read by the TODO graph and held by the
+    real pre-commit hook, with no inventory change."""
+
+    def setUp(self):
+        self.fx = stamp_fixture()
+        self.fx.setUp()
+        self.addCleanup(self.fx.tearDown)
+        self.root = self.fx.root
+
+    def report(self, *argv):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            ir.main(list(argv), root=self.root)
+        return out.getvalue() + err.getvalue()
+
+    def git(self, *args):
+        return subprocess.run(["git", "-C", str(self.root), *args], capture_output=True, text=True)
+
+    def commit_through_hook(self):
+        self.git("add", "-A")
+        return self.git("commit", "-qm", "step")
+
+    def test_a_stamp_and_an_unstamp_move_the_count_and_the_hook_holds_both(self):
+        self.report()  # the report as it stands before the stamp, committed before the hook is enabled
+        self.git("add", "-A")
+        self.git("commit", "-qm", "report")
+        self.git("config", "core.hooksPath", "scripts/hooks")
+        self.assertIn("1 records, 0 implemented", self.report("--app", "word"))
+
+        self.fx.tick_work()
+        self.fx.stamp("D00 T01 §1", self.fx.sha, self.fx.reviews, ["true -> ok"], "2026-10-13", sync_plan=True)
+        self.assertIn("1 records, 1 implemented", self.report("--app", "word"))
+        refused = self.commit_through_hook()
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertIn("design/inventory/COVERAGE.md is stale", refused.stderr)
+        self.report()
+        done = self.commit_through_hook()
+        self.assertEqual(done.returncode, 0, done.stderr)
+
+        tts.tg.unstamp(self.root, "D00 T01 §1", "test", "2026-10-14T00:00:00Z")
+        subprocess.run([sys.executable, str(self.root / "scripts/todo-graph.py"), "plan", "--sync"], check=True,
+                       capture_output=True, cwd=self.root)  # the unstamp changes the plan; only the report is stale
+        self.assertIn("1 records, 0 implemented", self.report("--app", "word"))
+        refused = self.commit_through_hook()
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertIn("design/inventory/COVERAGE.md is stale", refused.stderr)
 
 
 class Committed(unittest.TestCase):

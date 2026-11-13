@@ -146,6 +146,18 @@ class PreCommitHook(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("design/inventory/COVERAGE.md is stale", result.stderr)
 
+    def test_an_inventory_commit_with_an_unstaged_review_file_is_refused(self):
+        # Round 1: the coverage check reads the TODO graph, which reads the receipts and findings in docs/reviews/.
+        reviews = self.root / "docs/reviews"
+        reviews.mkdir(parents=True, exist_ok=True)
+        (reviews / "note.md").write_text("draft\n", encoding="utf-8")
+        self.record("word.insert", "tab")
+        self.report()
+        self.git("add", "design/inventory/")
+        result = self.commit()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("docs/reviews/ has unstaged or untracked changes", result.stderr)
+
     def test_a_commit_without_todo_changes_is_not_checked(self):
         (self.root / "notes.txt").write_text("x\n", encoding="utf-8")
         (self.root / "todo/00-workspace/TODO-01-a.md").write_text("broken\n", encoding="utf-8")  # unstaged, untouched
