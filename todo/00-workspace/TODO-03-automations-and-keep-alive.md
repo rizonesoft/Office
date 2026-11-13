@@ -83,6 +83,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 45 | §59 | A parked section is neither ready nor in progress | -- | [x] |
 | 46 | §60 | CI runs the tooling tests in parallel jobs | -- | [x] |
 | 47 | §61 | A reconciliation honours an owner decision | -- | [x] |
+| 48 | §62 | Graph reads batch their git calls | -- | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -1401,6 +1402,29 @@ Filed 2026-11-13 from §53's tenth reconciliation. Two obligations that reviews 
 
 > **Verified:** 2026-11-13 | §61 | 6e66f7143bd5abf0c951fd59b526df2395e146cd
 > **Review:** `docs/reviews/d00-t03-s61.json`
+## 62. Graph Reads Batch Their Git Calls
+
+Filed 2026-11-13T12:25:00Z by the lead, from a measurement made while D02 T01 §22 was being prepared. On this PC, with 172 sections of which 98 are stamped, one read of the TODO graph (`todo_graph.graph()`) takes 24.6 seconds, 22.8 of them in `receipt_data_ok`, which starts 349 `git` processes: 96 `show <commit>:.conclave/reviewers.toml`, 95 `diff --name-only` between two commits, 95 `merge-base --is-ancestor`, and 63 `show <commit>:<TODO file>`. Every `validate`, `plan --check`, `plan --sync`, `query`, `resolve`, `stamp` and `scripts/inventory-report.py` run reads the graph; the pre-commit hook reads it three times, so a commit already waits over a minute; and the cost grows with every stamp, so at the plan's full size (84 TODO files are still to be authored) a commit would wait many minutes. Each of those calls reads a fact that can never change (a file as a commit holds it, the files that differ between two commits, whether one commit descends from another), so the answers can come from one long-lived `git cat-file --batch` process, one read of the commit graph, and a comparison of two trees made only where a pass's schedule has a lens that depends on it. No answer is kept between runs: a cache on disk could be stale or edited, and a receipt check that trusts it would no longer be a check.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Add the batched reader to `scripts/lib/todo_graph.py`. Done when: a file at a commit, an ancestry question and a changed-files question are each answered without a process of their own, with the answers `git` gives.
+2. Route the receipt checks of a graph read through it. Done when: the number of `git` processes a graph read starts no longer depends on how many sections are stamped, and every refusal reads as before.
+3. Measure on this repository. Done when: the before and after times and process counts are in the section's findings file.
+
+- [ ] Add a `GitFacts` class to `scripts/lib/todo_graph.py` whose `show(commit, path)` answers through one `git cat-file --batch` process, started on first use and stopped when the graph read ends (a context manager that closes the process's input, waits for it and kills it if it has not exited). Done when: tests in `scripts/tests/test_todo_graph.py` over a fixture repository show the bytes equal to `git show <commit>:<path>` for a text file, a file with no final newline and a binary file; a path the commit does not hold and a commit the repository does not hold each answered as absent, the way a non-zero `git show` is read today, with the next question still answered correctly; and no `git` process left once the read has ended. Cheaper substitute: a cache file under `build/` that keeps earlier answers between runs, which a stale or edited file could make lie about a receipt; refused.
+- [ ] Answer `is_ancestor(older, newer)` inside a graph read from one read of the commit graph (`git rev-list --parents HEAD`, made once on first use) when both commits are in it, and by today's `merge-base --is-ancestor` call otherwise. Done when: tests over a fixture history with a merge show the same answer as the call for a commit and itself, an ancestor, a descendant, two commits on diverged lines, and a commit outside `HEAD`'s history, and one `rev-list` process however many questions are asked. Cheaper substitute: comparing commit dates, which a rebased or amended commit breaks; refused.
+- [ ] Ask for the files changed between two candidates (`changed_paths`, in `schedule_ok`) only for a pass whose replayed schedule holds a conditional lens for that kind of pass, since nothing else reads the answer. Done when: a graph read over a fixture whose pin has no `[[schedule.conditional]]` entry starts no `diff` process, and the existing tests of conditional lenses in `scripts/tests/test_todo_graph.py` pass unchanged. Cheaper substitute: dropping the comparison, which would accept a receipt whose pass ran without a lens its changed files called for; refused.
+- [ ] Route every `show`, `is_ancestor` and `changed_paths` question asked under `receipt_data_ok` and `schedule_ok` during `graph()` through that read's `GitFacts`, and leave `stamp`, `unstamp` and `scripts/review-dispatch.py`, which check one section, on their direct calls. Done when: a test counts the `git` processes of a graph read over fixture trees with 2 and with 12 stamped three-pass sections and finds the same number, at most 4; every existing test of `scripts/tests/test_todo_graph.py` passes without a change to its expectations; and a fabricated stamp commit, a candidate that is not an ancestor of the stamped commit and a pin missing at the plan review's candidate are each refused by `graph()` with the message they have today. Cheaper substitute: skipping receipt checks on sections stamped long ago, which is how a forged or broken receipt would go unseen; refused.
+- [ ] Measure `python scripts/todo-graph.py validate` on this repository before and after the change (seconds, and `git` processes started, counted by a wrapper around `subprocess.run` and `subprocess.Popen`), and record both under a `## Writer note:` heading in `docs/reviews/00-workspace/D00-T03-s62.md`. Done when: the run after the change starts at most 4 `git` processes and both measurements are quoted there with the section count of the day.
+- [ ] Commit: `todo-graph: answer a graph read's git questions from one batch process`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_todo_graph.py"` passes, with the process-count test among its tests, and `python scripts/todo-graph.py validate` prints `valid:`.
+
 ## Verification
 - `python -m unittest discover -s scripts/tests` passes on a fresh clone.
 - `Get-ScheduledTask -TaskPath '\Office\'` lists every task in `tasks.json`, and `README.md` matches it.
