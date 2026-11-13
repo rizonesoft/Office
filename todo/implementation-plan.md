@@ -296,4 +296,4 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 
 Progress: 94/169 verified sections, 20 ready to run now, 1 parked, 84 TODO files still to author (not counted here).
 
-Checklist: 671/1199 items completed (includes Commit items).
+Checklist: 678/1199 items completed (includes Commit items).

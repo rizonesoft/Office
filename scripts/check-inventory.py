@@ -88,6 +88,30 @@ def is_word_ribbon(path, inventory=INVENTORY):
     )
 
 
+def is_word_backstage(path, inventory=INVENTORY):
+    """Whether `path` is the repository's Word Backstage inventory (`design/inventory/word/backstage.json`)."""
+    p = Path(path)
+    return Path(inventory).resolve() == INVENTORY.resolve() and \
+        p.resolve() == (INVENTORY / "word" / "backstage.json").resolve()
+
+
+def check_word_backstage(f, data, require_behaviour):
+    """Problems in word/backstage.json beyond the record schema (D02 T01 §6): the baseline reconciliation, the
+    navigation actions, no add-in or private record, and, with --require-behaviour, a behaviour on every actionable
+    record. The rules are scripts/lib/word_backstage.py's."""
+    sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+    import word_backstage
+    try:
+        baseline = json.loads((INVENTORY / "word" / "baseline.json").read_text(encoding="utf-8"))
+        reference = (INVENTORY / REFERENCE).read_text(encoding="utf-8")
+        word_backstage.validate(data, baseline, word_backstage.ABSENT, reference, require_behaviour=require_behaviour)
+    except (OSError, ValueError) as exc:
+        return [f"{f}: the baseline or {REFERENCE} cannot be read: {exc}"]
+    except word_backstage.Invalid as exc:
+        return [f"{f}: {exc}"]
+    return []
+
+
 def check_word_ribbon(f, data):
     """Problems in word/ribbon.json beyond the record schema: required built-in and contextual tabs, baseline tab
     reconciliation, non-empty hierarchies, bounds, KeyTips, expanded submenus and galleries, and behaviour rules."""
@@ -561,6 +585,8 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             problems += check_shell_chrome(f, data)
         if is_word_ribbon(f, inventory):
             problems += check_word_ribbon(f, data)
+        if is_word_backstage(f, inventory):
+            problems += check_word_backstage(f, data, require_behaviour)
         # The schema refuses links in its typed fields; links() covers every other string and reports once. The
         # locations the schema already reported are gathered once per file, not once per record.
         reported = {p.split(": ", 1)[0] for p in schema_problems}

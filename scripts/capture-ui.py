@@ -41,6 +41,7 @@ import time
 import zlib
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
+import word_backstage  # noqa: E402  (scripts/lib, on the path above)
 from office_com import (INVENTORY, OwnProcess, Refused, installed_build, publish, reference_build,  # noqa: E402
                         same_build, transacted_replace, transacted_restore, transacted_unlink)
 
@@ -378,6 +379,25 @@ class Element:
 
     def collapse(self):
         self.pattern("expand").Collapse()
+
+    def invoke(self):
+        """Press a plain button (Backstage's File tab and navigation entries expose Invoke only)."""
+        u = self.uia.U
+        raw = self.raw.GetCurrentPattern(u.UIA_InvokePatternId)
+        if not raw:
+            raise Refused(f"{self.name or self.control_type!r} cannot be invoked")
+        raw.QueryInterface(u.IUIAutomationInvokePattern).Invoke()
+
+    def activate(self):
+        """Select a list entry, or press it when it is a button: how a navigation entry is chosen."""
+        try:
+            selectable = self.pattern("select") is not None
+        except Exception:
+            selectable = False
+        if selectable:
+            self.select()
+        else:
+            self.invoke()
 
 
 class Uia:
@@ -2402,8 +2422,14 @@ class Launched:
         try:
             return self._call_com(lambda: self._close_impl(wait), timeout=wait + 10.0 if apt is not None else None)
         except TimeoutError:
+            # Word can take longer than the wait to quit after a Backstage session (D02 T01 §6). Its own process
+            # leaving soon after is a close, not a failure: only an instance this tool started, holding nothing
+            # else, is ever asked to quit, so nothing of the operator's was in it. One that stays is refused.
+            gone = self.proc is not None and self.proc.exited(CLOSE_GRACE_SECONDS)
             if self.proc is not None:
                 self.proc.close()
+            if gone:
+                return None
             raise Refused(f"the {self.exe} instance did not respond while closing") from None
         finally:
             if apt is not None:
@@ -2730,6 +2756,8 @@ def popup_items(root, popup_roots=(), label="popup", target=None, exclude_rids=f
 
 
 def capture(args, launched, uia, win):
+    if getattr(args, "backstage", False) and args.app != "word":
+        raise Refused("--backstage captures Word's Backstage view only (D02 T01 §6)")
     row = APPS[args.app][0]
     expected = reference_build(app=row)
     if installed_build() != expected:
@@ -2764,6 +2792,19 @@ def capture(args, launched, uia, win):
     problems = profile_problems(state, monitor, launched.language(), ribbon_h)
     identifiers = baseline_ids(args.app)
     ctx = Context(args.app, expected, identifiers, origin=None if problems else state["origin"])
+    if getattr(args, "backstage", False):
+        launched.check_alone()
+        check_licensing()
+        records = capture_word_backstage(launched, uia, win, ctx, identifiers)
+        check_licensing()
+        if ctx.origin is not None and not same_geometry(state, win.state(launched.hwnd)):
+            ctx.drop_geometry("the window moved or changed size during the capture")
+        if ctx.origin is None:
+            for rec in records:
+                for key in ("bounds", "captureProfile", "size"):
+                    rec.pop(key, None)
+            problems += [why for why in ctx.dropped_reasons if why not in problems]
+        return records, problems, ctx
     if getattr(args, "shell", False):
         launched.check_alone()
         check_licensing()
@@ -2846,6 +2887,150 @@ def capture(args, launched, uia, win):
             if why not in problems:
                 problems.append(why)
     return records, problems, ctx
+
+
+# D02 T01 §6: Word's Backstage view. The record rules live in scripts/lib/word_backstage.py.
+CLOSE_GRACE_SECONDS = 60.0  # after a close that ran out of time, how long its process may take to leave
+BACKSTAGE_READY_SECONDS = 15.0  # longest wait for a page's content to load before the capture fails on that page
+
+
+def backstage_tree(element, identifiers, depth=0, limit=24):
+    """A plain tree of one element for word_backstage.record_tree, each node keeping its Element under `_el`."""
+    node = {"role": element.control_type, "name": element.name, "automation_id": element.automation_id,
+            "class_name": element.class_name, "_el": element}
+    if element.automation_id and element.automation_id in identifiers:
+        node["idMso"] = element.automation_id
+    if depth < limit:
+        node["children"] = [backstage_tree(k, identifiers, depth + 1, limit) for k in element.children()]
+    return node
+
+
+def _backstage_view(uia, hwnd):
+    return find(uia.element(hwnd), lambda e: e.automation_id == "BackstageView" and e.control_type == "Pane", depth=20)
+
+
+def _page_content(view, label):
+    """The page's content group in the Backstage pane, once it holds something a record is made for."""
+    if view is None:
+        return None
+    group = next((k for k in view.children() if k.control_type == "Group" and k.name == label), None)
+    if group is None:
+        return None
+    for el in descendants(group, depth=12):
+        if el.control_type in word_backstage.CONTROL_TYPES or el.control_type == "Group" and el.name.strip():
+            if not (el.name or "").lower().startswith("loading"):
+                return group
+    return None
+
+
+def capture_word_backstage(launched, uia, win, ctx, identifiers, ready=BACKSTAGE_READY_SECONDS):
+    """Records of Word's Backstage view: one `backstagePage` per page with its expanded content, and one `control`
+    per navigation action, which is never invoked. Fails, naming the page, when a page does not load in time; the
+    caller then publishes nothing."""
+    hwnd = launched.hwnd
+    root = uia.element(hwnd)
+    file_tab = wait_for(lambda: find(root, lambda e: e.automation_id == "FileTabButton"))
+    if file_tab is None:
+        raise Refused("the File tab was not found in Word's window")
+    file_tab.invoke()
+    nav = wait_for(lambda: find(uia.element(hwnd), lambda e: e.automation_id == "NavBarMenu", depth=20), seconds=ready)
+    if nav is None:
+        raise Refused("the Backstage navigation list did not appear after File was pressed")
+    records = []
+    try:
+        entries = [(e.name, e) for e in nav.children() if e.name]
+        order = 0
+        for label, entry in entries:
+            kind = word_backstage.classify(label)
+            if kind in ("back", "third-party"):
+                ctx.notes.append(f"Backstage entry {label!r} is not recorded ({kind})")
+                continue
+            if kind == "action":
+                records.append(ctx.base(word_backstage.ACTIONS[label], "control", label, order, entry,
+                                        parent=None, controlType="button"))
+                order += 1
+                continue
+            launched.check_alone()
+            entry.activate()
+            content = wait_for(lambda: _page_content(_backstage_view(uia, hwnd), label), seconds=ready)
+            if content is None:
+                raise Refused(f"the Backstage page {label!r} did not load within {ready:.0f} s")
+            pid = f"word.backstage.{word_backstage.slug(label)}"
+            extra = {"idMso": word_backstage.PAGES[label]} if label in word_backstage.PAGES else {}
+            records.append(ctx.base(pid, "backstagePage", label, order, entry, parent=None, **extra))
+            order += 1
+
+            def expand(node):
+                el = node["_el"]
+                try:
+                    if el.expand_state() is None:
+                        return None
+                    el.expand()
+                    time.sleep(0.8)
+                    items = [backstage_tree(k, identifiers, limit=6) for k in el.children()]
+                    el.collapse()
+                    time.sleep(0.3)
+                    return items
+                except Exception as exc:  # a menu that will not open is recorded without its items, and said so
+                    ctx.notes.append(f"{node.get('name')!r} on {label!r} did not open: {type(exc).__name__}")
+                    return None
+
+            def base(rid, kind, lab, o, node, parent, **extra):
+                return ctx.base(rid, kind, lab, o, node["_el"], parent=parent, **extra)
+
+            page_records = word_backstage.record_tree(pid, backstage_tree(content, identifiers), base, expand)
+            records += page_records
+            records += backstage_task_details(uia, hwnd, label, page_records, ctx, identifiers, base, expand, ready)
+    finally:
+        leave_backstage(uia, win, hwnd)
+    return word_backstage.apply_labels(records)
+
+
+def backstage_task_details(uia, hwnd, label, page_records, ctx, identifiers, base, expand, ready):
+    """Select each task of a page's detail task groups (Share, Export) and record the panel it shows under it."""
+    tasks = [r for r in page_records if r.get("kind") == "control" and r.get("parent") and
+             any(p.get("id") == r["parent"] and p.get("idMso") in word_backstage.DETAIL_TASK_GROUPS
+                 for p in page_records)]
+    out = []
+    for task in tasks:
+        element = ctx.elements.get(task["id"])
+        if element is None:
+            continue
+        before = {(k.name, k.automation_id) for k in _page_content(_backstage_view(uia, hwnd), label).children()}
+        element.activate()
+
+        def shown():
+            content = _page_content(_backstage_view(uia, hwnd), label)
+            if content is None:
+                return None
+            new = [k for k in content.children() if (k.name, k.automation_id) not in before and k.control_type == "Group"
+                   and k.automation_id not in word_backstage.TASK_GROUPS]
+            return new or None
+        panels = wait_for(shown, seconds=min(ready, 5.0))
+        if not panels:
+            ctx.notes.append(f"the {task['label']!r} task on {label!r} showed no panel of its own")
+            continue
+        tree = {"children": [backstage_tree(p, identifiers) for p in panels]}
+        out += word_backstage.record_tree(task["id"], tree, base, expand)
+    return out
+
+
+def leave_backstage(uia, win, hwnd, attempts=4):
+    """Leave the Backstage view and see that it is gone: Escape (which first closes any open menu), then the Back
+    entry. Word cannot close its document while Backstage is open, so the capture never leaves it showing."""
+    for attempt in range(attempts):
+        view = _backstage_view(uia, hwnd)
+        if view is None:
+            return
+        if attempt < attempts - 1:
+            win.dismiss_surface(hwnd, view)
+        else:
+            back = find(uia.element(hwnd), lambda e: e.automation_id == "FileTabButton" and e.name == "Back", depth=20)
+            if back is not None:
+                back.activate()
+        if wait_for(lambda: _backstage_view(uia, hwnd) is None, seconds=3.0):
+            return
+    raise Refused("the Backstage view could not be left; Word is left as it is")
 
 
 def same_geometry(before, after):
@@ -7019,6 +7204,16 @@ WORD_FORBIDDEN_CIRCULAR_BEHAVIOUR_PHRASES = (
 )
 
 
+def word_backstage_check(records, require_behaviour=True):
+    """`word_backstage.validate` against the committed baseline, absence list and REFERENCE.md; Refused on failure."""
+    baseline = json.loads((INVENTORY / "word" / "baseline.json").read_text(encoding="utf-8"))
+    ref = (INVENTORY / "REFERENCE.md").read_text(encoding="utf-8")
+    try:
+        word_backstage.validate(records, baseline, word_backstage.ABSENT, ref, require_behaviour=require_behaviour)
+    except word_backstage.Invalid as exc:
+        raise Refused(f"Word Backstage inventory: {exc}") from None
+
+
 def validate_word_ribbon(records, *, require_behaviour=True, full_capture=True, require_expanded=True):
     """Validate `design/inventory/word/ribbon.json` against D02 T01 §5 completeness, KeyTip, expansion and behaviour invariants."""
     if not isinstance(records, list) or not records:
@@ -7402,6 +7597,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     which.add_argument("--tab", help="one tab, by its name as the ribbon shows it")
     which.add_argument("--all-tabs", action="store_true", help="every built-in tab the ribbon lists")
     which.add_argument("--shell", action="store_true", help="shared shell chrome and per-app shell overrides")
+    which.add_argument("--backstage", action="store_true", help="Word's Backstage view (D02 T01 §6)")
     parser.add_argument("--expand", action="store_true", help="open each menu and gallery and record its items")
     parser.add_argument("--layout", choices=("classic", "simplified"), default="classic")
     parser.add_argument("--merge", action="store_true", help="update an existing file, keeping hand-written fields")
@@ -7476,7 +7672,8 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     if not args.app:
         parser.error("the following arguments are required: --app")
     out = Path(args.out) if args.out else INVENTORY / args.app / (
-        "ribbon-simplified.json" if args.layout == "simplified" else "ribbon.json")
+        "backstage.json" if args.backstage else "ribbon-simplified.json" if args.layout == "simplified" else
+        "ribbon.json")
     if out.exists() and not args.merge:
         print(f"capture-ui: {out} exists; pass --merge to update it", file=sys.stderr)
         return 1
@@ -7512,7 +7709,11 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     try:
         unverified_records = list(ctx.unverified)
         is_canonical_word_ribbon = False
-        if args.app == "word":
+        if args.backstage:
+            if args.merge and out.exists():  # behaviour sentences and the absence list are hand-written: kept
+                records = merge(_load_existing_records(out, out.read_bytes()), records)
+            word_backstage_check(records, require_behaviour=False)
+        elif args.app == "word":
             records, unverified_records = reconcile_word_unverified(records, unverified_records)
             try:
                 is_canonical_word_ribbon = out.resolve() == (INVENTORY / "word" / "ribbon.json").resolve()
@@ -7550,7 +7751,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
                     _load_existing_records(unverified_path, current_unverified),
                     unverified_records,
                 )
-        if args.app == "word" and is_canonical_word_ribbon:
+        if args.app == "word" and is_canonical_word_ribbon and not args.backstage:
             validate_word_ribbon(records, require_behaviour=True)
         files = {out: render(records)}
         expected = {out: initial_bytes} if args.merge else {}

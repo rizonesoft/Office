@@ -4593,5 +4593,184 @@ class WordRibbon(unittest.TestCase):
             cu.time.sleep = real_sleep
 
 
+class FakeWordBackstage:
+    """A Word window whose File tab opens a Backstage view (D02 T01 §6). `pages` maps a page's label to the children
+    its content group shows, or to None for a page that never loads. Records every entry pressed."""
+
+    def __init__(self, pages, actions=("Save", "Close", "Options")):
+        self.pages, self.pressed, self.view = pages, [], None
+        self.file = self.button("File Tab", "FileTabButton", self.open)
+        self.root = E("Window", "Document1 - Word", kids=[self.file])
+        names = ["Back", *pages, *actions, "Save as Adobe PDF"]
+        self.nav = E("List", "", "NavBarMenu", kids=[self.entry(name) for name in names])
+
+    def button(self, name, aid, on_press):
+        el = E("Button", name, aid)
+        el.invoke = on_press
+        el.expand_state = lambda: None
+        return el
+
+    def entry(self, name):
+        el = E("ListItem", name, "FileTabButton" if name == "Back" else "")
+        el.expand_state = lambda: None
+
+        def press():
+            self.pressed.append(name)
+            if name in self.pages and self.pages[name] is not None:
+                self.view.kids = [E("Group", name, kids=self.pages[name])]
+            elif name in self.pages:
+                self.view.kids = [E("Group", name, kids=[E("Group", "Loading services...", kids=[E("Text", "Loading...")])])]
+            elif name == "Back":
+                self.close()
+        el.activate = press
+        return el
+
+    def open(self):
+        self.view = E("Pane", "Backstage view", "BackstageView", kids=[])
+        self.root.kids = [self.file, self.nav, self.view]
+
+    def close(self):
+        self.view = None
+        self.root.kids = [self.file]
+
+
+def menu(name, *items):
+    """A menu button that opens to its items, as Word's Backstage menus do (their items are its own children)."""
+    el = E("MenuItem", name)
+    state = {"open": False}
+    el.expand_state = lambda: 1 if state["open"] else 0
+
+    def expand():
+        state["open"] = True
+        el.kids = [E("Menu", name, kids=[E("Group", "", kids=[E("MenuItem", i) for i in items])])]
+
+    def collapse():
+        state["open"] = False
+        el.kids = []
+    el.expand, el.collapse = expand, collapse
+    return el
+
+
+class SlowClose(unittest.TestCase):
+    """D02 T01 §6: Word can take longer than the close's wait to quit after a Backstage session."""
+
+    def launched(self, exits):
+        inst = cu.Launched.__new__(cu.Launched)
+        inst.owned, inst.exe, inst._apartment = True, "WINWORD.EXE", None
+        calls = []
+
+        class Proc:
+            def exited(self, seconds):
+                calls.append(seconds)
+                return exits
+
+            def close(self):
+                calls.append("closed")
+        inst.proc = Proc()
+
+        def timed_out(fn, timeout=None):
+            raise TimeoutError
+        inst._call_com = timed_out
+        return inst, calls
+
+    def test_a_close_that_ran_out_of_time_but_whose_process_left_is_a_close(self):
+        inst, calls = self.launched(exits=True)
+        self.assertIsNone(inst.close())
+        self.assertEqual(calls, [cu.CLOSE_GRACE_SECONDS, "closed"])
+
+    def test_a_process_that_stays_after_the_grace_is_still_refused(self):
+        inst, calls = self.launched(exits=False)
+        with self.assertRaises(cu.Refused) as ctx:
+            inst.close()
+        self.assertIn("did not respond while closing", str(ctx.exception))
+        self.assertEqual(calls, [cu.CLOSE_GRACE_SECONDS, "closed"])
+
+
+class WordBackstage(unittest.TestCase):
+    """The --backstage capture against a fake Word (D02 T01 §6)."""
+
+    def run_capture(self, word, ready=0.3):
+        uia = type("U", (), {"element": lambda self, h: word.root})()
+
+        class W:
+            def dismiss_surface(self, hwnd, element):
+                word.close()
+        launched = type("L", (), {"hwnd": 5, "check_alone": lambda self: None})()
+        ctx = cu.Context("word", BUILD, set())
+        real_sleep, cu.time.sleep = cu.time.sleep, lambda s: None
+        try:
+            return cu.capture_word_backstage(launched, uia, W(), ctx, set(), ready=ready), ctx
+        finally:
+            cu.time.sleep = real_sleep
+
+    def test_pages_are_walked_and_actions_recorded_but_never_pressed(self):
+        word = FakeWordBackstage({
+            "Info": [E("Group", "Protect Document", "GroupPermissions", kids=[menu("Protect Document", "Mark as Final")])],
+            "Print": [E("Group", "Print", kids=[E("Button", "Print"), E("Spinner", "Copies")])]})
+        records, ctx = self.run_capture(word)
+        self.assertEqual(word.pressed, ["Info", "Print"])  # no action, no Back, no add-in entry was pressed
+        by_id = {r["id"]: r for r in records}
+        for rid in ("word.backstage.save", "word.backstage.close", "word.backstage.options"):
+            self.assertEqual((by_id[rid]["kind"], by_id[rid]["controlType"]), ("control", "button"))
+        self.assertEqual(by_id["word.backstage.info"]["kind"], "backstagePage")
+        self.assertEqual(by_id["word.backstage.info"]["idMso"], "TabInfo")
+        self.assertIn("word.backstage.info.protect-document.protect-document.mark-as-final", by_id)
+        self.assertIn("word.backstage.print.print.copies", by_id)
+        self.assertNotIn("Adobe", json.dumps(records))
+        self.assertIsNone(word.view)  # Backstage was left
+
+    def test_a_page_that_never_loads_fails_naming_it_and_leaves_backstage(self):
+        word = FakeWordBackstage({"Info": None})
+        with self.assertRaises(cu.Refused) as ctx:
+            self.run_capture(word)
+        self.assertIn("the Backstage page 'Info' did not load", str(ctx.exception))
+        self.assertIsNone(word.view)
+
+    def test_a_failure_on_the_third_page_after_two_good_ones_names_that_page(self):
+        good = [E("Group", "Print", kids=[E("Button", "Print")])]
+        word = FakeWordBackstage({"Home": good, "Info": good, "Print": None})
+        with self.assertRaises(cu.Refused) as ctx:
+            self.run_capture(word)
+        self.assertIn("'Print'", str(ctx.exception))
+        self.assertEqual(word.pressed, ["Home", "Info", "Print"])
+        self.assertIsNone(word.view)
+
+    def test_a_file_tab_that_opens_nothing_is_refused(self):
+        word = FakeWordBackstage({"Info": []})
+        word.file.invoke = lambda: None  # pressed, but no Backstage appears
+        with self.assertRaises(cu.Refused) as ctx:
+            self.run_capture(word)
+        self.assertIn("the Backstage navigation list did not appear", str(ctx.exception))
+
+    def test_a_failed_capture_publishes_nothing_and_closes_word(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "backstage.json"
+            out.write_text("previous\n", encoding="utf-8")
+            closed = []
+            launched = type("L", (), {"hwnd": 5, "close": lambda self: closed.append(1)})()
+
+            def failing(args, launched, uia, win):
+                raise cu.Refused("the Backstage page 'Print' did not load within 15 s")
+            real = cu.capture
+            cu.capture = failing
+            try:
+                err = io.StringIO()
+                with contextlib.redirect_stderr(err):
+                    code = cu.main(["--app", "word", "--backstage", "--merge", "--out", str(out)],
+                                   launcher=lambda app: launched, uia_factory=lambda: None, win_factory=lambda: None)
+            finally:
+                cu.capture = real
+            self.assertEqual(code, 1)
+            self.assertIn("'Print' did not load", err.getvalue())
+            self.assertEqual(closed, [1])
+            self.assertEqual(out.read_text(encoding="utf-8"), "previous\n")
+
+    def test_the_mode_is_word_only_and_refuses_before_touching_the_app(self):
+        args = type("A", (), {"app": "excel", "backstage": True})()
+        with self.assertRaises(cu.Refused) as ctx:
+            cu.capture(args, None, None, None)  # nothing launched, read or pressed
+        self.assertIn("Word's Backstage view only", str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main()
