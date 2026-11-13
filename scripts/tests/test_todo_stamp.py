@@ -19,6 +19,7 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 SCRIPTS = REPO / "scripts"
 sys.path.insert(0, str(SCRIPTS / "lib"))
 import todo_graph as tg  # noqa: E402
+from test_todo_graph import git_started  # noqa: E402  (discovery puts this folder on the path)
 
 ADJACENCY = ("**Adjacency:** list=not-applicable (fixture); document=not-applicable (fixture); "
              "settings=not-applicable (fixture); reporting=not-applicable (fixture); "
@@ -1856,6 +1857,166 @@ class ThreePassStamp(Stamp):
 for _name in dir(Stamp):
     if _name.startswith("test_") and _name not in vars(ThreePassStamp):
         setattr(ThreePassStamp, _name, None)
+
+
+class GraphReadProcesses(ThreePassStamp):
+    """How many git processes one graph read starts, and that a conditional lens is still replayed (D00 T03 §62)."""
+
+    WATCHED = ('\n[[schedule.conditional]]\nlenses = ["design"]\npasses = [%s]\npaths = ["src/ui/"]\n')
+
+    def another_section(self, k):
+        """TODO file k with one section, taken through its own three-pass chain and stamped."""
+        name = f"TODO-{k:02d}-x.md"
+        self.write(todo_file([(1, f"S{k}", 0, "none", "--")], ident=f"extra{k}").replace(
+            "**Test checkpoint:**", STARTED + "**Test checkpoint:**", 1), name=name)
+        self.FILE = f"docs/reviews/00-workspace/D00-T{k:02d}-s1.md"
+        (self.root / self.FILE).write_text("# Review findings\n", encoding="utf-8")
+        start = self.commit(f"section {k}")
+        self.passed("plan", start)
+        path = self.root / "todo/00-workspace" / name
+        path.write_text(path.read_text(encoding="utf-8").replace("- [ ] Work.", "- [x] Work.", 1), encoding="utf-8")
+        sha = self.build(f"build {k}")
+        self.passed("round", sha)
+        self.passed("completion", sha)
+        tg.stamp(self.root, f"D00 T{k:02d} §1", sha, [{"round": 1, "report": self.FILE, "verdict": "clean"}],
+                 ["true -> ok"], "2026-10-24", completion={"report": self.FILE, "verdict": "complete"}, plan=self.FILE)
+
+    def read_graph(self):
+        started, rows = git_started(lambda: tg.graph(self.root))
+        return sorted(started), sum(1 for row in rows.values() if row.done)
+
+    def test_a_read_starts_the_same_two_processes_for_two_stamped_sections_and_for_twelve(self):
+        self.stamp3(self.chain())
+        self.another_section(2)
+        self.assertEqual(self.read_graph(), (["cat-file", "rev-list"], 2))
+        for k in range(3, 13):
+            self.another_section(k)
+        self.assertEqual(self.read_graph(), (["cat-file", "rev-list"], 12))
+
+    def ui_build(self):
+        (self.root / "src/ui").mkdir(parents=True)
+        (self.root / "src/ui/a.txt").write_text("x\n", encoding="utf-8")
+        return self.commit("ui build")
+
+    def with_pin(self, passes, body):
+        self.tearDown()
+        type(self).PIN_TEXT = THREE_PASS_PIN + self.WATCHED % passes
+        try:
+            self.setUp()
+            body()
+        finally:
+            type(self).PIN_TEXT = THREE_PASS_PIN
+
+    def test_a_watched_pass_is_compared_once_and_must_carry_its_lens(self):
+        def body():
+            self.passed("plan", self.start)
+            self.tick_work()
+            sha = self.ui_build()
+            self.passed("round", sha, lenses=["adversarial", "integration", "design"])
+            self.passed("completion", sha)
+            self.stamp3(sha)
+            # The entry names the round alone: one comparison for it, none for the plan review or the completion.
+            self.assertEqual(self.read_graph(), (["-c", "cat-file", "rev-list"], 1))
+            findings = self.root / self.FILE
+            recorded = findings.read_bytes()
+            with_lens = b"- Lenses: adversarial, integration, design\n"
+            self.assertEqual(recorded.count(with_lens), 1)
+            # The same receipt with the lens its changed file calls for left out of the recorded round is refused.
+            findings.write_bytes(recorded.replace(with_lens, b"- Lenses: adversarial, integration\n"))
+            with self.assertRaises(tg.Refused) as ctx:
+                tg.graph(self.root)
+            self.assertIn("the schedule expects medium with ['adversarial', 'integration', 'design']",
+                          str(ctx.exception))
+        self.with_pin('"round"', body)
+
+    def test_a_pass_that_changed_no_watched_file_carries_no_conditional_lens(self):
+        def body():
+            sha = self.chain()  # the build touches nothing under src/ui/
+            self.stamp3(sha)
+            self.assertEqual(self.read_graph(), (["-c", "cat-file", "rev-list"], 1))
+        self.with_pin('"round"', body)
+
+    def test_two_passes_on_one_pair_of_commits_are_compared_once(self):
+        def body():
+            self.passed("plan", self.start)
+            self.tick_work()
+            sha = self.ui_build()
+            self.passed("round", sha, lenses=["adversarial", "integration", "design"])
+            self.passed("completion", sha, lenses=["plan-delivery", "record", "design"])
+            self.stamp3(sha)
+            self.assertEqual(self.read_graph(), (["-c", "cat-file", "rev-list"], 1))
+        self.with_pin('"round", "completion"', body)
+
+    def test_a_pin_with_no_conditional_entry_compares_nothing(self):
+        self.stamp3(self.chain(completion=("P2", True), reconciliations=[("none", False)]), verdict="reconciled")
+        self.assertEqual(self.read_graph(), (["cat-file", "rev-list"], 1))
+
+    def refusal(self):
+        """What graph() refuses with, read through the batch process and then with every question asked the direct
+        way, as it was before D00 T03 §62: the same message both ways. No read and no batch process is left."""
+        batches, real = [], subprocess.Popen
+
+        def popen(args, *rest, **kwargs):
+            process = real(args, *rest, **kwargs)
+            if "cat-file" in [str(a) for a in args]:
+                batches.append(process)
+            return process
+        with mock.patch.object(tg.subprocess, "Popen", popen), self.assertRaises(tg.Refused) as batched:
+            tg.graph(self.root)
+        self.assertEqual(tg._READS, [])
+        self.assertTrue(all(process.poll() is not None for process in batches), "a batch process outlived its read")
+        with mock.patch.object(tg, "_reading", lambda root: None), self.assertRaises(tg.Refused) as direct:
+            tg.graph(self.root)
+        self.assertEqual(str(batched.exception), str(direct.exception))
+        return str(batched.exception), len(batches)
+
+    def test_a_tampered_receipt_is_refused_as_before_and_leaves_no_process(self):
+        sha = self.chain()
+        data = self.stamp3(sha)
+        findings, receipt = self.root / self.FILE, self.root / "docs/reviews/d00-t01-s1.json"
+        todo = self.root / "todo/00-workspace/TODO-01-a.md"
+        kept = {path: path.read_bytes() for path in (findings, receipt, todo)}
+
+        def restore():
+            for path, content in kept.items():
+                path.write_bytes(content)
+        later = self.build("later")
+        with self.subTest("a round on a candidate after the completion's"):
+            text = kept[findings].decode("utf-8")
+            at = text.index("- Candidate: ", text.index("## Round 1"))
+            findings.write_bytes((text[:at] + text[at:].replace(sha, later, 1)).encode("utf-8"))
+            message, batches = self.refusal()
+            self.assertIn("the completion review must run after the round, on a candidate at or after it", message)
+            self.assertEqual(batches, 1)  # the read had asked its batch process before it refused
+        restore()
+        with self.subTest("a plan review candidate that holds no pin"):
+            (self.root / tg.PIN).unlink()
+            bare = self.commit("no pin")
+            (self.root / tg.PIN).write_text(self.PIN_TEXT, encoding="utf-8")
+            self.commit("pin back")
+            edited = json.loads(json.dumps(data))
+            edited["plan"]["candidate"] = bare
+            receipt.write_text(json.dumps(edited, indent=2) + "\n", encoding="utf-8")
+            text = kept[findings].decode("utf-8")
+            at = text.index("- Candidate: ", text.index("## Plan review"))
+            findings.write_bytes((text[:at] + text[at:].replace(self.start, bare, 1)).encode("utf-8"))
+            message, _ = self.refusal()
+            self.assertIn("the commit whose pin the section ran under", message)
+        restore()
+        with self.subTest("a fabricated stamp commit"):
+            fake = "0" * 40
+            for path in (todo, receipt, findings):
+                path.write_bytes(kept[path].replace(sha.encode("ascii"), fake.encode("ascii")))
+            message, _ = self.refusal()
+            self.assertIn("not a commit: " + fake, message)
+        restore()
+        self.assertTrue(tg.graph(self.root)["D00 T01 §1"].done)  # and the untouched receipt still reads back
+
+
+# GraphReadProcesses borrows ThreePassStamp's fixture, not its tests: those run once, in ThreePassStamp.
+for _name in dir(ThreePassStamp):
+    if _name.startswith("test_") and _name not in vars(GraphReadProcesses):
+        setattr(GraphReadProcesses, _name, None)
 
 
 if __name__ == "__main__":

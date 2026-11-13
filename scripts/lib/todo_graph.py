@@ -15,9 +15,11 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import queue
 import re
 import subprocess
 import tempfile
+import threading
 
 ROOT = Path(__file__).resolve().parents[2]
 PLAN = "todo/implementation-plan.md"
@@ -220,13 +222,6 @@ def commit_ok(root, sha):
     require(on_branch.returncode == 0, "commit is not on this branch: " + sha)
 
 
-def _head_commits(root):
-    res = subprocess.run([git(), "-C", str(root), "rev-list", "HEAD"],
-                         capture_output=True, text=True, timeout=30)
-    require(res.returncode == 0, f"git repository with HEAD commit required for stamped sections: {root}")
-    return set(res.stdout.splitlines())
-
-
 def receipt_ok(root, receipt, ref, stamp_sha, commits=None, surface=None):
     """Check one receipt against its stamp and return it. `surface`: the section's Surface field is yes."""
     require(re.fullmatch(r"docs/reviews/[a-z0-9][a-z0-9.-]*\.json", receipt or "") is not None,
@@ -259,21 +254,193 @@ def review_dispatch():
     return _REVIEW_DISPATCH[0]
 
 
+GIT_SECONDS = 60  # how long one git question may take
+
+
+def _git_direct(root, *args):
+    return subprocess.run([git(), "-C", str(root), *args], capture_output=True, timeout=GIT_SECONDS)
+
+
+class GitFacts:
+    """What one graph read asks git, answered without a process for each question (D00 T03 §62). A read over a
+    hundred receipts asked several hundred questions, each a process of its own, and every one reads something that
+    never changes: a file as a commit holds it (one `git cat-file --batch` process answers them all), whether one
+    commit descends from another (the one `git rev-list --parents HEAD` the read makes anyway), and the files that
+    differ between two commits (asked once for each pair). Nothing is kept once the read ends: an answer stored on
+    disk could be stale or edited, and a receipt check that trusted it would no longer be a check. Whatever this
+    cannot answer exactly as git does (a name holding a line break, an object that is not a file, a commit outside
+    HEAD's history, a batch process that stopped answering) is asked the direct way."""
+
+    KEPT = 64 * 1024  # a file up to this size is remembered for the read: the pin is asked for again and again
+
+    def __init__(self, root, seconds=GIT_SECONDS):
+        self.root = Path(root).resolve()
+        self.seconds = seconds  # how long the batch process may take over one answer
+        self.parents = None  # each commit of HEAD's history -> its parents, once head_commits has run
+        self._process = self._answers = self._thread = None
+        self._failed = False  # the batch process stopped answering: every later question is asked the direct way
+        self._shown, self._descends, self._changed = {}, {}, {}
+
+    def __enter__(self):
+        _READS.append(self)
+        return self
+
+    def __exit__(self, *exc):
+        _READS.remove(self)
+        self.stop()
+
+    def serves(self, root):
+        return Path(root).resolve() == self.root
+
+    def head_commits(self):
+        """The commits of HEAD's history, which the same read gives with their parents."""
+        if self.parents is None:
+            res = subprocess.run([git(), "-C", str(self.root), "rev-list", "--parents", "HEAD"],
+                                 capture_output=True, text=True, timeout=GIT_SECONDS)
+            require(res.returncode == 0, f"git repository with HEAD commit required for stamped sections: {self.root}")
+            self.parents = {fields[0]: fields[1:] for fields in (line.split() for line in res.stdout.splitlines())
+                            if fields}
+        return self.parents.keys()
+
+    def descends(self, older, newer):
+        """Whether `older` is `newer` or an ancestor of it, or None when either is outside HEAD's history."""
+        if self.parents is None or older not in self.parents or newer not in self.parents:
+            return None
+        if (older, newer) not in self._descends:
+            seen, pending, found = {newer}, [newer], False
+            while pending and not found:
+                commit = pending.pop()
+                found = commit == older
+                for parent in self.parents.get(commit, ()):
+                    if parent not in seen:
+                        seen.add(parent)
+                        pending.append(parent)
+            self._descends[(older, newer)] = found
+        return self._descends[(older, newer)]
+
+    def changed(self, base, candidate):
+        """The files changed between two commits as an earlier question in this read found them, or None."""
+        return self._changed.get((base, candidate))
+
+    def remember_changed(self, base, candidate, names):
+        self._changed[(base, candidate)] = names
+
+    def _read(self, out, answers):
+        """The reader thread: one answer for each question, in order, until the process ends."""
+        try:
+            while True:
+                header = out.readline()
+                if not header:
+                    break
+                fields = header.split()
+                if len(fields) == 3 and fields[1] in (b"blob", b"tree", b"commit", b"tag") and fields[2].isdigit():
+                    body = out.read(int(fields[2]))
+                    if len(body) != int(fields[2]) or out.read(1) != b"\n":
+                        break
+                    answers.put((fields[1], body))
+                else:  # `<name> missing`, `<name> ambiguous`: one line and no body
+                    answers.put((None, b""))
+        except (OSError, ValueError) as closed:
+            answers.put(None)  # the pipe closed under the reader: the same to the asker as the process ending
+            return closed
+        answers.put(None)  # the process ended, or its output could not be followed
+
+    def stop(self):
+        """End the batch process: close its input, wait, and kill it if it has not gone."""
+        process, self._process = self._process, None
+        if process is None:
+            return
+        try:
+            process.stdin.close()
+        except OSError:
+            process.kill()  # its input is already broken, so it is not left to end by itself
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+        self._thread.join(timeout=5)
+        process.stdout.close()
+
+    def show(self, name):
+        """`git show <commit>:<path>` as `_git` returns it: returncode 0 and the file's bytes, or a non-zero
+        returncode for a path or a commit that is not there."""
+        if name in self._shown:
+            return self._shown[name]
+        if self._failed or any(c in name for c in "\r\n\0"):
+            return _git_direct(self.root, "show", name)
+        try:
+            line = name.encode("utf-8") + b"\n"
+        except UnicodeEncodeError:  # a name no pipe can carry: git refuses it the direct way, as it always did
+            return _git_direct(self.root, "show", name)
+        if self._process is None:
+            self._process = subprocess.Popen([git(), "-C", str(self.root), "cat-file", "--batch"],
+                                             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            self._answers = queue.Queue()
+            self._thread = threading.Thread(target=self._read, args=(self._process.stdout, self._answers), daemon=True)
+            self._thread.start()
+        try:
+            self._process.stdin.write(line)
+            self._process.stdin.flush()
+            answer = self._answers.get(timeout=self.seconds)
+        except (OSError, ValueError, queue.Empty):
+            answer = None  # the pipe is gone, or no answer came within the limit
+        if answer is None:
+            # No answer in time, or the process ended: its later answers could no longer be told apart, so it is
+            # stopped and this question and every later one go the direct way.
+            self._failed = True
+            if self._process is not None and self._process.poll() is None:
+                self._process.kill()
+            self.stop()
+            return _git_direct(self.root, "show", name)
+        kind, body = answer
+        if kind is None:
+            shown = subprocess.CompletedProcess(("show", name), 128, b"", b"")
+        elif kind == b"blob":
+            shown = subprocess.CompletedProcess(("show", name), 0, body, b"")
+        else:  # a folder, a commit or a tag: `git show` prints something else for it
+            return _git_direct(self.root, "show", name)
+        if len(body) <= self.KEPT:
+            self._shown[name] = shown
+        return shown
+
+
+_READS = []  # the GitFacts of the graph read in progress, where _git, is_ancestor and changed_paths find it
+
+
+def _reading(root):
+    read = _READS[-1] if _READS else None
+    return read if read is not None and read.serves(root) else None
+
+
 def _git(root, *args):
-    return subprocess.run([git(), "-C", str(root), *args], capture_output=True, timeout=60)
+    """One git question. Inside a graph read, a file at a commit is answered by that read's batch process."""
+    read = _reading(root) if len(args) == 2 and args[0] == "show" else None
+    return read.show(args[1]) if read is not None else _git_direct(root, *args)
 
 
 def is_ancestor(root, older, newer):
     """True when commit `older` is `newer` or an ancestor of it."""
-    return _git(root, "merge-base", "--is-ancestor", older, newer).returncode == 0
+    read = _reading(root)
+    known = read.descends(older, newer) if read is not None else None
+    if known is not None:
+        return known
+    return _git_direct(root, "merge-base", "--is-ancestor", older, newer).returncode == 0
 
 
 def changed_paths(root, base, candidate, ref):
     """The files that differ between two commits, repository-relative with forward slashes: what the dispatcher gave
-    a three-pass pass's conditional lenses."""
-    shown = _git(root, "-c", "core.quotepath=false", "diff", "--name-only", "--no-renames", "-z", base, candidate)
-    require(shown.returncode == 0, f"cannot list the files changed between {base} and {candidate}: {ref}")
-    return [name for name in shown.stdout.decode("utf-8", errors="replace").split("\0") if name]
+    a three-pass pass's conditional lenses. Inside a graph read each pair of commits is compared once."""
+    read = _reading(root)
+    names = read.changed(base, candidate) if read is not None else None
+    if names is None:
+        shown = _git_direct(root, "-c", "core.quotepath=false", "diff", "--name-only", "--no-renames", "-z", base,
+                            candidate)
+        require(shown.returncode == 0, f"cannot list the files changed between {base} and {candidate}: {ref}")
+        names = [name for name in shown.stdout.decode("utf-8", errors="replace").split("\0") if name]
+        if read is not None:
+            read.remember_changed(base, candidate, names)
+    return list(names)
 
 
 def removed_sections(root):
@@ -551,8 +718,12 @@ def schedule_ok(root, data, ref, surface):
     three_pass = schedule.get("policy") == dispatch.THREE_PASS
     base = data["plan"]["candidate"]
 
-    def changed(entry):
-        return changed_paths(root, base, entry["candidate"], ref) if three_pass and entry.get("candidate") else []
+    def changed(entry, kind):
+        # Only a conditional entry naming this kind of pass reads the changed files (review_pin.lenses_for), so with
+        # none there is nothing to compare the two commits for.
+        watched = any(kind in item["passes"] for item in schedule.get("conditional", []))
+        return changed_paths(root, base, entry["candidate"], ref) \
+            if three_pass and watched and entry.get("candidate") else []
 
     def check(where, recorded, expected, optional=()):
         lenses = list(recorded["lenses"] or [])
@@ -597,11 +768,11 @@ def schedule_ok(root, data, ref, surface):
             f"{completion} must end with one returned {final_kind} review of the receipt's candidate: {ref}")
     for entry in found["completions"]:
         check(f"the completion review in {completion}", entry,
-              dispatch.scheduled(schedule, "completion", [], surface, changed(entry)))
+              dispatch.scheduled(schedule, "completion", [], surface, changed(entry, "completion")))
     if three_pass:
         for entry in found["reconciliations"]:
             check(f"the reconciliation review in {completion}", entry,
-                  dispatch.scheduled(schedule, "reconciliation", [], surface, changed(entry)))
+                  dispatch.scheduled(schedule, "reconciliation", [], surface, changed(entry, "reconciliation")))
     else:
         require(not found["reconciliations"],
                 f"{completion} holds a reconciliation review, which only the three-pass policy takes: {ref}")
@@ -609,7 +780,7 @@ def schedule_ok(root, data, ref, surface):
         recorded = dispatch.read_rounds((Path(root) / report).read_bytes().decode("utf-8"))
         for i, entry in enumerate(recorded):
             check(f"{report} round {entry['number']}", entry,
-                  dispatch.scheduled(schedule, "round", recorded[:i], surface, changed(entry)))
+                  dispatch.scheduled(schedule, "round", recorded[:i], surface, changed(entry, "round")))
     if three_pass:
         three_pass_ok(root, data, ref, found)
 
@@ -965,6 +1136,11 @@ def xrefs_of(body, domain, todo):
 
 def graph(root=ROOT):
     """Parse every TODO file strictly; a malformed row or section refuses, it is never read as empty."""
+    with GitFacts(root) as read:  # the receipts' git questions share one batch process, ended with the read
+        return _graph(root, read)
+
+
+def _graph(root, read):
     root = Path(root)
     plan_config(root)
     legacy_receipts(root)  # a malformed freeze list refuses even before any old receipt is read against it
@@ -1116,7 +1292,7 @@ def graph(root=ROOT):
                 m = re.fullmatch(r"\d{4}-\d{2}-\d{2} \| §" + str(n) + r" \| ([0-9a-f]{40})", stamp_line)
                 require(m is not None, f"invalid stamp: {ref}")
                 if head_commits is None:
-                    head_commits = _head_commits(root)
+                    head_commits = read.head_commits()
                 data = receipt_ok(root, receipt, ref, m[1], head_commits, surface=surface == "yes")
                 if isinstance(data.get("completion"), dict):
                     filed_gaps[ref] = data["completion"]["filed"]

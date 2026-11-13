@@ -7,6 +7,7 @@ import pathlib
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -905,6 +906,172 @@ class GitPath(unittest.TestCase):
     def test_every_git_launch_uses_the_resolved_path(self):
         source = (REPO / "scripts" / "lib" / "todo_graph.py").read_text(encoding="utf-8")
         self.assertNotIn('["git"', source)
+
+
+def git_started(run):
+    """The git subcommands started while `run()` runs (the word after `-C <root>`), in order, and what it returned."""
+    started = []
+    real = subprocess.Popen.__init__
+
+    def counting(self, args, *rest, **kwargs):
+        argv = [str(a) for a in args] if isinstance(args, (list, tuple)) else [str(args)]
+        if pathlib.Path(argv[0]).stem.lower() == "git":
+            started.append(argv[3] if len(argv) > 3 and argv[1] == "-C" else argv[1])
+        return real(self, args, *rest, **kwargs)
+    with unittest.mock.patch.object(subprocess.Popen, "__init__", counting):
+        result = run()
+    return started, result
+
+
+class GitFactsReads(unittest.TestCase):
+    """One graph read's git questions, answered by one batch process and one read of the history (D00 T03 §62)."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = pathlib.Path(self.tmp.name)
+        self.git("init", "-q", "-b", "main")
+        self.git("config", "user.email", "t@example.com")
+        self.git("config", "user.name", "T")
+        (self.root / "dir").mkdir()
+        (self.root / "a.txt").write_bytes(b"one\ntwo\n")
+        (self.root / "bare.txt").write_bytes(b"no final newline")
+        (self.root / "bytes.bin").write_bytes(bytes(range(256)) * 3)
+        (self.root / "dir" / "x.txt").write_bytes(b"x\n")
+        self.first = self.commit("first")
+        (self.root / "a.txt").write_bytes(b"one\ntwo\nthree\n")
+        self.second = self.commit("second")
+        self.git("checkout", "-q", "-b", "side", self.first)
+        (self.root / "side.txt").write_bytes(b"side\n")
+        self.side = self.commit("side")
+        self.git("checkout", "-q", "main")
+        self.git("merge", "-q", "--no-ff", "-m", "merge", "side")
+        self.merged = self.head()
+        self.git("checkout", "-q", "-b", "apart", self.first)
+        (self.root / "apart.txt").write_bytes(b"apart\n")
+        self.apart = self.commit("apart")  # a commit HEAD's history does not hold
+        self.git("checkout", "-q", "main")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def git(self, *args):
+        return subprocess.run(["git", "-C", str(self.root), *args], check=True, capture_output=True)
+
+    def head(self):
+        return self.git("rev-parse", "HEAD").stdout.decode().strip()
+
+    def commit(self, message):
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", message)
+        return self.head()
+
+    def direct(self, name):
+        shown = tg._git_direct(self.root, "show", name)
+        return shown.returncode == 0, shown.stdout
+
+    def test_a_file_at_a_commit_is_read_as_git_show_reads_it_by_one_process(self):
+        names = [f"{self.first}:a.txt", f"{self.second}:a.txt", f"{self.merged}:bare.txt", f"{self.merged}:bytes.bin",
+                 f"{self.merged}:dir/x.txt", f"{self.apart}:apart.txt", f"{self.first}:a.txt"]
+        expected = [self.direct(name) for name in names]
+
+        def ask():
+            with tg.GitFacts(self.root):
+                return [tg._git(self.root, "show", name) for name in names]
+        started, shown = git_started(ask)
+        self.assertEqual([(s.returncode == 0, s.stdout) for s in shown], expected)
+        self.assertTrue(all(ok for ok, _ in expected))
+        self.assertEqual(started, ["cat-file"])  # seven questions, one process
+
+    def test_what_is_not_there_is_absent_and_the_next_question_is_still_answered(self):
+        absent = [f"{self.merged}:nowhere.txt", "0" * 40 + ":a.txt", "not a name at all", f"{self.first}:side.txt",
+                  "x blob 12", ""]
+        with tg.GitFacts(self.root):
+            for name in absent:
+                shown = tg._git(self.root, "show", name)
+                self.assertNotEqual(shown.returncode, 0, name)
+                self.assertFalse(self.direct(name)[0], name)  # git show refuses it too
+                after = tg._git(self.root, "show", f"{self.second}:a.txt")
+                self.assertEqual((after.returncode, after.stdout), (0, b"one\ntwo\nthree\n"), name)
+
+    def test_what_the_batch_cannot_carry_is_asked_the_direct_way(self):
+        folder, broken = f"{self.merged}:dir", f"{self.merged}:a.txt\n{self.merged}:bare.txt"
+        expected = [tg._git_direct(self.root, "show", name) for name in (folder, broken)]
+        self.assertEqual(expected[0].returncode, 0)  # git show lists a folder
+        self.assertNotEqual(expected[1].returncode, 0)
+
+        def ask():
+            with tg.GitFacts(self.root):
+                out = [tg._git(self.root, "show", name) for name in (folder, broken)]
+                out.append(tg._git(self.root, "show", f"{self.merged}:bare.txt"))  # the answers are still in step
+                return out
+        started, shown = git_started(ask)
+        self.assertEqual([(s.returncode, s.stdout) for s in shown[:2]], [(e.returncode, e.stdout) for e in expected])
+        self.assertEqual((shown[2].returncode, shown[2].stdout), (0, b"no final newline"))
+        self.assertEqual(started, ["cat-file", "show", "show"])  # the folder after the batch named it; the break at once
+
+    def test_the_process_ends_with_the_read_and_a_refusal_leaves_none_behind(self):
+        with tg.GitFacts(self.root) as read:
+            tg._git(self.root, "show", f"{self.first}:a.txt")
+            process = read._process
+            self.assertIsNone(process.poll())
+            self.assertEqual(tg._READS, [read])
+        self.assertIsNotNone(process.poll())
+        self.assertEqual(tg._READS, [])
+        with self.assertRaises(tg.Refused):
+            with tg.GitFacts(self.root) as read:
+                tg._git(self.root, "show", f"{self.first}:a.txt")
+                process = read._process
+                tg.require(False, "refused in the middle of a read")
+        self.assertIsNotNone(process.poll())
+        self.assertEqual(tg._READS, [])
+        # Outside a read, and for another repository, the question is the direct call it always was.
+        started, shown = git_started(lambda: tg._git(self.root, "show", f"{self.first}:a.txt"))
+        self.assertEqual((started, shown.stdout), (["show"], b"one\ntwo\n"))
+        with tempfile.TemporaryDirectory() as other, tg.GitFacts(other):
+            started, shown = git_started(lambda: tg._git(self.root, "show", f"{self.first}:a.txt"))
+        self.assertEqual((started, shown.stdout), (["show"], b"one\ntwo\n"))
+
+    def test_a_batch_process_that_never_answers_is_stopped_at_its_limit_and_the_question_still_answered(self):
+        real = subprocess.Popen
+        silent = []
+
+        def popen(args, *rest, **kwargs):
+            if "cat-file" in [str(a) for a in args]:  # stands in for git: reads its input and never answers
+                silent.append(real([sys.executable, "-c", "import sys; sys.stdin.buffer.read()"], *rest, **kwargs))
+                return silent[-1]
+            return real(args, *rest, **kwargs)
+        with unittest.mock.patch.object(tg.subprocess, "Popen", popen):
+            with tg.GitFacts(self.root, seconds=1.0) as read:
+                start = time.monotonic()
+                first = tg._git(self.root, "show", f"{self.first}:a.txt")
+                waited = time.monotonic() - start
+                second = tg._git(self.root, "show", f"{self.second}:a.txt")
+                self.assertTrue(read._failed)
+                self.assertIsNone(read._process)
+        self.assertEqual((first.returncode, first.stdout), (0, b"one\ntwo\n"))
+        self.assertEqual((second.returncode, second.stdout), (0, b"one\ntwo\nthree\n"))
+        self.assertGreaterEqual(waited, 1.0)
+        self.assertLess(waited, 15.0)  # the read's own limit, not a longer one: mutation proof, 2026-11-13
+        self.assertEqual(len(silent), 1)  # once it has failed, no second batch process is started
+        self.assertIsNotNone(silent[0].poll())  # and the silent one was stopped, not left running
+
+    def test_ancestry_is_answered_from_the_one_read_of_the_history(self):
+        pairs = [(self.first, self.first), (self.first, self.second), (self.second, self.first),
+                 (self.side, self.second), (self.second, self.side), (self.side, self.merged),
+                 (self.second, self.merged), (self.merged, self.second), (self.first, self.merged)]
+        outside = [(self.first, self.apart), (self.apart, self.merged), (self.apart, self.apart)]
+        expected = [tg.is_ancestor(self.root, a, b) for a, b in pairs + outside]  # outside a read: git's own answers
+        self.assertEqual(expected, [True, True, False, False, False, True, True, False, True, True, False, True])
+
+        def ask():
+            with tg.GitFacts(self.root) as read:
+                commits = set(read.head_commits())
+                return commits, [tg.is_ancestor(self.root, a, b) for a, b in (pairs + outside) * 2]
+        started, (commits, answers) = git_started(ask)
+        self.assertEqual(answers, expected * 2)
+        self.assertEqual(commits, {self.first, self.second, self.side, self.merged})
+        # One read of the history; only a commit outside it is asked about the direct way.
+        self.assertEqual(started, ["rev-list"] + ["merge-base"] * (len(outside) * 2))
 
 
 class Parked(Tree):
