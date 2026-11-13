@@ -118,6 +118,11 @@ class Rules(unittest.TestCase):
         self.refused(self.lowered(inventory(), "word.dialogs.font.cancel"),
                      "the Font dialog must show Cancel (button) of its own")
         self.refused(self.changed(hidden, controlType="radioButton"), "must show Hidden (checkBox) on Font")
+        # Two controls of one label are two: the Advanced tab of Font shows two spinners labelled By, and one
+        # of them removed, with the counts lowered to match, is a control missing.
+        self.refused(self.lowered(inventory(), "word.dialogs.font.advanced.by-2"),
+                     "the Font dialog must show By (spinner) 2 times on Advanced")
+        self.refused(self.lowered(inventory(), "word.dialogs.font.advanced.by"), "By (spinner) 2 times on Advanced")
         # And a count that does not agree fails on its own.
         self.refused(self.changed("word.dialogs.font", itemCount=3), "word.dialogs.font: holds", "of the 3 tabs, "
                      "headings and controls the capture recorded")
@@ -177,13 +182,29 @@ class Rules(unittest.TestCase):
 
     def test_the_parts_the_capture_builds_on(self):
         self.assertEqual(wd.clean(" Underline style: "), "Underline style")
-        self.assertEqual(wd.clean("Font Color (Automatic)"), "Font Color")
-        self.assertEqual(wd.clean("Sounds like (English)"), "Sounds like (English)")  # only a colour names its value
+        self.assertEqual(wd.clean("Sounds like (English)"), "Sounds like (English)")
+        self.assertEqual(wd.by_slug("font")["valued"], {"font color": "Font Color",
+                                                        "underline color": "Underline Color"})
+        # The buttons every tab shows are told by name: two tabs can show different buttons in one place.
         ok, cancel = {"role": "Button", "name": "OK"}, {"role": "Button", "name": "Cancel"}
         a, b = {"role": "CheckBox", "name": "A"}, {"role": "Button", "name": "Only here"}
-        common, own = wd.split_common([[a, ok, cancel], [b, ok, cancel]])
+        close = {"role": "Button", "name": "Close"}
+        common, own = wd.split_common([[a, ok, cancel], [b, dict(ok), dict(cancel)]])
         self.assertEqual((common, own), ([ok, cancel], [[a], [b]]))
+        self.assertEqual(wd.split_common([[a, ok, cancel], [b, ok, close]])[0], [ok])
         self.assertEqual(wd.split_common([[a, ok]]), ([], [[a, ok]]))  # one reading: nothing is every tab's
+        # A button straight after a caption the dialog's list names is that caption's control: it is never
+        # shared, and never asked its name. In a dialog with no such caption no text is read to look for one.
+        asked, read = [], []
+        colour = {"role": "Button", "read": lambda: asked.append(1) or "Font Color (Red)"}
+        caption = {"role": "Text", "read": lambda: "Font color"}
+        valued = {"font color": "Font Color"}
+        common, own = wd.split_common([[caption, colour, ok], [dict(caption), dict(colour), dict(ok)]], valued)
+        self.assertEqual((common, asked), ([ok], []))
+        self.assertEqual(wd.own_buttons([caption, colour, ok, cancel], valued), [ok, cancel])
+        value = {"role": "Text", "read": lambda: read.append(1) or "Alt+Ctrl+E"}
+        self.assertEqual(wd.own_buttons([value, ok, cancel]), [ok, cancel])
+        self.assertEqual(read, [])
         more = {"role": "Button", "name": "More >>", "rect": (1, 1, 2, 2)}
         less = {"role": "Button", "name": "<< Less", "rect": (1, 1, 2, 2)}
         case = {"role": "CheckBox", "name": "Match case", "rect": (1, 5, 2, 6)}

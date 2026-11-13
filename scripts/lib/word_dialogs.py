@@ -28,12 +28,13 @@ and Replace that open a menu, are recorded without their choices, by rule, and t
 What a capture reports about itself proves nothing, so `DIALOGS` is written by hand from the live dialogs of the
 reference build, and the capture and the checker both hold a file against it.
 """
-import re
-
 from word_backstage import ADDRESS, CONTROL_TYPES, slug
 
 ROOT = "word.dialogs"
 EXPANDED = "expanded"
+# Controls whose own name carries what is chosen in them (a colour button names its colour): the caption before
+# the control, and the label the control is recorded under. Such a control's name is never read.
+VALUED = {"font color": "Font Color", "underline color": "Underline Color"}
 # Each dialog: its id's last part, the title Word shows on it, the idMso of the command that opens it
 # (design/inventory/word/baseline.json lists every one), the record of design/inventory/word/ribbon.json that
 # command belongs to, and its tabs in order. What each tab must show is in REQUIRED, below.
@@ -42,9 +43,10 @@ EXPANDED = "expanded"
 #   `environment` names the lists of a newer dialog whose choices are this PC's or the document's data.
 #   `unnamed` gives labels, by role and in order, to controls Word gives no name.
 #   `recipients` says the dialog needs a mail merge data source, for which the capture attaches its own fixture.
+#   `valued` names the captions whose control names what is chosen in it; such a control's name is never read.
 # Find and Replace is not modal and is taken after the modal dialogs; the one that needs a data source comes last.
 DIALOGS = (
-    {"slug": "font", "old": True, "title": "Font",
+    {"slug": "font", "old": True, "title": "Font", "valued": VALUED,
      "command": "FontDialog", "openedBy": "word.home.font.font-fontdialog",
      "tabs": ("Font", "Advanced")},
     {"slug": "paragraph", "old": True, "title": "Paragraph", "command": "ParagraphDialog",
@@ -209,8 +211,6 @@ SKIPPED_CLASSES = frozenset({"RichEdit20W"})  # the old dialogs' own hidden edit
 CONTAINERS = frozenset({"Group", "Pane", "Custom", "ToolBar"})  # walked into; a named group is a record
 CLOSERS = ("Cancel", "Close")  # the only buttons the capture closes a dialog with, in this order
 COUNTED = ("dialogTab", "group", "setting")
-# A colour button names the colour it is set to after its label: the label is the fact.
-VALUED = re.compile(r"^(.*\bColor)\s*\([^)]*\)$")
 
 
 class Invalid(Exception):
@@ -218,11 +218,8 @@ class Invalid(Exception):
 
 
 def clean(text) -> str:
-    """A control's name as a label: without the colon the dialog lays it out with, and without the value a colour
-    button names after its label."""
-    text = str(text or "").strip().rstrip(":").strip()
-    match = VALUED.match(text)
-    return match.group(1).strip() if match else text
+    """A control's name as a label: without the colon the dialog lays it out with."""
+    return str(text or "").strip().rstrip(":").strip()
 
 
 def dialog_id(spec) -> str:
@@ -240,7 +237,8 @@ def by_slug(name):
 def ignore(node) -> bool:
     """Whether a node is a part of the dialog's own machinery and no control: the old dialogs' hidden edit
     controls, and an edit box with no name."""
-    return node.get("class_name") in SKIPPED_CLASSES or (node.get("role") == "Edit" and not node.get("name"))
+    return node.get("class_name") in SKIPPED_CLASSES or (node.get("role") == "Edit" and "name" in node
+                                                         and not node.get("name"))
 
 
 def is_environment(spec):
@@ -256,18 +254,37 @@ def key_of(node):
     return (node.get("role"), node.get("name"), tuple(node.get("rect") or ()))
 
 
-def split_common(reads: list) -> tuple:
+def named(node):
+    """A node's name, fetched now when it carries a `read` in place of one."""
+    if "name" not in node and callable(node.get("read")):
+        node["name"] = node["read"]()
+    return node.get("name")
+
+
+def own_buttons(nodes: list, valued=None) -> list:
+    """The buttons of a reading that are the dialog's own to press or to share between tabs: every button but one
+    that stands straight after a caption `valued` names. That one names what is chosen in it (a colour button),
+    and its name is never asked. Without `valued` a dialog has no such button, and no text is read to look for
+    one (the text before a button can be what a caption names)."""
+    if not valued:
+        return [n for n in nodes if n.get("role") == "Button"]
+    return [n for before, n in zip([None] + list(nodes), nodes) if n.get("role") == "Button"
+            and not (before is not None and before.get("role") == "Text"
+                     and str(named(before) or "").casefold() in valued)]
+
+
+def split_common(reads: list, valued=None) -> tuple:
     """For the readings of a dialog's tabs (each a list of plain nodes), the buttons every tab shows, taken from
-    the first reading, and each reading without them: a dialog's own OK and Cancel stand under every tab."""
+    the first reading, and each reading without them: a dialog's own OK and Cancel stand under every tab. They are
+    told by name (two tabs can show different buttons in one place), among `own_buttons` only."""
     if len(reads) < 2:
         return [], [list(nodes) for nodes in reads]
+    shared = set.intersection(*({named(n) for n in own_buttons(nodes, valued)} for nodes in reads)) - {None, ""}
 
-    def buttons(nodes):
-        return {n.get("name") for n in nodes if n.get("role") == "Button" and n.get("name")}
-    shared = set.intersection(*(buttons(nodes) for nodes in reads))
-    common = [n for n in reads[0] if n.get("role") == "Button" and n.get("name") in shared]
-    return common, [[n for n in nodes if not (n.get("role") == "Button" and n.get("name") in shared)]
-                    for nodes in reads]
+    def split(nodes):
+        mine = [n for n in own_buttons(nodes, valued) if named(n) in shared]
+        return mine, [n for n in nodes if not any(n is m for m in mine)]
+    return split(reads[0])[0], [split(nodes)[1] for nodes in reads]
 
 
 def added(collapsed: list, expanded: list, collapse_label: str) -> list:
@@ -280,7 +297,7 @@ def added(collapsed: list, expanded: list, collapse_label: str) -> list:
 def rules_for(spec, label, used, order, expanded=False):
     """The rules `word_options.record_category` records one part of a dialog by."""
     return {"types": TYPES, "skipped": SKIPPED, "ignore": ignore, "is_environment": is_environment(spec),
-            "containers": CONTAINERS, "groups": frozenset({"Group"}),
+            "containers": CONTAINERS, "groups": frozenset({"Group"}), "valued": spec.get("valued"),
             "unnamed": None if expanded else spec.get("unnamed"),
             "extra": {"condition": EXPANDED} if expanded else None, "used": used, "order": order,
             "noun": "dialog", "label": label,
@@ -290,27 +307,28 @@ def rules_for(spec, label, used, order, expanded=False):
 
 def missing(spec, records: list) -> list:
     """What `DIALOGS` says the dialog must show that `records` do not hold: a tab, or a control of a tab (or of
-    the dialog itself, under ""), by label, type and, for a control of the expanded dialog, its condition."""
+    the dialog itself, under ""), by label, type and, for a control of the expanded dialog, its condition. Each
+    is counted: a tab that must show two spinners labelled By holds two, and one does not stand for both."""
+    from collections import Counter
     rid = dialog_id(spec)
     tabs = [r.get("label") for r in sorted((r for r in records if r.get("kind") == "dialogTab"
                                             and r.get("parent") == rid), key=lambda r: r.get("order", 0))]
     lacking = []
     if tabs != list(spec["tabs"]):
         lacking.append("the tabs " + ", ".join(spec["tabs"]) if spec["tabs"] else "no tabs")
+    tab_prefixes = tuple(tab_id(spec, t) + "." for t in spec["tabs"])
     for tab, wanted in REQUIRED.get(spec["slug"], {}).items():
         prefix = (tab_id(spec, tab) if tab else rid) + "."
-        under = {(r.get("label"), r.get("controlType"), r.get("condition")) for r in records
-                 if r.get("kind") == "setting" and str(r.get("id", "")).startswith(prefix)}
-        if not tab:  # the dialog's own controls are those no tab holds
-            tab_prefixes = tuple(tab_id(spec, t) + "." for t in spec["tabs"])
-            under = {(r.get("label"), r.get("controlType"), r.get("condition")) for r in records
-                     if r.get("kind") == "setting" and str(r.get("id", "")).startswith(prefix)
-                     and not str(r.get("id", "")).startswith(tab_prefixes)}
-        for entry in wanted:
-            label, ctype, condition = (tuple(entry) + (None,))[:3]
-            if (label, ctype, condition) not in under:
+        held = Counter((r.get("label"), r.get("controlType"), r.get("condition")) for r in records
+                       if r.get("kind") == "setting" and str(r.get("id", "")).startswith(prefix)
+                       # the dialog's own controls are those no tab holds
+                       and (tab or not str(r.get("id", "")).startswith(tab_prefixes)))
+        need = Counter((tuple(entry) + (None,))[:3] for entry in wanted)
+        for (label, ctype, condition), count in need.items():
+            if held[(label, ctype, condition)] < count:
                 where = f"on {tab}" if tab else "of its own"
-                lacking.append(f"{label} ({ctype}{', ' + condition if condition else ''}) {where}")
+                times = f" {count} times" if count > 1 else ""
+                lacking.append(f"{label} ({ctype}{', ' + condition if condition else ''}){times} {where}")
     return lacking
 
 

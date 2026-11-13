@@ -2091,6 +2091,32 @@ class Launched:
         box = getattr(self, "_dialog_box", None)
         return box is not None and box.empty()
 
+    def _cancel_left_dialog(self, seconds=10.0):
+        """Cancel the dialog a stopped capture left open, from this process: each window Word has shown since the
+        dialog's command was started is sent the message its title bar's Close sends, which discards what the
+        dialog holds, and the command is then seen to return. Word answers nothing while a dialog holds it, so
+        without this a stopped capture would leave Word on its dialog. When the command is still held afterwards
+        Word is not closed over it: that is said, and Word is left running."""
+        import queue
+        win, pid = self._get_win(), int(self.proc.pid)
+        known = getattr(self, "_dialog_known", None) or set()
+        deadline = time.monotonic() + seconds
+        while self._dialog_held() and time.monotonic() < deadline:
+            for left in [h for h in win.windows_of(pid) if h not in known]:
+                try:
+                    win.close_window(left, expected_pid=pid)
+                except (Refused, OSError):
+                    continue  # it went, or is no longer Word's: the next look tells
+            try:
+                self._dialog_box.put(self._dialog_box.get(timeout=0.5))  # wait for the command, and keep its outcome
+            except queue.Empty:
+                continue
+        if self._dialog_held():
+            raise Refused(f"a dialog the capture opened with {getattr(self, '_dialog_command', None)} is still "
+                          f"showing and would not close, so Word cannot be closed from here; Word is left running: "
+                          f"cancel the dialog and close Word")
+        self._dialog_box = None
+
     def _dialog_closed(self, timeout=15.0):
         """See the command that opened a dialog return, now that the dialog is closed. A modal dialog holds its
         command until then; one still held after its window has gone is refused within `timeout`."""
@@ -2180,9 +2206,10 @@ class Launched:
         app = self.app
         if action == "document_state":  # D02 T01 §6: whether pressing Save could save anything
             doc = app.ActiveDocument
-            # empty: a blank document's text is its one paragraph mark (D02 T01 §34 asks after every dialog)
+            # empty: a blank document ends where its one paragraph mark does (D02 T01 §34 asks after every
+            # dialog). Where the document ends is asked, never what it holds: its text is not fetched.
             return {"hwnd": int(self.hwnd or 0), "new": not str(doc.Path or ""), "saved": bool(doc.Saved),
-                    "empty": len(str(doc.Content.Text or "")) <= 1}
+                    "empty": int(doc.Content.End) <= 1}
         if action == "open_fixture":
             self._restore_saved_clipboard()
             path = Path(kwargs.get("path") or WORD_DEFAULT_FIXTURE)
@@ -2508,6 +2535,9 @@ class Launched:
             if not bars.GetEnabledMso(command):
                 raise Refused(f"Word's command {command} is not available now")
             self._dialog_command = command
+            # What Word showed before the dialog: should the capture be stopped while the dialog is open, the
+            # windows that are new are the dialog's, and this process closes them before it closes Word.
+            self._dialog_known = set(self._get_win().windows_of(int(self.proc.pid)))
             self._dialog_box = self._start_held(lambda: bars.ExecuteMso(command))
             return {"hwnd": int(self.hwnd or 0)}
         if action == "pane_snapshot":  # D02 T01 §32: kept here, in the process that outlives the capture worker
@@ -2641,10 +2671,8 @@ class Launched:
     def close(self, wait=60.0):
         """Close only the documents this tool created, without saving; quit only an instance this tool started that
         holds nothing else; and confirm its process has exited."""
-        if self._dialog_held():  # D02 T01 §34: Word answers nothing while a dialog holds it, and never would here
-            raise Refused(f"a dialog the capture opened with {getattr(self, '_dialog_command', None)} is still "
-                          f"showing, so Word cannot be closed from here; Word is left running: cancel the dialog "
-                          f"and close Word")
+        if self._dialog_held():  # D02 T01 §34: a capture that was stopped left its dialog open
+            self._cancel_left_dialog()
         if not self.owned:
             return
         apt = getattr(self, "_apartment", None)
@@ -4063,13 +4091,17 @@ def dialog_tree(element, depth=0, limit=8):
     node = {"role": element.control_type, "class_name": element.class_name, "rect": element.rect,
             "enabled": bool(getattr(element, "is_enabled", True)), "offscreen": bool(element.is_offscreen),
             "_el": element}
-    if element.control_type == "Text":
-        node["read"] = lambda: element.name
+    # A text's name and a button's are fetched only when the rules ask: a text can be what a caption names, and
+    # a button can name what is chosen in it (a colour), which the rules tell from the caption before it.
+    if element.control_type in ("Text", "Button"):
+        node["read"] = lambda: word_dialogs.clean(element.name)
     else:
         node["name"] = word_dialogs.clean(element.name)
     if element.control_type in word_dialogs.CONTAINERS and depth < limit:
         node["children"] = [dialog_tree(k, depth + 1, limit) for k in quiet_children(element)]
     return node
+
+
 
 
 def _dialog_frame(uia, dialog):
@@ -4085,7 +4117,10 @@ def _dialog_frame(uia, dialog):
 
 
 def _dialog_signature(nodes):
-    return tuple((n["role"], n.get("name"), n["enabled"], tuple(n.get("rect") or ()),
+    """What two readings of a dialog must agree on: every control's role, state and place, and its name where the
+    name is read with the tree (a text's and a button's are fetched only when the rules ask, so they are left out:
+    a reading must not differ from another because one of them was asked)."""
+    return tuple((n["role"], None if "read" in n else n.get("name"), n["enabled"], tuple(n.get("rect") or ()),
                   _dialog_signature(n.get("children", []))) for n in nodes
                  if n["role"] not in word_dialogs.SKIPPED and not word_dialogs.ignore(n))
 
@@ -4102,11 +4137,11 @@ def _dialog_nodes(uia, dialog, ready):
     return nodes
 
 
-def _dialog_button(nodes, label):
-    return next((n for n in nodes if n["role"] == "Button" and n.get("name") == label), None)
+def _dialog_button(nodes, label, valued=None):
+    return next((n for n in word_dialogs.own_buttons(nodes, valued) if word_dialogs.named(n) == label), None)
 
 
-def close_dialog(uia, win, pid, dialog, seconds, title="the dialog", attempts=3):
+def close_dialog(uia, win, pid, dialog, seconds, title="the dialog", valued=None, attempts=3):
     """Close a dialog with its own Cancel button, or its Close button where it has no Cancel, and see its window
     gone. A dialog with neither (Mail Merge Recipients offers only OK) is sent the message its title bar's own
     Close sends, to that window and no other. Each of them discards what the dialog holds; OK is never pressed."""
@@ -4115,7 +4150,12 @@ def close_dialog(uia, win, pid, dialog, seconds, title="the dialog", attempts=3)
             return
         try:
             _top, frame = _dialog_frame(uia, dialog)
-            buttons = [k for k in quiet_children(frame) if k.control_type == "Button"]
+            kids = quiet_children(frame)
+            # A button straight after a caption that `valued` names is that caption's control (a colour button):
+            # it is never the dialog's Cancel, and its name is not asked (word_dialogs.own_buttons).
+            buttons = [k for before, k in zip([None] + kids, kids) if k.control_type == "Button" and not (
+                valued and before is not None and before.control_type == "Text"
+                and word_dialogs.clean(before.name).casefold() in valued)]
         except (Gone, Refused):
             continue  # the window went, or changed, while it was read
         button = next((b for label in word_dialogs.CLOSERS for b in buttons
@@ -4170,7 +4210,8 @@ def _record_dialog(uia, ctx, spec, order, dialog, ready):
             reads.append(_dialog_nodes(uia, dialog, ready))
         if not live:
             reads.append(_dialog_nodes(uia, dialog, ready))
-        common, own = word_dialogs.split_common(reads)
+        valued = spec.get("valued")
+        common, own = word_dialogs.split_common(reads, valued)
 
         def record(parent, nodes, label, at, expanded=False):
             rules = word_dialogs.rules_for(spec, label, used, at, expanded)
@@ -4191,18 +4232,19 @@ def _record_dialog(uia, ctx, spec, order, dialog, ready):
             if spec.get("expand"):
                 more, less = spec["expand"]
                 shown = _dialog_nodes(uia, dialog, ready)
-                button = _dialog_button(shown, more)
+                button = _dialog_button(shown, more, valued)
                 if button is not None:
                     button["_el"].invoke()
                     grown = _dialog_nodes(uia, dialog, ready)
-                    back = _dialog_button(grown, less)
+                    back = _dialog_button(grown, less, valued)
                     if back is None:
                         raise Refused(f"the {spec['title']} dialog did not expand when {more} was pressed")
                     try:
                         extra = word_dialogs.added(shown, grown, less)
                         if tab is not None:  # what every tab shows stays the dialog's own
-                            extra = [n for n in extra if not (n["role"] == "Button" and n.get("name") in
-                                                              {c.get("name") for c in common})]
+                            shared = {word_dialogs.named(c) for c in common}
+                            extra = [n for n in extra if not any(n is b and word_dialogs.named(b) in shared
+                                                                 for b in word_dialogs.own_buttons(extra, valued))]
                         under += record(part, extra, said + ", expanded", numbering, expanded=True)
                     finally:
                         back["_el"].invoke()
@@ -4261,7 +4303,8 @@ def capture_word_dialogs(launched, uia, win, ctx, ready=PANE_READY_SECONDS):
                 records += _record_dialog(uia, ctx, spec, order, dialog, ready)
             finally:
                 if dialog is not None:
-                    close_dialog(uia, win, pid, dialog, min(6.0, ready), f"the {spec['title']} dialog")
+                    close_dialog(uia, win, pid, dialog, min(6.0, ready), f"the {spec['title']} dialog",
+                                 spec.get("valued"))
                 launched.word_action("dialog_closed")
             untouched(f"after the {spec['title']} dialog", bool(spec.get("recipients")))
         finally:

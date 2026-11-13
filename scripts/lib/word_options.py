@@ -80,6 +80,8 @@ def record_category(cat_id: str, nodes: list, base, choices, notes: list, rules=
     `rules` lets another surface built of the same parts (a dialog) use these rules with its own lists: `types`
     (role to control type), `skipped` (roles that are furniture), `ignore` (a test for a node to pass over),
     `containers` (roles that are walked into) and `groups` (those of them that are a heading when named),
+    `valued` (captions whose control names what is chosen in it: the control takes the label given and its own
+    name, which a node may carry as `read`, is never fetched),
     `is_environment` (whether a list shows this PC's data), `unnamed` (labels for controls Word gives no name, by
     role, in order), `extra` (fields every record gets, such as a condition), `used` (the ids already taken) and
     `order` (where numbering goes on from), and `noun`, `label` and `said` (its own wording for a count) for the
@@ -90,6 +92,7 @@ def record_category(cat_id: str, nodes: list, base, choices, notes: list, rules=
     unnamed = {role: list(labels) for role, labels in (rules.get("unnamed") or {}).items()}
     more = dict(rules.get("extra") or {})
     containers = rules.get("containers", CONTAINERS)
+    valued = rules.get("valued") or {}
     groups = rules.get("groups", containers)
     records, used = [], rules.get("used", set())
     used.add(cat_id)
@@ -147,6 +150,9 @@ def record_category(cat_id: str, nodes: list, base, choices, notes: list, rules=
                           and n.get("role") != "Text"}
                 if name:
                     last_text = name
+                if name.casefold() in valued and after is not None:  # the caption of a control that names a value
+                    after["label"] = valued[name.casefold()]
+                    continue
                 # The label of the control or the heading beside it, or the heading of the group it stands in.
                 if not name or name.casefold() in beside or name.casefold() == heading.casefold():
                     continue
@@ -161,7 +167,7 @@ def record_category(cat_id: str, nodes: list, base, choices, notes: list, rules=
                 order[0] += 1
                 caption[0] = node
                 continue
-            name = clean(node.get("name"))
+            name = node["label"] if "label" in node else name_of(node)  # a valued control's name is not read
             disabled = not node.get("enabled", True)
             enabled = dict(more, enabled=False) if disabled else dict(more)
             if role in containers and node.get("class_name") == RADIO_GROUP:

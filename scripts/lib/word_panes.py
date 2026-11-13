@@ -197,9 +197,11 @@ def record_pane(spec, pane, chrome: list, content: list, base, choices, notes: l
 
 def missing(spec, records: list) -> list:
     """The controls `PANES` says the pane must show that are not among `records` (label and type), chrome included."""
-    under = {(r.get("label"), r.get("controlType")) for r in records
-             if r.get("kind") == "control" and str(r.get("id", "")).startswith(pane_id(spec) + ".")}
-    return [f"{label} ({ctype})" for label, ctype in CHROME + tuple(spec["required"]) if (label, ctype) not in under]
+    from collections import Counter
+    held = Counter((r.get("label"), r.get("controlType")) for r in records
+                   if r.get("kind") == "control" and str(r.get("id", "")).startswith(pane_id(spec) + "."))
+    need = Counter(CHROME + tuple(spec["required"]))  # each is counted: one control does not stand for two
+    return [f"{label} ({ctype})" for (label, ctype), count in need.items() if held[(label, ctype)] < count]
 
 
 def validate(records: list, ribbon_ids=None) -> None:

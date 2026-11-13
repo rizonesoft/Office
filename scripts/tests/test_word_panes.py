@@ -90,6 +90,9 @@ class Rules(unittest.TestCase):
             rid = f"word.panes.editor.{wp.slug(label)}"
             records = [r for r in self.changed("word.panes.editor", itemCount=6) if r["id"] != rid]
             self.refused(records, f"word.panes.editor: the Editor pane must show {label} (button)")
+        # Each required control is counted: one does not stand for two of the same label and type.
+        twice = dict(wp.by_slug("selection"), required=wp.by_slug("selection")["required"] + (("Show All", "button"),))
+        self.assertEqual(wp.missing(twice, inventory()), ["Show All (button)"])
         # The right label with another type is not the control.
         self.refused(self.changed("word.panes.navigation.search", controlType="button"),
                      "the Navigation pane must show Search (splitButton)")

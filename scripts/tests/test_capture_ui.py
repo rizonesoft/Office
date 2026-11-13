@@ -6431,7 +6431,8 @@ class WordStatusBar(unittest.TestCase):
 
 TEST_DIALOGS = (
     {"slug": "font", "old": True, "title": "Font", "command": "FontDialog",
-     "openedBy": "word.home.font.font-fontdialog", "tabs": ("Font", "Advanced")},
+     "openedBy": "word.home.font.font-fontdialog", "tabs": ("Font", "Advanced"),
+     "valued": {"font color": "Font Color"}},
     {"slug": "track-changes-options", "title": "Track Changes Options", "command": "ReviewChangeTrackingOptions",
      "openedBy": "word.review.markup.change-tracking-options", "tabs": ()},
     {"slug": "find-and-replace", "old": True, "title": "Find and Replace", "command": "ReplaceDialog",
@@ -6467,7 +6468,7 @@ class FakeWordDialogs:
         self.state = {"hwnd": 5, "new": True, "saved": True, "empty": True}
         self.root = E("Window", "Document1 - Word")
         self.entry = Unread("ListItem", "A recipient of the owner")
-        self.style = pane_menu("unused")
+        self.colour = Unread("Button", "Font Color (the owner's crimson)", rect=at(8))
         self.pane = combo("Reviewing Pane", "Off", "Vertical", "Horizontal")
 
     # ----- the dialogs
@@ -6493,6 +6494,7 @@ class FakeWordDialogs:
                          E("Text", "Underline style:", rect=at(3)), self.closed_list("Underline style:", 4),
                          control("CheckBox", "Hidden", rect=at(5)),
                          control("CheckBox", "Small caps", False, rect=at(6)),
+                         E("Text", "Font color:", rect=at(7)), self.colour,
                          E("Edit", "RichEdit Control", cls="RichEdit20W"), E("Image", "a preview")],
                 "Advanced": [E("Text", "Scale:", rect=at(0)), E("Edit", "Scale:", rect=at(1))]}
             shared = [self.button(slug, "Set As Default", 20), self.button(slug, "OK", 21),
@@ -6622,15 +6624,19 @@ class WordDialogs(unittest.TestCase):
             (".font", "dialogTab", None, 0),
             (".font.font", "setting", "editBox", 0), (".font.font-2", "setting", "listBox", 1),
             (".font.underline-style", "setting", "dropdown", 2), (".font.hidden", "setting", "checkBox", 3),
-            (".font.small-caps", "setting", "checkBox", 4),
+            (".font.small-caps", "setting", "checkBox", 4), (".font.font-color", "setting", "button", 5),
             (".advanced", "dialogTab", None, 1),
             (".advanced.scale", "setting", "editBox", 0),
             # What every tab shows is the dialog's own, recorded once.
             (".set-as-default", "setting", "button", 2), (".ok", "setting", "button", 3),
             (".cancel", "setting", "button", 4)])
         self.assertEqual(by_id["word.dialogs.font"]["openedBy"], "word.home.font.font-fontdialog")
-        self.assertEqual(by_id["word.dialogs.font"]["itemCount"], 11)  # two tabs and nine controls
-        self.assertEqual(by_id["word.dialogs.font.font"]["itemCount"], 5)
+        self.assertEqual(by_id["word.dialogs.font"]["itemCount"], 12)  # two tabs and ten controls
+        self.assertEqual(by_id["word.dialogs.font.font"]["itemCount"], 6)
+        # A colour button names the colour chosen in it: it takes its caption's label and its name is never read.
+        self.assertEqual(by_id["word.dialogs.font.font.font-color"]["label"], "Font Color")
+        self.assertEqual(word.colour.read(), 0)
+        self.assertNotIn("crimson", json.dumps(records))
         self.assertEqual(by_id["word.dialogs.font.advanced"]["itemCount"], 1)
         self.assertIs(by_id["word.dialogs.font.font.small-caps"]["enabled"], False)
         self.assertNotIn("itemCount", by_id["word.dialogs.font.font.underline-style"])  # an old dialog's list: closed
@@ -6758,10 +6764,26 @@ class WordDialogs(unittest.TestCase):
                 ran.append(command)
                 release.wait(20)
                 return None
+        sent = []
+
+        class Windows:
+            """Word's windows as this process sees them: its own window, and the dialog while the command is
+            held. A close message to the dialog's window cancels it, when the dialog obeys."""
+            obeys = True
+
+            def windows_of(self, pid):
+                return [5] + ([77] if ran and not release.is_set() else [])
+
+            def close_window(self, hwnd, expected_pid=None, expected_class=None):
+                sent.append((hwnd, expected_pid))
+                if self.obeys and hwnd == 77:
+                    release.set()
         launched = object.__new__(cu.Launched)
         launched.key, launched.hwnd, launched.created, launched.owned = "word", 5, [], True
+        launched.proc, launched._win = type("P", (), {"pid": 9})(), Windows()
         launched.app = type("App", (), {"CommandBars": Bars()})()
         launched._check_alone_impl = lambda: None
+        launched.sent = sent
         self.addCleanup(release.set)
         return launched, release, ran
 
@@ -6802,14 +6824,30 @@ class WordDialogs(unittest.TestCase):
             self.assertIn("Word's command FontDialog has not returned although its dialog is gone; nothing is "
                           "published, and Word is left running", str(ctx.exception))
             self.assertTrue(launched._dialog_held())
-            # Closing Word now would wait on the same held call: it is refused at once and asks Word nothing.
+            # The capture was stopped with its dialog open. Closing Word first cancels the dialog from here, with
+            # a close message to the dialog's own window and to no other, and only then closes Word.
+            closed = []
+            launched._call_com = lambda fn, timeout=None: closed.append("Word closed")
+            launched.close()
+            self.assertEqual((launched.sent, closed), ([(77, 9)], ["Word closed"]))
+            self.assertFalse(launched._dialog_held())
+
+    def test_a_dialog_that_will_not_close_keeps_word_running_and_says_so(self):
+        import time as clock
+        with unittest.mock.patch.object(cu.word_dialogs, "COMMANDS", frozenset({"FontDialog"})):
+            launched, release, ran = self.held_word()
+            launched._win.obeys = False
+            launched._word_action_impl("open_dialog", command="FontDialog")
+            self.assertTrue(cu.wait_for(lambda: ran == ["FontDialog"], seconds=2.0))
+            launched._cancel_left_dialog = lambda: cu.Launched._cancel_left_dialog(launched, seconds=0.8)
             launched._call_com = lambda *a, **k: (_ for _ in ()).throw(AssertionError("Word was asked"))
             began = clock.monotonic()
             with self.assertRaises(cu.Refused) as ctx:
                 launched.close()
-            self.assertLess(clock.monotonic() - began, 1.0)
-            self.assertIn("a dialog the capture opened with FontDialog is still showing, so Word cannot be closed "
-                          "from here; Word is left running", str(ctx.exception))
+            self.assertLess(clock.monotonic() - began, 4.0)  # it tries for its time and does not wait on the call
+            self.assertIn("a dialog the capture opened with FontDialog is still showing and would not close, so "
+                          "Word cannot be closed from here; Word is left running", str(ctx.exception))
+            self.assertTrue(launched.sent and set(launched.sent) == {(77, 9)})  # the dialog's window, never Word's
 
     def test_the_apartment_starts_a_call_without_waiting_for_it(self):
         import time as clock
