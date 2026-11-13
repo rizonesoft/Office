@@ -39,8 +39,10 @@ CONTROL_TYPES = {"Button": "button", "Hyperlink": "button", "SplitButton": "spli
 # templates, places) and a date are never walked, since a list is recorded as one control and text is not recorded.
 PRIVATE_CLASSES = {"NetUIPersona"}
 # Dropdowns whose items are this PC's environment (its printers, and the paper sizes the selected printer's driver
-# offers), recorded without their items.
-ENVIRONMENT_LISTS = {"Printer", "Which Printer", "Page Size"}
+# offers, and the sensitivity labels an organisation defines), recorded without their items.
+ENVIRONMENT_LISTS = {"Printer", "Which Printer", "Page Size", "Sensitivity"}
+# Control types that open to a list of items: each must be recorded with its items, apart from ENVIRONMENT_LISTS.
+OPENS = {"menu", "dropdown", "splitButton"}
 # A people picker is named by the person it shows (the last editor, an author): it is recorded under its field's name.
 PEOPLE = {"NetUIPeoplePicker", "NetUIPeoplePickerWell"}
 # Roles that carry no record of their own and whose children are walked as if they were the parent's.
@@ -210,9 +212,14 @@ def record_tree(page_id: str, node: dict, base, expand=None) -> list:
         return candidate
 
     labels = {page_id: ""}
+    orders = {}  # the next position under each recorded parent, kept across the containers walked through
+
+    def next_order(parent):
+        orders[parent] = orders.get(parent, -1) + 1
+        return orders[parent]
 
     def walk(children, parent, depth, environment=False, tasks=False):
-        order, previous_text = 0, ""
+        previous_text = ""
         for child in children:
             role, cls = child.get("role"), child.get("class_name", "")
             task = tasks and role in ("ListItem", "TabItem")
@@ -242,8 +249,7 @@ def record_tree(page_id: str, node: dict, base, expand=None) -> list:
                 me = rid(parent, label)
                 labels[me] = label
                 extra = {"idMso": child["idMso"]} if child.get("idMso") else {}
-                records.append(base(me, "group", label, order, child, parent, **extra))
-                order += 1
+                records.append(base(me, "group", label, next_order(parent), child, parent, **extra))
                 walk(child.get("children", []), me, depth + 1, environment or label in ENVIRONMENT_LISTS,
                      tasks or child.get("automation_id") in TASK_GROUPS)
                 continue
@@ -255,8 +261,7 @@ def record_tree(page_id: str, node: dict, base, expand=None) -> list:
                 continue
             me = rid(parent, label)
             extra = {"idMso": child["idMso"]} if child.get("idMso") else {}
-            records.append(base(me, "control", label, order, child, parent, controlType=ctype, **extra))
-            order += 1
+            records.append(base(me, "control", label, next_order(parent), child, parent, controlType=ctype, **extra))
             if role in ("MenuItem", "ComboBox", "SplitButton") and expand is not None \
                     and label not in ENVIRONMENT_LISTS and not environment:
                 items = expand(child)
@@ -276,6 +281,14 @@ def record_tree(page_id: str, node: dict, base, expand=None) -> list:
 
     walk(node.get("children", []), page_id, 0)
     return records
+
+
+def carry_behaviours(existing: list, captured: list) -> list:
+    """The captured records, each with the behaviour sentence the committed record of the same id carries: the only
+    hand-written field. A record the capture did not see is not kept, so an old record never stands in for a fresh one."""
+    written = {r["id"]: r["behaviour"] for r in existing if isinstance(r, dict) and r.get("behaviour")}
+    return [dict(r, behaviour=written[r["id"]]) if r["id"] in written and not r.get("behaviour") else r
+            for r in captured]
 
 
 def flatten(items):
@@ -338,6 +351,15 @@ def validate(records: list, baseline: dict, absent: dict, reference_text: str, r
         page = row.get("tab")
         if page in pages and mso not in seen and mso not in absent:
             problems.append(f"baseline {row.get('controlType')} {mso} on {page} is neither captured nor listed absent")
+    with_items = {r.get("parent") for r in records if r.get("kind") == "menuItem"}
+    for rec in records:
+        if rec.get("controlType") in OPENS:
+            environment = rec.get("label") in ENVIRONMENT_LISTS
+            if environment and rec["id"] in with_items:
+                problems.append(f"{rec['id']}: {rec['label']} lists this PC's or organisation's data and is recorded "
+                                f"without its items")
+            elif not environment and rec["id"] not in with_items:
+                problems.append(f"{rec['id']}: {rec['label']} opens to items, and none is recorded")
     stale = sorted(m for m in absent if m in seen)
     if stale:
         problems.append(f"listed absent but captured: {', '.join(stale)}")

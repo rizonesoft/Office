@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import unittest.mock
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("capture_ui", SCRIPTS / "capture-ui.py")
@@ -4734,6 +4735,33 @@ class WordBackstage(unittest.TestCase):
         self.assertIn("'Print'", str(ctx.exception))
         self.assertEqual(word.pressed, ["Home", "Info", "Print"])
         self.assertIsNone(word.view)
+
+    def test_a_menu_that_will_not_open_fails_the_capture(self):
+        broken = menu("Protect Document", "Mark as Final")
+
+        def fails():
+            raise RuntimeError("element not available")
+        broken.expand = fails
+        word = FakeWordBackstage({"Info": [E("Group", "Protect Document", kids=[broken])]})
+        with self.assertRaises(cu.Refused) as ctx:
+            self.run_capture(word)
+        self.assertIn("'Protect Document' on the Backstage page 'Info' did not open", str(ctx.exception))
+        self.assertIsNone(word.view)
+
+    def test_the_backstage_checkpoint_requires_behaviour_without_the_flag(self):
+        records = json.loads((cu.INVENTORY / "word" / "backstage.json").read_text(encoding="utf-8"))
+        stripped = [{k: v for k, v in r.items() if k != "behaviour"} for r in records]
+        problems = ci.check_word_backstage("backstage.json", stripped, True)
+        self.assertTrue(problems and "has no behaviour" in problems[0], problems)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "backstage.json"
+            path.write_text(json.dumps(stripped), encoding="utf-8")
+            out = io.StringIO()
+            with unittest.mock.patch.object(ci, "is_word_backstage", return_value=True), \
+                    contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+                code = ci.main([str(path)])  # the ordinary checkpoint, no --require-behaviour
+            self.assertNotEqual(code, 0)
+            self.assertIn("has no behaviour", out.getvalue())
 
     def test_a_file_tab_that_opens_nothing_is_refused(self):
         word = FakeWordBackstage({"Info": []})

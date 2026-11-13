@@ -585,8 +585,8 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             problems += check_shell_chrome(f, data)
         if is_word_ribbon(f, inventory):
             problems += check_word_ribbon(f, data)
-        if is_word_backstage(f, inventory):
-            problems += check_word_backstage(f, data, require_behaviour)
+        if is_word_backstage(f, inventory):  # D02 T01 §6: behaviour is part of the Backstage checkpoint, flag or not
+            problems += check_word_backstage(f, data, True)
         # The schema refuses links in its typed fields; links() covers every other string and reports once. The
         # locations the schema already reported are gathered once per file, not once per record.
         reported = {p.split(": ", 1)[0] for p in schema_problems}

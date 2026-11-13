@@ -89,6 +89,16 @@ class Records(unittest.TestCase):
                          n("ComboBox", "Page Size", opens=[n("ListItem", "A4")]))
         self.assertEqual([r["label"] for r in recs], ["Printer", "Which Printer", "Page Size"])
 
+    def test_positions_are_counted_per_parent_across_containers_walked_through(self):
+        recs = self.page(n("Pane", kids=[n("Button", "A"), n("Button", "B")]), n("Button", "C"),
+                         n("Group", "", kids=[n("Button", "D")]))
+        self.assertEqual([(r["label"], r["order"]) for r in recs], [("A", 0), ("B", 1), ("C", 2), ("D", 3)])
+
+    def test_carrying_behaviours_keeps_only_records_the_fresh_capture_saw(self):
+        existing = [{"id": "a", "behaviour": "Does a."}, {"id": "gone", "behaviour": "Was there."}]
+        captured = [{"id": "a"}, {"id": "new"}]
+        self.assertEqual(wb.carry_behaviours(existing, captured), [{"id": "a", "behaviour": "Does a."}, {"id": "new"}])
+
     def test_label_map_gives_ids_to_controls_ui_automation_shows_without_one(self):
         recs = [{"id": "word.backstage.share", "kind": "backstagePage", "idMso": "TabShare", "label": "Share"},
                 {"id": "word.backstage.share.share.email", "kind": "control", "label": "Email"}]
@@ -142,6 +152,22 @@ class Validate(unittest.TestCase):
         recs = copy.deepcopy(self.records)
         recs[1]["label"] = "Signed in as someone@example.com"
         self.refused(recs, "an e-mail address is the owner's data")
+
+    def test_a_menu_recorded_without_its_items_is_refused(self):
+        recs = [r for r in self.records if r.get("parent") != "word.backstage.print.print.settings.margins"]
+        self.refused(recs, "word.backstage.print.print.settings.margins: Margins opens to items, and none is recorded")
+        unexpanded = [r for r in self.records if r["kind"] != "menuItem" or r.get("idMso")]
+        self.refused(unexpanded, "opens to items, and none is recorded")
+
+    def test_an_environment_list_recorded_with_its_entries_is_refused(self):
+        recs = copy.deepcopy(self.records) + [{"id": "word.backstage.print.print.printer.which-printer.office", "app": "word",
+                                               "kind": "menuItem", "label": "Office printer", "behaviour": "x",
+                                               "parent": "word.backstage.print.print.printer.which-printer"}]
+        self.refused(recs, "Which Printer lists this PC's or organisation's data")
+
+    def test_every_position_in_the_committed_capture_is_unique_under_its_parent(self):
+        positions = [(r.get("parent"), r["order"]) for r in self.records]
+        self.assertEqual(len(positions), len(set(positions)))
 
     def test_an_add_in_record_is_refused(self):
         recs = copy.deepcopy(self.records) + [{"id": "word.backstage.export.create-adobe-pdf", "app": "word",

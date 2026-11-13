@@ -2971,9 +2971,9 @@ def capture_word_backstage(launched, uia, win, ctx, identifiers, ready=BACKSTAGE
                     el.collapse()
                     time.sleep(0.3)
                     return items
-                except Exception as exc:  # a menu that will not open is recorded without its items, and said so
-                    ctx.notes.append(f"{node.get('name')!r} on {label!r} did not open: {type(exc).__name__}")
-                    return None
+                except Exception as exc:  # a menu that will not open fails the capture: it would be incomplete
+                    raise Refused(f"{node.get('name')!r} on the Backstage page {label!r} did not open "
+                                  f"({type(exc).__name__}: {exc})") from None
 
             def base(rid, kind, lab, o, node, parent, **extra):
                 return ctx.base(rid, kind, lab, o, node["_el"], parent=parent, **extra)
@@ -7710,9 +7710,9 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
         unverified_records = list(ctx.unverified)
         is_canonical_word_ribbon = False
         if args.backstage:
-            if args.merge and out.exists():  # behaviour sentences and the absence list are hand-written: kept
-                records = merge(_load_existing_records(out, out.read_bytes()), records)
-            word_backstage_check(records, require_behaviour=False)
+            word_backstage_check(records, require_behaviour=False)  # the fresh capture alone must be complete
+            if args.merge and out.exists():
+                records = word_backstage.carry_behaviours(_load_existing_records(out, out.read_bytes()), records)
         elif args.app == "word":
             records, unverified_records = reconcile_word_unverified(records, unverified_records)
             try:
