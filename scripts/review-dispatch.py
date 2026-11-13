@@ -818,6 +818,29 @@ def lock_section(record_path, timeout):
     atexit.register(release_section, path, owned)
 
 
+def check_plan_candidate(record_path, candidate):
+    """A section's plan review is held, before a reviewer runs, to the rule its stamp will hold it to: the candidate
+    is the commit that first held the section's Started line, an ancestor of it, or a later commit reached through
+    commits that change only todo/ and docs/ (D00 T03 §63). The rule is the todo kit's own, asked of
+    scripts/lib/todo_graph.py beside this script and never restated here; where that kit is not installed there is no
+    Started line to hold a candidate to, and the pass is dispatched as it always was."""
+    library = Path(__file__).resolve().parent / "lib" / "todo_graph.py"
+    if not library.is_file():
+        return
+    named = re.search(r"/D([0-9]{2})-T([0-9]{2})-s([1-9][0-9]*)\.md$", Path(os.path.abspath(record_path)).as_posix())
+    spec = importlib.util.spec_from_file_location("todo_graph_for_dispatch", library)
+    todo_graph = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = todo_graph  # its dataclasses look their module up by name while they are defined
+    spec.loader.exec_module(todo_graph)
+    ref = f"D{named[1]} T{named[2]} §{named[3]}"
+    try:
+        start = todo_graph.started_commit(ROOT, ref)
+        if start is not None:
+            todo_graph.plan_candidate_ok(ROOT, candidate, start, ref)
+    except todo_graph.Refused as exc:
+        raise Refused(str(exc)) from None
+
+
 def check_three_pass_order(kind, record_path, candidate, schedule):
     """The order of a three-pass section's passes: the plan review, one round on a candidate descending from it, one
     completion review, then reconciliations only after a completion that returned gaps, each on a candidate
@@ -1009,6 +1032,8 @@ def main(argv=None):
             raise Refused("this section's pin has no reconciliation pass; only policy = \"three-pass\" takes one")
         elif paths:
             raise Refused("--paths goes with a three-pass pin; this pin's schedule has no conditional lenses")
+        if args.kind == "plan" and args.candidate and section_record(args.record):
+            check_plan_candidate(args.record, args.candidate)
         plan = None
         if "schedule" in pin:
             rounds = []

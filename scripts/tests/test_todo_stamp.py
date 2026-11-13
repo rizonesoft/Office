@@ -1247,6 +1247,7 @@ class Stamp(Tree):
         self.refuses(f"--plan must be the section's own findings file {self.PLAN}, not {other}")
 
     def test_a_plan_review_after_the_build_began_refuses(self):
+        (self.root / "work.txt").write_text("the build\n", encoding="utf-8")  # a build changes more than todo/ and docs/
         later = self.commit("the build")
         self.write_plan(candidate=later)
         self.stamp_refuses("is not the commit the build began at")
@@ -2041,10 +2042,163 @@ class GraphReadProcesses(ThreePassStamp):
         self.assertIn(f"cannot list the files changed between {self.start} and {abandoned}", message)
 
 
-# GraphReadProcesses borrows ThreePassStamp's fixture, not its tests: those run once, in ThreePassStamp.
-for _name in dir(ThreePassStamp):
-    if _name.startswith("test_") and _name not in vars(GraphReadProcesses):
-        setattr(GraphReadProcesses, _name, None)
+class PlanCandidate(ThreePassStamp):
+    """Where a plan review's candidate may lie against the commit that recorded the Started line (D00 T03 §63): on
+    it, before it, or after it through commits that change only todo/ and docs/."""
+
+    TODO = "todo/00-workspace/TODO-01-a.md"
+    RULE = ("is not the commit the build began at ({start}), an ancestor of it, or a later commit reached from it "
+            "through commits that change only todo/ and docs/")
+
+    def git(self, *args):
+        return subprocess.run(["git", "-C", str(self.root), *args], check=True, capture_output=True)
+
+    def plan_only(self, n):
+        """A commit that corrects the plan and adds a note: paths under todo/ and docs/ only."""
+        todo = self.root / self.TODO
+        todo.write_bytes(todo.read_bytes().replace(b"> **Goal:** g", b"> **Goal:** g" + str(n).encode("ascii"), 1))
+        (self.root / "docs" / "notes.md").write_text(f"note {n}\n", encoding="utf-8")
+        return self.commit(f"plan only {n}")
+
+    def code(self, name="src/app.py"):
+        path = self.root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("x = 1\n", encoding="utf-8")
+        return self.commit("code " + name)
+
+    def finish(self, candidate):
+        """The plan reviewed on `candidate`, then the build, the round and the completion on it; the built commit."""
+        self.passed("plan", candidate)
+        self.tick_work()
+        sha = self.build()
+        self.passed("round", sha)
+        self.passed("completion", sha)
+        return sha
+
+    def refused(self, candidate, *fragments):
+        sha = self.finish(candidate)
+        with self.assertRaises(tg.Refused) as ctx:
+            self.stamp3(sha)
+        message = str(ctx.exception)
+        for fragment in (f"the plan review's candidate {candidate} " + self.RULE.format(start=self.start),
+                         "review the plan before the build: D00 T01 §1", *fragments):
+            self.assertIn(fragment, message)
+        self.assertFalse((self.root / "docs/reviews/d00-t01-s1.json").exists())
+        return message
+
+    def test_a_plan_reviewed_after_plan_only_commits_stamps(self):
+        for commits in (1, 3):
+            with self.subTest(commits=commits):
+                candidate = [self.plan_only(n) for n in range(commits)][-1]
+                self.assertNotEqual(candidate, self.start)
+                data = self.stamp3(self.finish(candidate))
+                self.assertEqual(data["plan"]["candidate"], candidate)
+            self.setUp_again()
+        data = self.stamp3(self.finish(self.start))  # and the Started commit itself, as always
+        self.assertEqual(data["plan"]["candidate"], self.start)
+
+    def test_a_commit_that_changed_code_before_the_review_refuses_it(self):
+        self.plan_only(1)
+        code = self.code()
+        self.refused(self.plan_only(2), f": commit {code} changed src/app.py: ")
+
+    def test_code_written_and_reverted_before_the_review_still_refuses_it(self):
+        # The two trees are equal outside todo/ and docs/; every commit between them is read, so the first is named.
+        first = self.code("src/tmp.py")
+        (self.root / "src/tmp.py").unlink()
+        candidate = self.commit("revert")
+        between = self.git("diff", "--name-only", self.start, candidate).stdout.decode()
+        self.assertNotIn("src/", between)
+        self.refused(candidate, f": commit {first} changed src/tmp.py: ")
+
+    def test_a_merge_that_brought_code_in_refuses_it(self):
+        self.git("checkout", "-q", "-b", "side")
+        side = self.code("src/side.py")
+        self.git("checkout", "-q", "-")
+        self.git("merge", "-q", "--no-ff", "-m", "merge side", "side")
+        self.refused(self.plan_only(1), f": commit {side} changed src/side.py: ")
+
+    def test_a_merge_commit_that_itself_adds_code_refuses_it(self):
+        # Both lines hold plan-only commits; the code arrives in the merge commit alone, which is why a merge is read
+        # against each of its parents.
+        self.git("checkout", "-q", "-b", "side")
+        (self.root / "docs" / "side.md").write_text("side\n", encoding="utf-8")
+        self.commit("a note on the side line")
+        self.git("checkout", "-q", "-")
+        self.plan_only(1)
+        self.git("merge", "-q", "--no-ff", "--no-commit", "side")
+        (self.root / "src").mkdir()
+        (self.root / "src" / "merged.py").write_text("x = 1\n", encoding="utf-8")
+        merge = self.commit("merge side, with code of its own")
+        self.assertEqual(len(self.git("rev-list", "--parents", "-n", "1", merge).stdout.split()), 3)
+        self.refused(self.plan_only(2), f": commit {merge} changed src/merged.py: ")
+
+    def test_a_candidate_on_a_line_that_diverged_from_the_started_commit_refuses(self):
+        # The section is started again on a later commit; a line that forked before that commit and was merged after
+        # it is neither before it nor after it.
+        self.git("checkout", "-q", "-b", "side")
+        (self.root / "docs" / "side.md").write_text("side\n", encoding="utf-8")
+        apart = self.commit("a note on the side line")
+        self.git("checkout", "-q", "-")
+        todo = self.root / self.TODO
+        todo.write_bytes(todo.read_bytes().replace(b"2026-10-23T00:00Z", b"2026-10-24T00:00Z", 1))
+        self.start = self.commit("started again")
+        self.git("merge", "-q", "--no-ff", "-m", "merge side", "side")
+        message = self.refused(apart)
+        self.assertNotIn(" changed ", message)
+
+    def test_a_history_that_cannot_be_listed_refuses(self):
+        candidate = self.plan_only(1)
+        sha = self.finish(candidate)
+        real = tg._git_direct
+        for command, said in (("rev-list", f"cannot list the commits between {self.start} and {candidate} (git rev-list)"),
+                              ("diff-tree", f"cannot list the files commit {candidate} changed (git diff-tree)")):
+            def failing(root, *args, command=command):
+                if command in args:
+                    return subprocess.CompletedProcess(args, 128, b"", b"fatal")
+                return real(root, *args)
+            with mock.patch.object(tg, "_git_direct", failing), self.assertRaises(tg.Refused) as ctx:
+                self.stamp3(sha)
+            self.assertIn(said, str(ctx.exception))
+        self.stamp3(sha)  # read without the failure, the same receipt stamps
+
+    def test_started_commit_tells_nothing_to_hold_to_from_a_lookup_that_failed(self):
+        ref, todo = "D00 T01 §1", self.root / self.TODO
+        self.assertEqual(tg.started_commit(self.root, ref), self.start)
+        for nothing in ("D00 T01 §2", "D00 T01 §9", "D00 T09 §1", "D07 T01 §1"):  # no Started line, no section, no file
+            self.assertIsNone(tg.started_commit(self.root, nothing), nothing)
+        with tempfile.TemporaryDirectory() as bare:  # no todo/ folder: the reviewer kit alone
+            self.assertIsNone(tg.started_commit(bare, ref))
+        kept = todo.read_bytes()
+        todo.write_bytes(kept.replace(b"2026-10-23T00:00Z", b"2026-10-25T00:00Z", 1))  # a line no commit holds yet
+        self.assertIsNone(tg.started_commit(self.root, ref))
+        todo.write_bytes(kept)
+        real = subprocess.run
+
+        def failing_log(command, *args, **kwargs):
+            if list(command[3:4]) == ["log"]:
+                return subprocess.CompletedProcess(command, 128, "", "fatal")
+            return real(command, *args, **kwargs)
+        with mock.patch.object(tg.subprocess, "run", failing_log), self.assertRaises(tg.Refused) as ctx:
+            tg.started_commit(self.root, ref)
+        self.assertIn(f"cannot list the commits of {self.TODO} (git log exited 128)", str(ctx.exception))
+        todo.write_bytes(b"\xff\xfe not utf-8")
+        with self.assertRaises(tg.Refused) as ctx:
+            tg.started_commit(self.root, ref)
+        self.assertIn(f"{self.TODO} cannot be read", str(ctx.exception))
+        todo.write_bytes(kept)
+        (todo.parent / "TODO-01-b.md").write_bytes(kept)
+        with self.assertRaises(tg.Refused) as ctx:
+            tg.started_commit(self.root, ref)
+        self.assertIn("more than one TODO file for D00 T01 §1", str(ctx.exception))
+
+
+# These classes borrow ThreePassStamp's fixture, not its tests: those run once, in ThreePassStamp.
+for _borrower in (GraphReadProcesses, PlanCandidate):
+    for _name in dir(ThreePassStamp):
+        if _name.startswith("test_") and _name not in vars(_borrower):
+            setattr(_borrower, _name, None)
+del _borrower, _name  # a class left under a second module-level name would be collected twice
 
 
 if __name__ == "__main__":

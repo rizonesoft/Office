@@ -616,5 +616,60 @@ class Decoding(ThreePass):
         self.assertEqual(module.decode_reply(b"a\x81b"), "a�b")
 
 
+class PlanCandidate(ThreePass):
+    """A section's plan review is held to its Started commit before a reviewer runs (D00 T03 §63), by the todo kit's
+    own rule in scripts/lib/todo_graph.py."""
+
+    TODO = "todo/00-core/TODO-01-a.md"
+    SECTION = "# TODO-01 -- A\n\n## 1. A\n\n{started}Text.\n\n## 2. B\n\nText.\n"
+    STARTED = "> **Started:** 2026-11-13T00:00:00Z\n\n"
+
+    def setUp(self):
+        super().setUp()
+        library = self.repo / "scripts" / "lib" / "todo_graph.py"
+        library.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(Path(__file__).resolve().parents[1] / "lib" / "todo_graph.py", library)
+        self.kit = self.commit("the todo kit")
+        self.started = self.commit("start the section", {self.TODO: self.SECTION.format(started=self.STARTED)})
+
+    def test_the_started_commit_one_before_it_and_a_plan_only_one_after_it_are_dispatched(self):
+        for name, candidate in (("the Started commit", lambda: self.started), ("an ancestor", lambda: self.kit),
+                                ("after plan-only commits", lambda: self.commit("plan only", {
+                                    self.TODO: self.SECTION.format(started=self.STARTED) + "\nMore.\n",
+                                    "docs/notes.md": "note\n"}))):
+            with self.subTest(name):
+                sha = candidate()
+                summary = self.ok("plan", sha)
+                self.assertEqual(self.findings()["plans"][0]["candidate"], sha, summary)
+            self.tearDown()
+            self.setUp()
+
+    def test_a_candidate_after_a_code_change_is_refused_before_a_reviewer_runs(self):
+        code = self.commit("build", {"src/app/a.py": "x = 1\n"})
+        after = self.commit("plan only", {"docs/notes.md": "note\n"})
+        self.refused("plan", after, f"commit {code} changed src/app/a.py: review the plan before the build: D00 T01 §1")
+        self.assertFalse(self.record.exists())
+        self.ok("plan", self.started)  # the same section on its Started commit is still dispatched
+
+    def test_a_todo_file_that_cannot_be_read_is_refused_before_a_reviewer_runs(self):
+        (self.repo / self.TODO).write_bytes(b"\xff\xfe not utf-8")
+        self.refused("plan", self.started, f"{self.TODO} cannot be read")
+
+    def test_a_section_with_no_committed_started_line_is_dispatched_as_before(self):
+        code = self.commit("build", {"src/app/a.py": "x = 1\n"})
+        for name, text in (("no Started line", self.SECTION.format(started="")),
+                           ("a line no commit holds yet", self.SECTION.format(
+                               started="> **Started:** 2026-11-14T00:00:00Z\n\n"))):
+            with self.subTest(name):
+                (self.repo / self.TODO).write_text(text, encoding="utf-8", newline="\n")
+                self.ok("plan", code)
+            self.record.unlink()
+
+    def test_without_the_todo_kit_a_plan_review_is_dispatched_as_before(self):
+        code = self.commit("build", {"src/app/a.py": "x = 1\n"})
+        (self.repo / "scripts" / "lib" / "todo_graph.py").unlink()
+        self.ok("plan", code)
+
+
 if __name__ == "__main__":
     unittest.main()

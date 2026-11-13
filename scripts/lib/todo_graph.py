@@ -601,16 +601,7 @@ def build_start(root, path, body, ref):
     started = STARTED.search(body or "")
     first = None
     if started:
-        line = started[0].rstrip("\r")
-        number = ref.rsplit("§", 1)[1]
-        out = subprocess.run([git(), "-C", str(root), "log", "--reverse", "--format=%H", "--", path],
-                             capture_output=True, text=True, timeout=60)
-        for sha in out.stdout.split() if out.returncode == 0 else []:
-            shown = subprocess.run([git(), "-C", str(root), "show", f"{sha}:{path}"], capture_output=True, timeout=30)
-            section = section_text(shown.stdout.decode("utf-8", "replace"), number) if shown.returncode == 0 else None
-            if section is not None and line in section.splitlines():
-                first = sha
-                break
+        first = _first_holding(root, path, started[0].rstrip("\r"), ref.rsplit("§", 1)[1])
     else:
         # The whole reference, so `D01 T02 §2` does not match a commit that names only §22 or §23.
         out = subprocess.run([git(), "-C", str(root), "log", "--reverse", "--format=%H", "-E",
@@ -636,7 +627,8 @@ def plan_record(root, report, ref, commits=None, start=None):
     """The receipt's record of the section's one-pass plan review, from `--plan <findings file>`: the file is the
     section's own findings file (so another section's plan review cannot stand in for it), holds exactly one plan
     review returned by a reviewer of another model family, ending in the plan prompt's `PLAN:` and `OVERALL:` verdict
-    lines, and its candidate is the commit the build began at (`start`) or one before it."""
+    lines, and its candidate is one the plan could be reviewed on before the build (`plan_candidate_ok`, against
+    `start`, the commit the build began at)."""
     require(isinstance(report, str), f"receipt plan is malformed: {ref}")
     expected = section_findings(root, ref)
     require(report == expected,
@@ -660,12 +652,82 @@ def plan_record(root, report, ref, commits=None, start=None):
     if commits is None or candidate not in commits:
         commit_ok(root, candidate)
     if start is not None:  # stamping: the plan was reviewed before the build began
-        ancestor = subprocess.run([git(), "-C", str(root), "merge-base", "--is-ancestor", candidate, start],
-                                  capture_output=True, timeout=30)
-        require(ancestor.returncode == 0, f"the plan review's candidate {candidate} is not the commit the build began "
-                                          f"at ({start}) or an ancestor of it: review the plan before the build: {ref}")
+        plan_candidate_ok(root, candidate, start, ref)
     return {"report": report, "candidate": candidate, "reviewer": entry["reviewer"], "model": entry["model"],
             "effort": entry["effort"], "lenses": entry["lenses"] or []}
+
+
+PLAN_ONLY = ("todo/", "docs/")  # what a commit between a section's Started commit and its plan review may change
+
+
+def plan_candidate_ok(root, candidate, start, ref):
+    """Refuse a plan review's candidate the plan was not reviewed before the build on (D00 T03 §63). `start` is the
+    commit that first held the section's Started line. The candidate is that commit, an ancestor of it, or a later
+    commit reached from it through commits that change only todo/ and docs/: a correction to the plan made after the
+    section was started is still the plan, while one commit that changes anything else is the build having begun.
+    Every commit between the two is read (a merge against each of its parents), never the two trees alone, so code
+    written and then reverted before the review does not pass. The stamp and the dispatcher both ask here."""
+    if _git_direct(root, "merge-base", "--is-ancestor", candidate, start).returncode == 0:
+        return
+    rule = (f"the plan review's candidate {candidate} is not the commit the build began at ({start}), an ancestor of "
+            f"it, or a later commit reached from it through commits that change only todo/ and docs/")
+    require(_git_direct(root, "merge-base", "--is-ancestor", start, candidate).returncode == 0,
+            f"{rule}: review the plan before the build: {ref}")
+    listed = _git_direct(root, "rev-list", "--reverse", f"{start}..{candidate}")
+    require(listed.returncode == 0, f"cannot list the commits between {start} and {candidate} (git rev-list): {ref}")
+    for sha in listed.stdout.decode("ascii", "replace").split():
+        shown = _git_direct(root, "-c", "core.quotepath=false", "diff-tree", "-m", "-r", "--root", "--no-commit-id",
+                            "--name-only", "--no-renames", "-z", sha)
+        require(shown.returncode == 0, f"cannot list the files commit {sha} changed (git diff-tree): {ref}")
+        for name in shown.stdout.decode("utf-8", "replace").split("\0"):
+            require(not name or name.startswith(PLAN_ONLY),
+                    f"{rule}: commit {sha} changed {name}: review the plan before the build: {ref}")
+
+
+def started_commit(root, ref):
+    """For the dispatcher, before a plan review runs (D00 T03 §63): the commit that first held the section's
+    `> **Started:**` line, or None when there is nothing to hold the candidate to: no todo/ folder, no TODO file for
+    the section, a section the file does not hold, no Started line, or a line no commit holds yet. A lookup that
+    failed is a refusal, never a None: a TODO file that cannot be read, two files for one number, a failing git."""
+    m = re.fullmatch(r"D(\d{2}) T(\d{2}) §([1-9]\d*)", ref)
+    require(m is not None, f"not a full section reference: {ref}")
+    root = Path(root)
+    if not (root / "todo").is_dir():
+        return None
+    paths = sorted((root / "todo").glob(f"{m[1]}-*/TODO-{m[2]}-*.md"))
+    if not paths:
+        return None
+    require(len(paths) == 1, f"more than one TODO file for {ref} "
+                             f"({', '.join(p.relative_to(root).as_posix() for p in paths)}), so its Started line "
+                             f"cannot be found")
+    rel = paths[0].relative_to(root).as_posix()
+    try:
+        text = paths[0].read_bytes().decode("utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        raise Refused(f"{rel} cannot be read ({exc}), so the plan review's candidate cannot be held to the Started "
+                      f"line of {ref}") from None
+    body = section_text(text.replace("\r\n", "\n"), m[3])
+    started = STARTED.search(body or "")
+    if not started:
+        return None
+    return _first_holding(root, rel, started[0].rstrip("\r"), m[3], ref)
+
+
+def _first_holding(root, path, line, number, ref=None):
+    """The first commit of `path` in which section `number`'s own text holds `line` whole, or None. With `ref`, a
+    history that cannot be listed is a refusal naming the command; without it, it is read as no commit, as the stamp
+    always read it."""
+    out = subprocess.run([git(), "-C", str(root), "log", "--reverse", "--format=%H", "--", path],
+                         capture_output=True, text=True, timeout=60)
+    if ref is not None:
+        require(out.returncode == 0, f"cannot list the commits of {path} (git log exited {out.returncode}), so the "
+                                     f"plan review's candidate cannot be held to the Started line of {ref}")
+    for sha in out.stdout.split() if out.returncode == 0 else []:
+        shown = subprocess.run([git(), "-C", str(root), "show", f"{sha}:{path}"], capture_output=True, timeout=30)
+        section = section_text(shown.stdout.decode("utf-8", "replace"), number) if shown.returncode == 0 else None
+        if section is not None and line in section.splitlines():
+            return sha
+    return None
 
 
 def committed_pin(root, sha, ref):
