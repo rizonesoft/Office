@@ -144,7 +144,8 @@ if ($Stop) {
 }
 
 $runnerName = @{ claude = 'Claude Code'; agy = 'Google Antigravity (Gemini 4 Carbon)' }[$Runner]
-$Host.UI.RawUI.WindowTitle = @{ claude = 'Office Claude campaign'; agy = 'Office Carbon campaign' }[$Runner]
+$windowTitle = @{ claude = 'Office Claude campaign'; agy = 'Office Carbon campaign' }[$Runner]
+$Host.UI.RawUI.WindowTitle = $windowTitle
 
 # The lock is taken as the first statement inside one try that runs to the end of the file, so nothing can
 # happen between taking it and being sure it is given back: a normal end, an exit, an error anywhere below
@@ -301,8 +302,12 @@ function Test-Holds([string]$Folder, [string]$Program) {
 }
 $env:PATH = (@($toolDirs) + @($env:PATH -split ';' | Where-Object { $_ })) -join ';'
 $pinnedClangd = @($toolDirs | Where-Object { Test-Holds $_ 'clangd.exe' })
+# Claude Code replaces the terminal title with its own session topic unless the session has a name, so --name
+# carries the window title and the operator can tell which repository a campaign window belongs to. Antigravity
+# leaves the host title alone and takes nothing from here.
 # Settings for this session only, layered over .claude/settings.json by claude's --settings.
 $sessionArgs = @()
+if ($Runner -eq 'claude') { $sessionArgs = @('--name', $windowTitle) }
 if ($Runner -ne 'claude') {
     # The clangd-lsp plugin and its setting are Claude Code's; another runner takes no session settings from here.
 } elseif ($pinnedClangd) {
@@ -315,7 +320,7 @@ if ($Runner -ne 'claude') {
     $partial = "$sessionSettings.tmp"
     Set-Content -LiteralPath $partial -Value '{"enabledPlugins": {"clangd-lsp@claude-plugins-official": false}}'
     Move-Item -LiteralPath $partial -Destination $sessionSettings -Force
-    $sessionArgs = @('--settings', $sessionSettings)
+    $sessionArgs += @('--settings', $sessionSettings)
     Write-Host 'clangd: none (the pinned clangd is not installed: run python scripts/bootstrap-tools.py). The clangd-lsp plugin is off for this session, so no other clangd is used.' -ForegroundColor Yellow
 }
 # The campaign's own first check, shown here so a host that is not ready costs no session and no park commit.

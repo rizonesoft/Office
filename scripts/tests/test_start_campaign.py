@@ -311,6 +311,20 @@ class LauncherRunTest(unittest.TestCase):
         args = (self.root / "session-args.txt").read_text(encoding="utf-8").split()
         self.assertEqual(args[:5], ["--model", "opus", "--effort", "medium", "--dangerously-skip-permissions"])
 
+    def test_a_claude_start_names_the_session_like_the_window(self):
+        # Claude Code overwrites the terminal title with its own session topic unless --name is given.
+        launcher = self.launch("-RestartSeconds", "30")
+        self.wait_for(self.root / "session-args.txt")
+        self.request_stop()
+        launcher.communicate(timeout=120)
+        args = (self.root / "session-args.txt").read_text(encoding="utf-8").split()
+        self.assertEqual(args[5:9], ["--name", "Office", "Claude", "campaign"])
+
+    def test_the_session_name_comes_from_the_window_title(self):
+        text = LAUNCHER.read_text(encoding="utf-8")
+        self.assertIn("$Host.UI.RawUI.WindowTitle = $windowTitle", text)
+        self.assertIn("$sessionArgs = @('--name', $windowTitle)", text)
+
     def test_a_crashed_session_is_not_started_again(self):
         # Owner, 2026-11-12 (decision 43): only a clean exit is followed by the next session in the window.
         self.env["OFFICE_FAKE_EXIT"] = "1"
