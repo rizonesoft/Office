@@ -326,23 +326,38 @@ def render(records):
 class Element:
     """A UI Automation element, exposing only what a capture records. Help text is deliberately absent."""
 
-    def __init__(self, uia, raw):
+    def __init__(self, uia, raw, quiet=False):
         try:
-            self._read(uia, raw)
+            self._read(uia, raw, quiet)
         except Exception as exc:  # comtypes raises COMError for an element that no longer exists
             if type(exc).__name__ == "COMError":
                 raise Gone(str(exc)) from None
             raise
 
-    def _read(self, uia, raw):
+    def __getattr__(self, attr):
+        # Only a quiet text element comes here, and only for its name: it is read when it is first asked for.
+        if attr != "name" or "raw" not in self.__dict__:
+            raise AttributeError(attr)
+        try:
+            self.name = strip_control_chars(self.raw.CurrentName or "")
+        except Exception as exc:
+            if type(exc).__name__ == "COMError":
+                raise Gone(str(exc)) from None
+            raise
+        return self.name
+
+    def _read(self, uia, raw, quiet=False):
         self.uia, self.raw = uia, raw
+        self.control_type = uia.type_name(raw.CurrentControlType)
         # Word embeds an unseen level-number placeholder (U+0001) in numbering gallery names and bidi format marks
         # (U+202A..U+202C) around some item labels; control and format characters are dropped from the name.
-        self.name = strip_control_chars(raw.CurrentName or "")
+        # A quiet text element's name is not read here: a text can be this PC's data (what a caption names), and
+        # the capture that asked for quiet children decides from where the text stands whether to read it at all.
+        if not (quiet and self.control_type == "Text"):
+            self.name = strip_control_chars(raw.CurrentName or "")
         self.automation_id = raw.CurrentAutomationId or ""
         self.access_key = raw.CurrentAccessKey or ""
         self.class_name = raw.CurrentClassName or ""
-        self.control_type = uia.type_name(raw.CurrentControlType)
         self.is_offscreen = bool(getattr(raw, "CurrentIsOffscreen", False))
         self.is_enabled = bool(getattr(raw, "CurrentIsEnabled", True))
         r = raw.CurrentBoundingRectangle
@@ -355,6 +370,13 @@ class Element:
         child = self.uia.walker.GetFirstChildElement(self.raw)
         while child:
             yield Element(self.uia, child)
+            child = self.uia.walker.GetNextSiblingElement(child)
+
+    def quiet_children(self):
+        """The children, with the name of a text element left unread until it is asked for (Word Options)."""
+        child = self.uia.walker.GetFirstChildElement(self.raw)
+        while child:
+            yield Element(self.uia, child, quiet=True)
             child = self.uia.walker.GetNextSiblingElement(child)
 
     def pattern(self, name):
@@ -3154,20 +3176,53 @@ def open_backstage(uia, hwnd, ready):
 
 
 # ------------------------------------------------------------------------------- Word Options (D02 T01 §31)
+def quiet_children(element):
+    """An element's children without reading the name of a text among them (a test's fake element reads nothing
+    until its name is asked for, so its plain children are quiet already)."""
+    quiet = getattr(element, "quiet_children", None)
+    return list(quiet() if callable(quiet) else element.children())
+
+
 def options_tree(element, depth=0, limit=12):
     """A plain tree of one element for word_options.record_category. Only a container is walked into: a control is
-    one node, whatever parts it is made of, and nothing inside it (a value, a list's entries) is read."""
-    node = {"role": element.control_type, "name": element.name, "class_name": element.class_name,
+    one node, whatever parts it is made of, and nothing inside it (a value, a list's entries) is read. A text node
+    carries no `name` but a `read` that fetches it, so that the rules decide from where a text stands whether it is
+    read at all: the text after a caption is this PC's data."""
+    node = {"role": element.control_type, "class_name": element.class_name,
             "enabled": bool(getattr(element, "is_enabled", True)), "offscreen": bool(element.is_offscreen),
             "_el": element}
+    if element.control_type == "Text":
+        node["read"] = lambda: element.name
+    else:
+        node["name"] = element.name
     if element.control_type in word_options.CONTAINERS and depth < limit:
-        node["children"] = [options_tree(k, depth + 1, limit) for k in element.children()]
+        node["children"] = [options_tree(k, depth + 1, limit) for k in quiet_children(element)]
     return node
 
 
 def _options_signature(node):
-    return (node["role"], node["name"], node["enabled"]) + tuple(
+    """What two reads of a category must agree on: every element's role and state, and every name but a text's."""
+    return (node["role"], node.get("name"), node["enabled"]) + tuple(
         _options_signature(k) for k in node.get("children", []) if k["role"] not in word_options.SKIPPED)
+
+
+def _options_frame(uia, dialog):
+    """The dialog's window and its frame, whose own children are the list of categories, the pane of the category
+    now shown and the dialog's buttons. They are reached step by step, never by a search through the dialog: a
+    search would read the name of everything it passed, a list's entries and a caption's value among them."""
+    top = uia.element(dialog)
+    pane = next((k for k in quiet_children(top) if k.control_type == "Pane"), None)
+    frame = next((k for k in quiet_children(pane) if k.control_type == "Group"), None) if pane is not None else None
+    if frame is None:
+        raise Refused("Word Options is not laid out as the capture knows it (a pane holding one group)")
+    return top, frame
+
+
+def _options_part(uia, dialog, control_type, name=None):
+    """The frame's own child of one type (and one name, when given), or None."""
+    _top, frame = _options_frame(uia, dialog)
+    return next((k for k in quiet_children(frame) if k.control_type == control_type
+                 and (name is None or word_options.clean(k.name) == word_options.clean(name))), None)
 
 
 def _options_sample(launched):
@@ -3192,6 +3247,20 @@ def options_unchanged(launched, run):
     return result
 
 
+def _options_cancel(element, depth=6):
+    """The dialog's Cancel button, looked for in containers only, so that the dialog can be closed even when it is
+    not laid out as the capture knows it. A list, a grid or a tree is never walked into and a text's name is never
+    read, so the search passes none of this PC's data."""
+    for kid in quiet_children(element):
+        if kid.control_type == "Button" and word_options.clean(kid.name) == "Cancel":
+            return kid
+        if depth and kid.control_type in ("Pane", "Group", "Window", "Custom"):
+            found = _options_cancel(kid, depth - 1)
+            if found is not None:
+                return found
+    return None
+
+
 def close_word_options(uia, win, pid, dialog, attempts=3, seconds=5.0):
     """Close Word Options with its own Cancel button and see that its window is gone. Cancel discards whatever the
     dialog holds, so no setting changes; the tool never presses OK and never closes the window any other way."""
@@ -3199,7 +3268,7 @@ def close_word_options(uia, win, pid, dialog, attempts=3, seconds=5.0):
         if dialog not in win.windows_of(pid):
             return
         try:
-            cancel = find(uia.element(dialog), lambda e: e.control_type == "Button" and e.name == "Cancel", depth=6)
+            cancel = _options_cancel(uia.element(dialog))
         except Gone:
             continue  # the window went while it was read
         if cancel is not None:
@@ -3241,8 +3310,7 @@ def _options_category(uia, dialog, name, ready, notes):
     scrolled to its end. Controls below the pane's edge are in the tree already; a pane that shows more only when
     scrolled is recorded from the scrolled read, without positions."""
     def read():
-        pane = find(uia.element(dialog), lambda e: e.control_type == "Pane"
-                    and word_options.clean(e.name) == word_options.clean(name), depth=5)
+        pane = _options_part(uia, dialog, "Pane", name)
         if pane is None:
             return None
         tree = options_tree(pane)
@@ -3297,17 +3365,15 @@ def capture_word_options(launched, uia, win, ctx, ready=BACKSTAGE_READY_SECONDS)
 
 
 def _walk_word_options(uia, ctx, dialog, ready):
-    top = uia.element(dialog)
-
     def categories():
-        found = find(uia.element(dialog), lambda e: e.control_type == "List", depth=5)
+        found = _options_part(uia, dialog, "List")
         return found if found is not None and any(k.control_type == "ListItem" for k in found.children()) else None
     listed = wait_for(categories, seconds=ready)
     if listed is None:
         raise Refused("Word Options shows no list of categories")
     names = [k.name for k in listed.children() if k.control_type == "ListItem" and word_options.clean(k.name)]
+    top, frame = _options_frame(uia, dialog)
     title = word_options.clean(top.name) or "Word Options"
-    frame = find(top, lambda e: e.control_type == "Group" and word_options.clean(e.name) == title, depth=3) or top
     window_origin = ctx.origin
     # A position in the dialog is measured from the dialog's own corner, wherever the dialog stands.
     ctx.origin = (frame.rect[0], frame.rect[1]) if window_origin is not None and frame.rect else None
@@ -3344,7 +3410,8 @@ def _walk_word_options(uia, ctx, dialog, ready):
                 raise Refused(f"the Options category {name!r} shows no heading and no control")
             tab["itemCount"] = count
             records += [tab] + under
-        buttons = [k for k in frame.children() if k.control_type == "Button" and word_options.clean(k.name)]
+        _top, frame = _options_frame(uia, dialog)
+        buttons = [k for k in quiet_children(frame) if k.control_type == "Button" and word_options.clean(k.name)]
         for at, button in enumerate(buttons):
             rec = ctx.base(f"{word_options.ROOT}.{word_backstage.slug(button.name)}", "control",
                            word_options.clean(button.name), len(names) + at, button, parent=word_options.ROOT,
@@ -3368,17 +3435,23 @@ def schema_problems(records):
     return checker.validate(records, schema, schema)
 
 
-def word_options_check(records):
-    """Refuse an Options capture that is not whole (scripts/lib/word_options.py's rules) or that the inventory's
-    schema would refuse."""
+def schema_check(records, what):
+    """Refuse records the inventory's schema would refuse, naming the first problems."""
+    problems = schema_problems(records)
+    if problems:
+        raise Refused(f"{what} breaks the inventory's schema, so nothing is published: " + "; ".join(problems[:5]) +
+                      (f"; and {len(problems) - 5} more" if len(problems) > 5 else ""))
+
+
+def word_options_check(records, what="the Options capture"):
+    """Refuse Options records that are not whole (scripts/lib/word_options.py's rules) or that the inventory's
+    schema would refuse. It is asked of the fresh capture, and again of what a merge made of it: the fields a merge
+    carries over were written by hand, and what is published is the merged file."""
     try:
         word_options.validate(records)
     except word_options.Invalid as exc:
-        raise Refused(f"the Options capture is not whole: {exc}") from None
-    problems = schema_problems(records)
-    if problems:
-        raise Refused("the Options capture breaks the inventory's schema, so nothing is published: " +
-                      "; ".join(problems[:5]) + (f"; and {len(problems) - 5} more" if len(problems) > 5 else ""))
+        raise Refused(f"{what} is not whole: {exc}") from None
+    schema_check(records, what)
 
 
 def same_geometry(before, after):
@@ -8069,6 +8142,12 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
                         records = word_backstage.carry_behaviours(existing_records, records)
                     except word_backstage.Invalid as exc:
                         raise Refused(str(exc)) from None
+                    # What is published is the merged file, hand-written fields and all: it is checked as such.
+                    merged = f"{out} merged with the capture"
+                    if args.options:
+                        word_options_check(records, merged)
+                    else:
+                        schema_check(records, merged)
                 elif args.app == "word" and is_canonical_word_ribbon:
                     records = merge_word_ribbon(
                         existing_records,

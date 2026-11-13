@@ -71,9 +71,18 @@ def record_category(cat_id: str, nodes: list, base, choices, notes: list) -> lis
     """The records under one category from its content tree. `nodes` are plain nodes (`role`, `name`, `class_name`,
     `enabled`, `children`); `base(rid, kind, label, order, node, parent, **extra)` builds a record; `choices(node)`
     opens a list or menu and returns its choice nodes, leaving it closed. Raises Invalid for a control it has no
-    rule for or cannot name, so nothing is dropped without a word."""
+    rule for or cannot name, so nothing is dropped without a word.
+
+    A text node may carry `read`, a function that fetches its name, in place of `name`. It is called only for a
+    text the rules need to read: the text after a caption is what the caption names (an add-in's publisher, its
+    folder), this PC's data, and when another text or nothing follows it, it is never read at all."""
     records, used = [], {cat_id}
     counts = {"prose": 0, "value": 0, "environment": 0, "data": 0, "disabled": 0}
+
+    def name_of(node):
+        if "name" not in node and callable(node.get("read")):
+            node["name"] = node["read"]()
+        return clean(node.get("name"))
 
     def unique(parent, label):
         rid, n = f"{parent}.{slug(label)}", 1
@@ -102,18 +111,24 @@ def record_category(cat_id: str, nodes: list, base, choices, notes: list) -> lis
         shown = [n for n in siblings if n.get("role") not in SKIPPED]
         last_text, caption = "", [None]  # caption: where among `shown` the last recorded caption stands
         for at, node in enumerate(shown):
-            role, name = node.get("role"), clean(node.get("name"))
-            # A text names the control beside it, or the heading whose controls follow (a list may stand between
-            # the heading's text and its group).
-            beside = {clean(n.get("name")) for n in shown[max(at - 1, 0):at + 3] if n is not node
-                      and n.get("role") != "Text"}
+            role = node.get("role")
             if role == "Text":
+                after = shown[at + 1] if at + 1 < len(shown) else None
+                # The text straight after a caption is what the caption names: this PC's data, never a label. With
+                # another text or nothing after it, it is not even read. Two captions never stand in a row.
+                if caption[0] == at - 1 and (after is None or after.get("role") == "Text"):
+                    counts["value"] += 1
+                    continue
+                # With a control or a group after it, it may be that one's label or heading: it is read to tell.
+                name = name_of(node)
+                # A text names the control beside it, or the heading whose controls follow (a list may stand
+                # between the heading's text and its group).
+                beside = {clean(n.get("name")) for n in shown[max(at - 1, 0):at + 3] if n is not node
+                          and n.get("role") != "Text"}
                 if name:
                     last_text = name
                 if not name or name in beside:  # the label of the control or the heading beside it
                     continue
-                # The text straight after a caption is what the caption names (an add-in's publisher, its folder):
-                # this PC's data, never a label. Two captions never stand in a row.
                 if caption[0] == at - 1:
                     counts["value"] += 1
                     continue
@@ -125,6 +140,7 @@ def record_category(cat_id: str, nodes: list, base, choices, notes: list) -> lis
                 order[0] += 1
                 caption[0] = at
                 continue
+            name = clean(node.get("name"))
             disabled = not node.get("enabled", True)
             enabled = {"enabled": False} if disabled else {}
             if role in CONTAINERS and node.get("class_name") == RADIO_GROUP:

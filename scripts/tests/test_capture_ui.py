@@ -5100,6 +5100,22 @@ class Flicker(E):
         return iter([E("CheckBox", f"Option {Flicker.reads}")])
 
 
+class Unread(E):
+    """An element that counts how often its name is read: this PC's data, which a capture must not read."""
+
+    @property
+    def name(self):
+        self.__dict__["seen"] = self.__dict__.get("seen", 0) + 1
+        return self.__dict__["text"]
+
+    @name.setter
+    def name(self, value):
+        self.__dict__["text"] = value
+
+    def read(self):
+        return self.__dict__.get("seen", 0)
+
+
 class WordOptions(unittest.TestCase):
     """The --options capture against a fake Word (D02 T01 §31)."""
 
@@ -5244,6 +5260,83 @@ class WordOptions(unittest.TestCase):
                      "this PC's data)"):
             self.assertIn(note, ctx.notes)
         cu.word_options_check(records)
+
+    def test_this_pcs_data_is_never_read_and_not_only_left_out(self):
+        # The Add-ins category shows the chosen add-in's publisher and folder as texts after their captions, and
+        # its add-ins as the entries of a grid. Leaving them out of the file is not enough: they are not read.
+        publisher, folder, about = Unread("Text", "Contoso Ltd"), Unread("Text", "C:\\Somewhere\\addin.dll"), \
+            Unread("Text", "A helper of this PC")
+        entry, language = Unread("ListItem", "Contoso Addin"), Unread("ListItem", "Zulu of this PC")
+        last = Unread("Text", "The last value")
+        word = FakeWordOptions({
+            "Language": [E("DataGrid", "Display Language", kids=[language])],
+            "Add-ins": [E("DataGrid", "Add-ins", kids=[entry]), E("Text", "Publisher"), publisher,
+                        E("Text", "Location"), folder, E("Text", "Description"), about, E("Text", "Manage"),
+                        combo("Manage", "COM Add-ins"), E("Button", "Go..."), E("Text", "Compatibility"), last],
+            "Trust Center": [control("CheckBox", "Fine")]})
+        records, ctx = self.run_capture(word)
+        self.assertEqual([r["label"] for r in records if r.get("parent") == "word.options.add-ins"],
+                         ["Add-ins", "Publisher", "Location", "Description", "Manage", "Go...", "Compatibility"])
+        for data in (publisher, folder, about, last, entry, language):
+            self.assertEqual(data.read(), 0, data.__dict__["text"])  # through every category, and the close
+        self.assertIn("Options category add-ins: 4 text(s) after a caption not recorded (what the caption names is "
+                      "this PC's data)", ctx.notes)
+        self.assertEqual((word.cancelled, word.dialog), (1, None))
+        # A text after a caption with a control after it may be that control's label, so it is read to tell, and
+        # recorded only when it is not what the caption names.
+        value = Unread("Text", "D:\\Elsewhere")
+        word = FakeWordOptions({"Add-ins": [E("Text", "Location"), value, E("Button", "Go...")]})
+        records, ctx = self.run_capture(word)
+        self.assertNotIn("Elsewhere", json.dumps(records))
+        self.assertEqual([r["label"] for r in records if r.get("parent") == "word.options.add-ins"],
+                         ["Location", "Go..."])
+        # A dialog that is not laid out as the capture knows it is refused, not searched.
+        word = FakeWordOptions({"General": [control("CheckBox", "Fine")]})
+        show = word.show
+
+        def other_layout():
+            show()
+            word.dialog.kids = [E("Custom", "", kids=word.dialog.kids)]
+        word.show = other_layout
+        self.refused(word, "Word Options is not laid out as the capture knows it")
+        self.assertEqual((word.cancelled, word.dialog, word.view), (1, None, None))  # and is still cancelled
+
+    def test_what_a_merge_publishes_is_checked_as_merged(self):
+        # The fields a merge carries over were written by hand. A behaviour the schema refuses (over 1,000
+        # characters) in the committed file must not ride into the published one behind a fresh capture that passes.
+        fresh, ctx = self.run_capture(self.two_categories())
+        live = "word.options.general.user-interface-options.enable-live-preview"
+        old = [dict(r, behaviour="x" * 1001) if r["id"] == live else r for r in copy.deepcopy(fresh)]
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "options.json"
+            out.write_text(cu.render(old), encoding="utf-8")
+            before = out.read_bytes()
+            code, _, err = self.run_main(out, lambda *a: (copy.deepcopy(fresh), [], ctx))
+            self.assertEqual(code, 1)
+            self.assertIn("merged with the capture breaks the inventory's schema, so nothing is published", err)
+            self.assertIn("behaviour", err)
+            self.assertEqual(out.read_bytes(), before)
+        # The same for the Backstage file, which merges by the same rule.
+        committed = json.loads((cu.INVENTORY / "word" / "backstage.json").read_text(encoding="utf-8"))
+        captured = [{k: v for k, v in r.items() if k != "behaviour"} for r in committed]
+        written = next(r["id"] for r in committed if r.get("behaviour"))
+        old = [dict(r, behaviour="x" * 1001) if r["id"] == written else r for r in committed]
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "backstage.json"
+            out.write_text(cu.render(old), encoding="utf-8")
+            before = out.read_bytes()
+            launched = type("L", (), {"hwnd": 5, "close": lambda self: None})()
+            real, cu.capture = cu.capture, lambda *a: (copy.deepcopy(captured), [], cu.Context("word", BUILD, set()))
+            try:
+                err = io.StringIO()
+                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                    code = cu.main(["--app", "word", "--backstage", "--merge", "--out", str(out)],
+                                   launcher=lambda app: launched, uia_factory=lambda: None, win_factory=lambda: None)
+            finally:
+                cu.capture = real
+            self.assertEqual(code, 1)
+            self.assertIn("merged with the capture breaks the inventory's schema", err.getvalue())
+            self.assertEqual(out.read_bytes(), before)
 
     def test_a_category_is_read_whole_on_screen_or_not(self):
         below = control("CheckBox", "Allow co-authoring", is_offscreen=True)
