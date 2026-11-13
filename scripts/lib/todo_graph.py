@@ -302,6 +302,10 @@ class GitFacts:
                             if fields}
         return self.parents.keys()
 
+    def holds(self, commit):
+        """Whether `commit` is in HEAD's history, by its full id."""
+        return commit in self.head_commits()
+
     def descends(self, older, newer):
         """Whether `older` is `newer` or an ancestor of it, or None when either is outside HEAD's history."""
         if self.parents is None or older not in self.parents or newer not in self.parents:
@@ -719,11 +723,17 @@ def schedule_ok(root, data, ref, surface):
     base = data["plan"]["candidate"]
 
     def changed(entry, kind):
-        # Only a conditional entry naming this kind of pass reads the changed files (review_pin.lenses_for), so with
-        # none there is nothing to compare the two commits for.
+        if not (three_pass and entry.get("candidate")):
+            return []
+        # Only a conditional entry naming this kind of pass reads the changed files (review_pin.lenses_for). With
+        # none, a graph read skips the comparison, but only where it could not have failed: both commits are in
+        # HEAD's history. For any other candidate (an attempt on a commit since abandoned, or one the repository no
+        # longer holds) the comparison is still made, because its failure is what refuses such a receipt.
         watched = any(kind in item["passes"] for item in schedule.get("conditional", []))
-        return changed_paths(root, base, entry["candidate"], ref) \
-            if three_pass and watched and entry.get("candidate") else []
+        read = _reading(root)
+        if not watched and read is not None and read.holds(base) and read.holds(entry["candidate"]):
+            return []
+        return changed_paths(root, base, entry["candidate"], ref)
 
     def check(where, recorded, expected, optional=()):
         lenses = list(recorded["lenses"] or [])

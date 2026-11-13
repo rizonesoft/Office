@@ -2012,6 +2012,34 @@ class GraphReadProcesses(ThreePassStamp):
         restore()
         self.assertTrue(tg.graph(self.root)["D00 T01 §1"].done)  # and the untouched receipt still reads back
 
+    def test_an_attempt_on_a_commit_the_repository_no_longer_holds_is_still_refused(self):
+        # Round 1, finding 1: a completion attempt that returned no review, on a build that was then replaced and
+        # pruned. The comparison of its candidate with the plan's was the one check that failed on it, so skipping
+        # the comparison for an unwatched pass must not skip that refusal.
+        self.passed("plan", self.start)
+        self.tick_work()
+        abandoned = self.build("first build")
+        outage = {"writer": "claude", "reviewer": None, "model": self.MODEL, "cli": self.CLI, "effort": "medium",
+                  "lenses": self.LENSES["completion"], "failover": [{"reviewer": "astra", "reason": "exited 3"}],
+                  "review": None}
+        self.clock += 1
+        tg.review_dispatch().record_completion(self.root / self.FILE, outage, f"2026-10-23T00:00:{self.clock:02d}Z",
+                                               abandoned, kind="completion")
+        subprocess.run(["git", "-C", str(self.root), "reset", "-q", "--soft", "HEAD~1"], check=True)
+        sha = self.build("the build that replaced it")
+        self.passed("round", sha)
+        self.passed("completion", sha)
+        self.stamp3(sha)
+        # While the abandoned commit is still in the object store the receipt reads back, and the read compares it
+        # with the plan's candidate the direct way, since it is outside HEAD's history.
+        self.assertEqual(self.read_graph(), (["-c", "cat-file", "rev-list"], 1))
+        for args in (["reflog", "expire", "--expire=now", "--all"], ["gc", "-q", "--prune=now"]):
+            subprocess.run(["git", "-C", str(self.root), *args], check=True, capture_output=True)
+        gone = subprocess.run(["git", "-C", str(self.root), "cat-file", "-e", abandoned], capture_output=True)
+        self.assertNotEqual(gone.returncode, 0)
+        message, _ = self.refusal()
+        self.assertIn(f"cannot list the files changed between {self.start} and {abandoned}", message)
+
 
 # GraphReadProcesses borrows ThreePassStamp's fixture, not its tests: those run once, in ThreePassStamp.
 for _name in dir(ThreePassStamp):
