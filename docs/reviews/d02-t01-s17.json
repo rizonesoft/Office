@@ -1,0 +1,85 @@
+{
+  "ref": "D02 T01 \u00a717",
+  "title": "Keyboard Shortcuts",
+  "implementation_sha": "5e98aebc39800de390781a4e89bc9c4592139a32",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/D02-T01-s17.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python scripts/run-tests.py -p \"test_shortcuts.py\" -> Ran 18 tests in 1 files in 14.1 s (4 at a time) OK",
+    "python scripts/run-tests.py -p \"test_word_commands.py\" -> Ran 22 tests in 1 files in 0.9 s (4 at a time) OK",
+    "python scripts/check-inventory.py design/inventory -> exit 0"
+  ],
+  "completion": {
+    "report": "docs/reviews/02-interface/D02-T01-s17.md",
+    "verdict": "reconciled",
+    "candidate": "5e98aebc39800de390781a4e89bc9c4592139a32",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/02-interface/D02-T01-s17.md",
+    "candidate": "cab914443d8c102ebcbfa071b19d27dd119ab928",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "cab914443d8c102ebcbfa071b19d27dd119ab928",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 4,
+  "pass_cap": 33
+}
