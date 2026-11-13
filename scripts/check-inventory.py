@@ -248,54 +248,118 @@ def ecma(pattern):
 # function as any dotted call, which it lets stand unfinished, so the scan must leave it alone too (measured over
 # generated texts: scripts/tests/test_check_inventory.py, test_nesting_depth_never_changes_the_address_verdict).
 HYPHENATED_CALL = re.compile(r"[A-Za-z0-9_)\]]-[A-Z0-9]+\.[A-Z0-9.]+\(")
-AFTER_ARGUMENT = set("),;+-*/^&=<>%:#!\\}")  # what may follow a completed inner call or a string, as noHost's pattern allows
-# After a space, a completed inner call may also meet the next reference or name: Excel's intersection operator.
-INTERSECTED = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789$'(@_\\")
+NAME_CHARACTERS = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.")
+DEPTH_PROBED = 64  # how deep the probe for a pattern's counted depth goes; past it the pattern is taken to count
+_COUNTED = {}  # (pattern, function name) -> the depth from which the pattern no longer counts that call's groups
 
 
-def unfinished_call(text):
-    """The first hyphenated dotted-function call in `text` that is not a completed call, or None (D02 T01 §27).
-    noHost exempts the dot of such a call from the host rule, but a regular expression can count its parentheses only
-    to a fixed depth, so this counts them at any depth: the call must close, an Excel string inside it ("" is a quote
-    in one) must close, and a completed inner call or string may be followed only by another argument, an operator or
-    the call's own end (and, after a space, an inner call by the next reference, as the intersection operator reads),
-    never by a string, a stray dot or bracket, or prose glued to it, as noHost's pattern holds at the depth it
-    counts."""
-    for match in HYPHENATED_CALL.finditer(text):
-        i, depth = match.end(), 1
-        while depth:
-            if i >= len(text):
-                return match.group(0)
-            c = text[i]
-            if c == '"':
-                i += 1
-                while i < len(text) and not (text[i] == '"' and text[i + 1:i + 2] != '"'):
-                    i += 2 if text[i] == '"' else 1
-                # A string that never closes has run to the end of the text, where the loop's own guard refuses it.
-            elif c == "(":
-                depth += 1
-            elif c == ")":
-                depth -= 1
-            if depth and c in '")':  # a completed inner call or string: what follows it must be formula
-                k = i + 1
-                while k < len(text) and text[k] in " \t":
-                    k += 1
-                spaced = k > i + 1
-                if k < len(text) and text[k] not in AFTER_ARGUMENT and not (
-                        c == ")" and spaced and text[k] in INTERSECTED):
-                    return match.group(0)
+def call_groups(text, start):
+    """The groups of the call whose opening parenthesis is at `start - 1`: (raw depth, [(open, close), ...] in the
+    order they open, the call's own pair first), or None when the call never closes. A group is a pair of
+    parentheses outside "..." and '...' (a doubled quote inside either is a quote, and one that never closes runs to
+    the end of the text, so the call does not close). Raw depth counts every parenthesis, quoted or not: the pattern
+    spends a level on one inside a quoted sheet name, so the depth it has left is the raw one."""
+    stack, groups, i, raw, deepest = [start - 1], [], start, 1, 1
+    while stack:
+        if i >= len(text):
+            return None
+        c = text[i]
+        if c in "\"'":
             i += 1
+            while i < len(text) and not (text[i] == c and text[i + 1:i + 2] != c):
+                if text[i] in "()":
+                    raw += 1 if text[i] == "(" else -1
+                    deepest = max(deepest, raw)
+                i += 2 if text[i] == c else 1
+        elif c == "(":
+            stack.append(i)
+            raw += 1
+            deepest = max(deepest, raw)
+        elif c == ")":
+            groups.append((stack.pop(), i))
+            raw -= 1
+        i += 1
+    return deepest - 1, sorted(groups)
+
+
+def call_levels(text, groups):
+    """Each group of a call read on its own, outermost first: (the name glued before its parenthesis, its text with
+    the inside of every group directly inside it replaced by `1`). Every character of the call, and so every place
+    where one argument meets the next, is in exactly one level, and no level nests more than one group deep."""
+    inner, open_groups = {g: [] for g in groups}, []
+    for g in groups:
+        while open_groups and open_groups[-1][1] < g[0]:
+            open_groups.pop()
+        if open_groups:
+            inner[open_groups[-1]].append(g)
+        open_groups.append(g)
+    for opened, closed in groups:
+        parts, at = [], opened + 1
+        for child_open, child_close in inner[(opened, closed)]:
+            parts.append(text[at:child_open + 1] + "1")
+            at = child_close
+        parts.append(text[at:closed])
+        named = opened
+        while named > 0 and text[named - 1] in NAME_CHARACTERS:
+            named -= 1
+        yield text[named:opened], "".join(parts)
+
+
+def counted_depth(name, host):
+    """How many groups deep `host` (noHost's compiled pattern) counts inside a hyphenated call of the function
+    `name` (`REGISTER.ID(`): the first depth at which it lets an unfinished call stand. Measured on the pattern, never
+    assumed, so a schema that counts deeper is followed without a change here."""
+    key = (host.pattern, name)
+    if key not in _COUNTED:
+        if len(_COUNTED) >= 256:  # the pattern exempts a closed list of functions; anything more is hostile input
+            _COUNTED.clear()
+        depth = 1
+        while depth <= DEPTH_PROBED and host.search(utf16("=1-" + name + "(" * depth + "1" + ")" * depth)):
+            depth += 1
+        _COUNTED[key] = depth
+    return _COUNTED[key]
+
+
+def unfinished_call(text, host):
+    """Why the first hyphenated dotted-function call in `text` cannot keep noHost's exemption, or None (D02 T01 §27).
+    `host` is noHost's compiled pattern, which has already accepted `text`. The pattern exempts the dot of such a
+    call from the address rule, but a regular expression counts parentheses only to a fixed depth, and past it lets
+    an unfinished call, or one with anything at all between its inner calls, stand. So the call must close, at any
+    depth; and a call nested deeper than the pattern counts is read one level at a time by the pattern itself (each
+    level's own text under its own function name, the levels inside it replaced by `1`), so what the pattern refuses
+    in a shallow call it refuses in a deep one, and nothing else is refused: below the counted depth the pattern's
+    verdict stands as it is."""
+    read = set()
+    for match in HYPHENATED_CALL.finditer(text):
+        groups = call_groups(text, match.end())
+        if groups is None:
+            return f"the call {match.group(0)} is not completed"
+        depth, groups = groups
+        name = match.group(0)[2:]
+        if depth >= counted_depth(name, host):
+            for level, (callee, inside) in enumerate(call_levels(text, groups)):
+                alone = f"=1-{name}{inside})" if level == 0 else f"=1-{name}{callee}({inside}))"
+                if alone in read:  # a call inside another shares its levels: each is read once
+                    continue
+                read.add(alone)
+                if host.search(utf16(alone)):
+                    shown = inside if len(inside) <= 60 else inside[:57] + "..."
+                    return (f"the call {match.group(0)} nests deeper than the address rule counts, and its part "
+                            f"{callee}({shown}) is refused when read alone")
     return None
 
 
 def validate(value, schema, root, path="$"):
     """The subset of JSON Schema 2020-12 that schema.json uses. Returns a list of problems."""
     if "$ref" in schema:
-        problems = validate(value, resolve_ref(root, schema["$ref"]), root, path)
+        target = resolve_ref(root, schema["$ref"])
+        problems = validate(value, target, root, path)
         if schema["$ref"] == "#/$defs/noHost" and isinstance(value, str) and not problems:
-            call = unfinished_call(value)  # the depth noHost's pattern cannot count (D02 T01 §27)
-            if call:
-                problems.append(f"{path}: host name or address (the call {call} is not completed)")
+            pattern = target.get("not", {}).get("pattern")
+            if pattern:  # the depth noHost's pattern cannot count (D02 T01 §27)
+                reason = unfinished_call(value, ecma(pattern))
+                if reason:
+                    problems.append(f"{path}: host name or address ({reason})")
         return problems
     problems = []
     if "type" in schema and not type_ok(value, schema["type"]):

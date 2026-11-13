@@ -369,60 +369,126 @@ class Inventory(unittest.TestCase):
                 self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, behaviour=text)])
                 self.assertEqual(self.problems(), [], text[:40] + "..." + text[-20:])
 
-    def test_the_unfinished_call_scan_reads_strings_and_boundaries(self):
-        f = ci.unfinished_call
-        self.assertIsNone(f("=1-STDEV.S(1,2) and prose after the call"))
-        self.assertIsNone(f('=1-REGISTER.ID(SUM("a""b"), 2)'))
-        self.assertEqual(f('=1-REGISTER.ID(SUM("a""b) x'), "1-REGISTER.ID(")
-        self.assertIsNone(f("=1-REGISTER.ID(SUM(1) desk)"))  # the intersection operator, as noHost's pattern reads it
-        self.assertIsNone(f("=1-STDEV.S((Table1[[#Data],[Amount]]) January)"))
-        for glued in ('=1-REGISTER.ID(SUM(1) "desk")', "=1-REGISTER.ID(SUM(1) .x)", "=1-REGISTER.ID(SUM(1) [x])",
-                      "=1-REGISTER.ID(SUM(1)desk)", '=1-REGISTER.ID("help" desk)'):
-            self.assertEqual(f(glued), "1-REGISTER.ID(", glued)
-        self.assertIsNone(f("=1-REGISTER.ID(SUM(1) )"))
-        self.assertIsNone(f("No call here: STDEV.S without a hyphen before it."))
+    def host_pattern(self):
+        return ci.ecma(ci.load(ci.SCHEMA)["$defs"]["noHost"]["not"]["pattern"])
+
+    def test_a_hyphenated_call_must_close_whatever_it_quotes(self):
+        # D02 T01 §27: the scan counts parentheses outside "..." and '...' only (a doubled quote inside either is a
+        # quote), and takes only a call glued to its hyphen. Round 1, finding 1: a parenthesis inside a quoted sheet
+        # name was counted as call syntax, so a valid reference was refused.
+        host = self.host_pattern()
+
+        def f(text):
+            return ci.unfinished_call(text, host)
+        for whole in ("=1-STDEV.S(1,2) and prose after the call", '=1-REGISTER.ID(SUM("a""b"), 2)',
+                      "=1-STDEV.S('Q1 (draft)'!A1)", "=1-STDEV.S('It''s (x)'!A1, \"a)\")", "=1-REGISTER.ID(SUM(1) )",
+                      "No call here: STDEV.S without a hyphen before it.",
+                      "=1 - REGISTER.ID(SUM(1", "=x -NORM.S.DIST(1"):  # a spaced hyphen is the pattern's to judge
+            self.assertIsNone(f(whole), whole)
+        for open_call, call in (('=1-REGISTER.ID(SUM("a""b) x', "1-REGISTER.ID("), ("=1-STDEV.S('Q1 (draft!A1)", "1-STDEV.S("),
+                                ("=SUM(1)-NORM.S.DIST(1", ")-NORM.S.DIST("), ("=Table1[Amount]-NORM.S.DIST((1)", "]-NORM.S.DIST("),
+                                ("=1-STDEV.S(1)+2-REGISTER.ID(3", "2-REGISTER.ID(")):
+            self.assertEqual(f(open_call), f"the call {call} is not completed", open_call)
+        schema = ci.load(ci.SCHEMA)
+        record = {"id": "excel.probe", "app": "excel", "kind": "tab", "label": "Probe",
+                  "behaviour": "=1-STDEV.S('Q1 (draft)'!A1)"}  # the record the round reproduced the refusal with
+        self.assertEqual(ci.validate([record], schema, schema), [])
+
+    def test_a_call_nested_deeper_than_the_pattern_counts_is_read_level_by_level(self):
+        # D02 T01 §27: the depth the pattern counts is measured on the pattern, and from that depth each level of the
+        # call is read by the pattern on its own, so a deep call is refused for exactly what refuses a shallow one.
+        host, schema = self.host_pattern(), ci.load(ci.SCHEMA)
+        counted = ci.counted_depth("REGISTER.ID(", host)
+        self.assertLess(counted, ci.DEPTH_PROBED)
+        unfinished = "=1-REGISTER.ID(" + "(" * (counted - 1) + "1" + ")" * (counted - 1)
+        self.assertIsNotNone(host.search(unfinished))  # one level short of it, the pattern still refuses this itself
+        self.assertIsNone(host.search("=1-REGISTER.ID(" + "(" * counted + "1" + ")" * counted))  # and from it, not
+
+        def behaviour(text):
+            return ci.validate([dict(BOLD, behaviour=text)], schema, schema)
+        for n in (counted, counted + 1, 40):
+            nested = "=1-REGISTER.ID(" + "SUM(" * n + "1" + ")" * n
+            self.assertEqual(behaviour(nested + ")"), [], n)
+            self.assertEqual(behaviour(nested + ",'Q1 (draft)'!A1)"), [], n)
+            for glued, part in (("?)", "REGISTER.ID(SUM(1)?)"), ("'x')", "REGISTER.ID(SUM(1)'x')"),
+                                (",SUM(2) [x])", "REGISTER.ID(SUM(1),SUM(1) [x])")):
+                self.assertIsNone(host.search(nested + glued))  # the pattern alone lets it stand at this depth
+                self.assertEqual(behaviour(nested + glued),
+                                 ["$[0].behaviour: host name or address (the call 1-REGISTER.ID( nests deeper than "
+                                  f"the address rule counts, and its part {part} is refused when read alone)"], (n, glued))
+        # A long refused part is cut short in the diagnostic.
+        long_part = "=1-REGISTER.ID(" + "SUM(" * 20 + "1" + ")" * 20 + "?" + "2" * 80 + ")"
+        self.assertIsNone(host.search(long_part))
+        self.assertEqual(behaviour(long_part), ["$[0].behaviour: host name or address (the call 1-REGISTER.ID( nests "
+                                                "deeper than the address rule counts, and its part REGISTER.ID(SUM(1)?"
+                                                + "2" * 50 + "...) is refused when read alone)"])
+        # Inside an inner call the pattern lets the same text stand at any depth it counts, so it stands deep too.
+        self.assertIsNone(host.search("=1-REGISTER.ID(SUM(IF(1)?2))"))
+        self.assertEqual(behaviour("=1-REGISTER.ID(" + "SUM(" * 20 + "IF(1)?2" + ")" * 20 + ")"), [])
 
     def test_nesting_depth_never_changes_the_address_verdict(self):
         # D02 T01 §27: the scan exists only for the depth noHost's pattern cannot count, so over generated calls it
         # must (1) refuse nothing the pattern accepts at a depth the pattern counts, and (2) give a deep call the
         # verdict the pattern gives the same call nested one, two and three times. Without the scan, (2) fails for a
-        # call glued to its hyphen; a scan that also took a spaced hyphen failed (1) 1,728 times over these texts, and
-        # one that took only a name before the hyphen failed (2) after `)` and `]`.
-        schema = ci.load(ci.SCHEMA)
-        host = ci.ecma(schema["$defs"]["noHost"]["not"]["pattern"])
-        endings = (")", ") is a lookup.", "+1)", " desk)", "", ' "help desk"', ' "desk")', " .x)", " [x])", "desk)")
+        # call glued to its hyphen. Three earlier scans failed here: one that also took a spaced hyphen failed (1)
+        # 1,728 times, one that took only a name before the hyphen failed (2) after `)` and `]`, and one that judged
+        # what may follow an inner call with rules of its own failed (1) for every parenthesis in a quoted sheet name
+        # (round 1, finding 1), which is why each level is now read by the pattern itself.
+        host = self.host_pattern()
+        counted = ci.counted_depth("REGISTER.ID(", host)
+        cores = ("1", '"help"', '"a ""b"""', '"help', "'Q1 (draft)'!A1", "'It''s (x)'!A1", "'Q1", "A1:B2",
+                 "Table1[Amount (USD)]", "{1,2}", "#N/A", "NORM.S.DIST(1)", "x.y", "John's", "(1+2)*3", "")
+        endings = (")", ") is a lookup.", "+1)", " desk)", "", ' "help desk"', ' "desk")', " .x)", " [x])", "desk)",
+                   ",'Q1 (draft)'!A1)", " 'Q1'!A1)", '"x")', "'x')", ")-STDEV.S(1)", ") and 1-STDEV.S(", ")'",
+                   "?)", "~1)", "}1)", ",SUM(1) [x])", ",(1)?)")
+        after = "?[]`|~}{'\"$@_.x1 "  # one character after an inner call, with and without more after it
 
-        def shapes(n):
-            nested = "SUM(" * n + "1" + ")" * n
-            return [nested + end for end in endings] + [
-                "SUM(" * n + "1" + ")" * (n - 1) + " help desk",
-                "SUM(" * n + '"help' + ")" * n + ")",
-                "SUM(" * n + '"help" desk' + ")" * n + ")",
-                "SUM(" * n + '"a ""b"""' + ")" * n + ")"]
+        def shapes(n, opening):
+            out = []
+            for core in cores:
+                nested = opening * n + core + ")" * n
+                out += [nested + end for end in endings]
+                out += [nested[:-1] + " help desk", nested[:-n] + " desk" + ")" * n + ")"]
+            plain = opening * n + "1" + ")" * n
+            for x in after:
+                out += [plain + x + ")", plain + x + "1)", plain + " " + x + "1)",
+                        opening * n + '"s"' + x + ")" * n + ")"]
+            return out
 
-        def accepted(text):
-            return host.search(ci.utf16(text)) is None and ci.unfinished_call(text) is None
-
-        heads = [prefix + left + hyphen + function
-                 for prefix in ("=", "Type =")
-                 for left in ("1", "x_1", "A1", "SUM(1)", "Table1[Amount]", '"a"', "1%", "(1)")
-                 for hyphen in ("-", " - ", " -", "- ")
-                 for function in ("REGISTER.ID(", "NORM.S.DIST(", "register.id(")]
+        heads = ("=1-REGISTER.ID(", "Type =SUM(1)-NORM.S.DIST(", "=Table1[Amount]-NORM.S.DIST(",
+                 "=1 - REGISTER.ID(", '="a"-REGISTER.ID(')
         verdicts = set()
         for head in heads:
-            shallow = [[(host.search(ci.utf16(head + shape)) is None, ci.unfinished_call(head + shape))
-                        for shape in shapes(n)] for n in (1, 2, 3)]
-            for n, row in zip((1, 2, 3), shallow):
-                for (by_pattern, call), shape in zip(row, shapes(n)):
-                    self.assertFalse(by_pattern and call, f"the scan refuses what the pattern accepts: {head + shape}")
-            by_shape = [[by_pattern for by_pattern, _ in row] for row in shallow]
-            self.assertEqual(by_shape[0], by_shape[1], head)
-            self.assertEqual(by_shape[0], by_shape[2], head)
-            for n in (20, 40):
-                deep = [accepted(head + shape) for shape in shapes(n)]
-                self.assertEqual(deep, by_shape[0], f"{head} nested {n} times")
-            verdicts.update(by_shape[0])
+            for opening in ("SUM(", "SUM(1,"):
+                by_depth = []
+                for n in (1, 2, 3):
+                    row = []
+                    for shape in shapes(n, opening):
+                        by_pattern = host.search(ci.utf16(head + shape)) is None
+                        self.assertFalse(by_pattern and ci.unfinished_call(head + shape, host),
+                                         f"the scan refuses what the pattern accepts: {head + shape}")
+                        row.append(by_pattern)
+                    by_depth.append(row)
+                self.assertEqual(by_depth[0], by_depth[1], head)
+                self.assertEqual(by_depth[0], by_depth[2], head)
+                for n in (counted - 1, counted, counted + 1, 40):
+                    for shallow, shape in zip(by_depth[0], shapes(n, opening)):
+                        text = head + shape
+                        deep = host.search(ci.utf16(text)) is None and ci.unfinished_call(text, host) is None
+                        self.assertEqual(deep, shallow, f"nested {n} times: {text[:60]} ... {text[-40:]}")
+                verdicts.update(by_depth[0])
         self.assertEqual(verdicts, {True, False})  # the texts hold both calls that stand and calls that are refused
+
+    def test_nested_hyphenated_calls_cost_bounded_time(self):
+        # Each call inside another shares its levels with it; they are read once, so sixty calls nested in each other
+        # cost no more than their levels.
+        import time
+        schema = ci.load(ci.SCHEMA)
+        ci.validate([dict(BOLD, behaviour="=1-REGISTER.ID(" + "(" * 20 + "1" + ")" * 21)], schema, schema)  # measures
+        text = "=" + "1-REGISTER.ID(" * 60 + "1" + ")" * 60
+        start = time.perf_counter()
+        self.assertEqual(ci.validate([dict(BOLD, behaviour=text)], schema, schema), [])
+        self.assertLess(time.perf_counter() - start, 3.0)
 
     def test_unicode_host_names_are_refused(self):
         # Audit round 6, finding 1: host names with the full-stop forms IDNA normalises, and in other scripts.
