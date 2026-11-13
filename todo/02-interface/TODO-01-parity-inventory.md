@@ -225,7 +225,9 @@ Every built-in Word tab (Home, Insert, Draw, Design, Layout, References, Mailing
 
 ## 6. Word Backstage Pages
 
-> **Started:** 2026-11-13T01:15:23Z
+> **Duration:** started 2026-11-13T01:15:23Z, reopened 2026-11-13T03:11:16Z
+
+> **Started:** 2026-11-13T03:11:16Z
 
 Word beyond the ribbon, part one: the Backstage view behind File, its pages (Home, New, Open, Info, Save, Save As, Print, Share, Export, Transform, Close, Account, Feedback, Options) and the sections each page shows. **Corrected 2026-11-13:** split from §6, which bundled six capture surfaces, each needing its own capture mode in `scripts/capture-ui.py` (the tool knew only the ribbon and the shell); one surface per section.
 
