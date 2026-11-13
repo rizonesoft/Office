@@ -119,7 +119,7 @@ Sections: 17 | Checklist items: 90
 
 ### Phase 2: Interface inventory and specification
 
-Sections: 36 | Checklist items: 221
+Sections: 36 | Checklist items: 222
 
 | Status | Reference   | Deliverable                         | Needs                                           | Items |
 | ------ | ----------- | ----------------------------------- | ----------------------------------------------- | ----- |
@@ -140,7 +140,7 @@ Sections: 36 | Checklist items: 221
 | [x]    | D02 T01 §18 | Inventory Coverage Report           | none                                            | 9     |
 | [x]    | D02 T01 §22 | Inventory Ownership Check           | none                                            | 13    |
 | [x]    | D02 T01 §27 | Checker Mutation Sweep              | none                                            | 6     |
-| [ ]    | D02 T01 §28 | Record Dispositions                 | none                                            | 6     |
+| [ ]    | D02 T01 §28 | Record Dispositions                 | none                                            | 7     |
 | [ ]    | D02 T01 §29 | Inventory Layout Tables             | none                                            | 10    |
 | [ ]    | D02 T01 §30 | Built-App Layout Check              | none                                            | 8     |
 | [ ]    | D02 T01 §31 | Word Options Settings               | office, windows-host, display-session           | 3     |
@@ -301,4 +301,4 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 
 Progress: 101/174 verified sections, 21 ready to run now, 1 parked, 84 TODO files still to author (not counted here).
 
-Checklist: 722/1226 items completed (includes Commit items).
+Checklist: 722/1227 items completed (includes Commit items).
