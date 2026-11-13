@@ -160,6 +160,14 @@ class Validate(unittest.TestCase):
         self.refused(recs, "word.backstage.print.print-preview.zoom-in: its behaviour does not say when it is unavailable")
         target["behaviour"] = "Makes the preview larger. Always available."
         wb.validate(recs, self.baseline, wb.ABSENT, self.reference)
+        for incidental in ("Makes the document suggest opening read only.",  # reconciliation 2: a word, no condition
+                           "Prints only when asked, and needs nothing more.", "Marks it final; readers see it read only."):
+            target["behaviour"] = incidental
+            self.refused(recs, "its behaviour does not say when it is unavailable")
+        for stated in ("Shows the size; read only.", "Prints. Needs an installed printer.",
+                       "Opens it; disabled until a name is entered."):
+            target["behaviour"] = stated
+            wb.validate(recs, self.baseline, wb.ABSENT, self.reference)
 
     def test_save_is_an_action_or_the_page_it_shows(self):
         recs = copy.deepcopy(self.records)

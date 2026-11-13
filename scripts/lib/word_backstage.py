@@ -64,9 +64,11 @@ TASK_GROUPS = {"GroupOpenPlaces", "SaveGroup", "GroupShare", "PublishGroup"}
 # (Browse, Add a Place) and are never selected.
 DETAIL_TASK_GROUPS = {"GroupShare", "PublishGroup"}
 ACTIONABLE = {"control", "menuItem", "backstagePage"}
-# Every actionable behaviour says when it is unavailable, or that it never is (D02 T01 §6): one of these words.
-CONDITION = re.compile(r"\b(disabled|needs?|unavailable|only when|only for|only where|until|while|read only|empty when|shown when|"
-                       r"always available)\b", re.IGNORECASE)
+# Every actionable behaviour ends with its availability (D02 T01 §6): its last sentence, or the clause after its last
+# semicolon, opens with one of these. A word anywhere else in the sentence says nothing about availability.
+AVAILABILITY = re.compile(r"(?:^|[.;]\s+)(Always available|Needs |Disabled |Unavailable |Shown only |Empty when |"
+                          r"Read only|Available only )[^.;]*\.?$", re.IGNORECASE)
+CONDITION = AVAILABILITY  # the name the capture scripts used
 # Baseline Backstage ids that UI Automation shows without an automation id, matched by their page and label instead.
 LABELS = {
     ("TabRecent", "Recent"): "ButtonTaskRecentDocuments", ("TabRecent", "Shared with Me"): "ButtonTaskSharedWithMe",
@@ -337,7 +339,7 @@ def validate(records: list, baseline: dict, absent: dict, reference_text: str, r
             text = str(rec.get("behaviour", "")).strip()
             if not text:
                 problems.append(f"{rec['kind']} {rec['id']} has no behaviour")
-            elif not CONDITION.search(text):
+            elif not AVAILABILITY.search(text):
                 problems.append(f"{rec['kind']} {rec['id']}: its behaviour does not say when it is unavailable, "
                                 f"or that it is always available")
     pages = {r["idMso"]: r for r in records if r.get("kind") == "backstagePage" and r.get("idMso")}
