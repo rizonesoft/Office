@@ -109,11 +109,16 @@ def check_word_shortcuts(f, data):
     return [f"{f}: {p}" for p in word_shortcuts.validate(data if isinstance(data, list) else [])]
 
 
-def chord_problems(records):
-    """Unreadable chords, unknown scopes and one chord given twice in one scope of one app (D02 T01 §17)."""
+def chord_problems(records, named_ids):
+    """Unreadable chords and unknown scopes of the named records, and every chord given twice in one scope of one app
+    where either record is named, so checking one file still sees a conflict with another (D02 T01 §17)."""
     sys.path.insert(0, str(ROOT / "scripts" / "lib"))
     import shortcuts
-    return shortcuts.problems(records)
+    named = [r for r in records if isinstance(r, dict) and r.get("id") in named_ids]
+    clashes = [f"{later}: {chord} in {scope} is already {earlier}'s"
+               for later, earlier, chord, scope in shortcuts.conflicts(records)
+               if later in named_ids or earlier in named_ids]
+    return [p for p in shortcuts.problems(named) if " is already " not in p] + clashes
 
 
 def check_word_backstage(f, data, require_behaviour):
@@ -526,10 +531,9 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             if isinstance(rec, dict) and isinstance(rec.get("id"), str):
                 seen.setdefault(rec["id"], []).append(f"{f}[{i}]")
                 kinds[rec["id"]] = rec.get("kind")
-    named_ids = {rec.get("id") for r in named_resolved for rec in records.get(r, []) if isinstance(rec, dict)}
-    for p in chord_problems([rec for recs in records.values() for rec in recs]):
-        if p.split(": ", 1)[0] in named_ids:  # chords conflict across the app's files; each is reported once
-            problems.append(f"shortcut {p}")
+    named_ids = {rec["id"] for r in named_resolved for rec in records.get(r, [])
+                 if isinstance(rec, dict) and isinstance(rec.get("id"), str)}
+    problems += [f"shortcut {p}" for p in chord_problems([rec for recs in records.values() for rec in recs], named_ids)]
     # A parent chain is followed only through ids defined once; an ambiguous parent is reported on its own.
     parents = {}
     for resolved, f in universe.items():

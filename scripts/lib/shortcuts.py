@@ -47,23 +47,47 @@ def canonical(chord: str) -> str:
     return SEQUENCE.join("+".join([m for m in MODIFIERS if m in mods] + [key]) for mods, key in steps(chord))
 
 
+def conflicts(records: list) -> list:
+    """(the later record's id, the earlier one's, the chord, the scope) for every chord two records give in one scope
+    of one app; records `problems` reports as unreadable are left out."""
+    out, seen = [], {}
+    for rec in records:
+        if not _readable(rec):
+            continue
+        scope = rec.get("scope", "document")
+        try:
+            key = (rec["app"], canonical(rec["shortcut"]), scope)
+        except Malformed:
+            continue
+        if key in seen:
+            out.append((rec["id"], seen[key], key[1], scope))
+        else:
+            seen[key] = rec["id"]
+    return out
+
+
+def _readable(rec):
+    return isinstance(rec, dict) and rec.get("kind") == "shortcut" and \
+        all(isinstance(rec.get(k), str) for k in ("id", "app", "shortcut")) and \
+        isinstance(rec.get("scope", "document"), str) and rec.get("scope", "document") in SCOPES
+
+
 def problems(records: list) -> list:
     """Every chord that cannot be read, every scope outside SCOPES, and every chord two records give in one scope of
     one app. A record without a scope is in `document`, as every key in an app's own key table is."""
-    out, seen = [], {}
+    out = []
     for rec in records:
         if not isinstance(rec, dict) or rec.get("kind") != "shortcut":
             continue
+        if not all(isinstance(rec.get(k), str) for k in ("id", "app", "shortcut")):
+            out.append(f"{rec.get('id')!r}: a shortcut's id, app and chord are text")
+            continue
         scope = rec.get("scope", "document")
-        if scope not in SCOPES:
+        if not isinstance(scope, str) or scope not in SCOPES:
             out.append(f"{rec.get('id')}: scope {scope!r} is not one of {', '.join(sorted(SCOPES))}")
         try:
-            key = (rec.get("app"), canonical(rec.get("shortcut")), scope)
+            canonical(rec["shortcut"])
         except Malformed as exc:
-            out.append(f"{rec.get('id')}: {exc}")
-            continue
-        if key in seen:
-            out.append(f"{rec.get('id')}: {key[1]} in {scope} is already {seen[key]}'s")
-        else:
-            seen[key] = rec.get("id")
-    return out
+            out.append(f"{rec['id']}: {exc}")
+    return out + [f"{later}: {chord} in {scope} is already {earlier}'s"
+                  for later, earlier, chord, scope in conflicts(records)]

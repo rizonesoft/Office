@@ -59,6 +59,13 @@ class Notation(unittest.TestCase):
         self.assertEqual(sc.problems(alternatives + [rec("other", "Ctrl+Insert")]),
                          ["word.shortcut.other: Ctrl+Insert in document is already word.shortcut.copy-2's"])
 
+    def test_a_field_of_the_wrong_type_is_reported_not_raised(self):
+        for field, value in (("scope", []), ("app", ["word"]), ("id", {"a": 1}), ("shortcut", 5)):
+            bad = dict(rec("a", "Ctrl+B"), **{field: value})
+            out = sc.problems([bad, rec("b", "Ctrl+B")])  # round 1: a list scope raised TypeError
+            self.assertTrue(out, field)
+            self.assertEqual(sc.conflicts([bad, rec("b", "Ctrl+B")]), [], field)
+
     def test_a_scope_outside_the_set_is_refused(self):
         self.assertIn("scope 'menu' is not one of", sc.problems([rec("a", "Esc", "menu")])[0])
 
@@ -121,6 +128,26 @@ class Checklist(unittest.TestCase):
                 problems = "\n".join(ci.check([str(inventory / "word" / "shortcuts.json")], inventory=inventory))
         self.assertIn("word.shortcut.italic: Ctrl+B in document is already word.shortcut.bold's", problems)
         self.assertIn("word.shortcut.underline: no behaviour", problems)
+
+    def test_checking_one_file_still_sees_a_conflict_with_another(self):
+        with tempfile.TemporaryDirectory() as tmp:  # round 1: only the later record's file reported it
+            inventory = Path(tmp) / "inventory"
+            shutil.copytree(ci.INVENTORY, inventory)
+            ribbon = inventory / "word" / "ribbon.json"
+            recs = json.loads(ribbon.read_text(encoding="utf-8"))
+            recs.insert(0, {"id": "word.shortcut.incoming", "app": "word", "kind": "shortcut", "label": "Incoming",
+                            "shortcut": "Ctrl+B", "scope": "document"})
+            ribbon.write_text(json.dumps(recs), encoding="utf-8")
+            with mock.patch.object(ci, "INVENTORY", inventory):
+                for named in (ribbon, inventory / "word" / "shortcuts.json"):
+                    problems = "\n".join(ci.check([str(named)], inventory=inventory))
+                    self.assertIn("Ctrl+B in document is already", problems, named.name)
+
+    def test_a_dialog_key_is_its_own_record_not_the_documents(self):
+        row = ws.COVERAGE["function-keys"][5]  # F6 and its combinations
+        dialog = [r for r in self.records if r["id"] in row and r["scope"] == "dialog"]
+        self.assertEqual([r["shortcut"] for r in dialog], ["Alt+F6"])  # round 1: it pointed at Next Window
+        self.assertNotIn("target", dialog[0])
 
     def test_word_key_codes_are_what_findkey_takes(self):
         self.assertEqual(ws.key_code({"Ctrl"}, "B"), 512 | 66)
