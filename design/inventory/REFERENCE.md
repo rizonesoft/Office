@@ -132,3 +132,22 @@ The reason is in our own words: the cloud service the record depends on and, for
 Who writes the fields: D03 T01 §14 decides each cloud service once, for the whole suite, and sets the records of the apps that are captured when it runs; the section that authors each later app's domain (D03 T01 §20 to §24) sets that app's records from §14's decisions. Nothing else writes them, and no capture does: a recapture carries both fields over from the committed record of the same id (`merge` in `scripts/capture-ui.py`, `carry_behaviours` in `scripts/lib/word_backstage.py`, `carry` and `carry_decided` in `scripts/word-commands.py`), and refuses, naming the record, when a Backstage record or a command that carries a disposition is no longer there to carry it to.
 
 What reads them: `design/inventory/COVERAGE.md` counts the three values for each app and counts an excluded record as accounted for; `python scripts/inventory-report.py --owners` leaves an excluded record out of the records that need an owner and refuses a section that claims one.
+
+## Layout check
+
+`python scripts/check-layout.py --parent <record id> --capture <file>` compares what a built app shows with what the inventory records for one parent (a tab, a group, a menu, a dialog), so a surface section's Test checkpoint can prove that every element sits at its inventoried position. `--capture` is the JSON array of draft records `python scripts/capture-ui.py --out <file>` writes for a window of the built app, taken at the capture profile above.
+
+| Finding | Meaning | Fails |
+| ------- | ------- | ----- |
+| `missing` | A record with no captured element | Yes |
+| `extra` | A captured element with no record | No |
+| `renamed` | The label differs | Yes |
+| `retyped` | The control type differs | Yes |
+| `reordered` | The child sits at another place among its siblings | Yes |
+| `moved` | Its position from the parent's corner differs | Yes |
+| `resized` | Its width or height differs | Yes |
+| `unmeasured` | A pair or a parent has no bounds to compare | Yes |
+
+An `extra` element is listed and does not fail: an improvement may add a control and may never lose one. Positions and sizes are compared from the parent's top left corner, so a window in another place changes nothing, and within `--tolerance` pixels (default 2 pixels). A capture at another profile than the record's is refused. `--no-bounds` compares presence, label, type and order only, for a parent whose layout `design/SPEC.md` modernises (Outlook, Visio and Project: decision 5 of `docs/specs/2026-10-23-campaign-scope-design.md`).
+
+The parent is found from the top of its branch, one level at a time, since several parents share a label and a type in different branches. A record with a `uiaId` pairs with the captured element of the same `uiaId`; one without pairs by label and type, in order where siblings share them. What is left unpaired is paired once more, by label alone (`retyped`) and then by its place between the same neighbours (`renamed`); a control with no `uiaId` whose label and type both changed is reported `missing` with an `extra`. The findings go to stderr and one line of counts to stdout. Exit 0 when nothing fails, 1 otherwise, 2 when an input cannot be read, the parent has no children in the inventory, a level of its branch cannot be told apart in the capture, or a profile differs.
