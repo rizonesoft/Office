@@ -138,7 +138,7 @@ Sections: 36 | Checklist items: 221
 | [x]    | D02 T01 §6  | Word Backstage Pages                | office, windows-host, display-session           | 8     |
 | [x]    | D02 T01 §17 | Keyboard Shortcuts                  | none                                            | 4     |
 | [x]    | D02 T01 §18 | Inventory Coverage Report           | none                                            | 9     |
-| [ ]    | D02 T01 §22 | Inventory Ownership Check           | none                                            | 13    |
+| [x]    | D02 T01 §22 | Inventory Ownership Check           | none                                            | 13    |
 | [x]    | D02 T01 §27 | Checker Mutation Sweep              | none                                            | 6     |
 | [ ]    | D02 T01 §28 | Record Dispositions                 | none                                            | 6     |
 | [ ]    | D02 T01 §29 | Inventory Layout Tables             | none                                            | 10    |
@@ -299,6 +299,6 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 | [ ]    | D03 T01 §25 | Interoperability Domain Authoring  | 3              |
 | [ ]    | D03 T01 §26 | VBA Domain Authoring               | 4              |
 
-Progress: 100/174 verified sections, 20 ready to run now, 1 parked, 84 TODO files still to author (not counted here).
+Progress: 101/174 verified sections, 21 ready to run now, 1 parked, 84 TODO files still to author (not counted here).
 
-Checklist: 721/1226 items completed (includes Commit items).
+Checklist: 722/1226 items completed (includes Commit items).

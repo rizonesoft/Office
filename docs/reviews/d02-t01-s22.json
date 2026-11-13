@@ -1,0 +1,85 @@
+{
+  "ref": "D02 T01 \u00a722",
+  "title": "Inventory Ownership Check",
+  "implementation_sha": "8d7b5cebea57965371008e814ffb3784c536afc6",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/D02-T01-s22.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_inventory_report.py\" -> Ran 35 tests, OK",
+    "python scripts/inventory-report.py --owners -> exit 0; owned and total counts for each of the seven apps",
+    "python -m unittest discover -s scripts/tests -p \"test_pre_commit_hook.py\" -> Ran 15 tests, OK"
+  ],
+  "completion": {
+    "report": "docs/reviews/02-interface/D02-T01-s22.md",
+    "verdict": "complete",
+    "candidate": "8d7b5cebea57965371008e814ffb3784c536afc6",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/02-interface/D02-T01-s22.md",
+    "candidate": "e9db0c3f7ea4e064e20f08d0eec66777d95ba913",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "e9db0c3f7ea4e064e20f08d0eec66777d95ba913",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}

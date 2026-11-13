@@ -60,7 +60,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 19 | §19 | Control ID baseline | §1, §21 | [x] |
 | 20 | §20 | Word command catalogue | §1, §2, §21 | [x] |
 | 21 | §21 | Microsoft-free inventory | §1 | [x] |
-| 22 | §22 | Inventory ownership check | §18 | [ ] |
+| 22 | §22 | Inventory ownership check | §18 | [x] |
 | 23 | §23 | Audit schema checker | §1 | [x] |
 | 24 | §24 | Audit capture tool | §3 | [x] |
 | 25 | §25 | Audit control ID baseline | §19 | [x] |
@@ -659,9 +659,12 @@ Parity is 1:1: every element the inventory records for Word, Excel, PowerPoint, 
 - [x] Add `--all` to `--owners --check`: every app it covers (all of them, or the one `--app` names) is held as `enforced` whatever its state, so it exits 1 naming each app with no captured record and each unowned record. Done when: tests show the pending fixtures above exit 1 under `--all`, `--all --app` on a half-claimed fixture app exits 1 naming its unowned records, and a fully claimed fixture exits 0. An authoring section proves its own app with `--all --app <app>` before it is stamped (D03 T01 §17 and §19 to §24), and D03 T01 §13 runs `--all` over everything. Cheaper substitute: reading the pending list by eye at the gate. **Corrected 2026-11-12:** added by D03 T01 §30; D03 T01 §13 runs it, so the proof over all six apps and the shell stays where it was.
 - [x] Add `python scripts/inventory-report.py --owners --check` to `scripts/hooks/pre-commit` for commits that stage `todo/` or `design/inventory/`, with a test in `scripts/tests/test_pre_commit_hook.py`. Done when: staging a section of an enforced fixture app with one claim removed refuses the commit, staging a new record of a pending app does not, and staging the first, partial claims of an app whose authoring section is open does not. Cheaper substitute: running the check only at the gate. **Corrected 2026-11-12:** moved here from D03 T01 §13 by D03 T01 §30, so the check holds Write's sections from the day they are written. **Corrected 2026-11-13 (build):** the two pending cases, an unknown claim and a missing authoring file are tested in `scripts/tests/test_pre_commit_hook.py`; the enforced case needs a really stamped authoring section, whose fixture is `stamp_fixture` in `scripts/tests/test_inventory_report.py`, so it is `RealStamp.test_the_hook_holds_an_enforced_apps_records_to_their_owners` there (two records, two claims, the section stamped for real, one claim dropped, the commit refused by the hook naming the record). The hook drops the check's stdout (states and counts) and keeps its stderr (refusals).
 - [x] Write the owners tests in `scripts/tests/test_inventory_report.py`: unowned, unknown, doubly owned, filtered, example-only and fully claimed fixtures. Done when: the suite passes and fails when the unowned list is forced empty. Cheaper substitute: one happy-path test. **Measured 2026-11-13 (build):** with `ownership` made to return every unowned list empty, 7 of the 13 tests of the `Owners` class fail (0 errors); unchanged, all 13 pass.
-- [ ] Commit: `inventory: add record-level ownership check`
+- [x] Commit: `inventory: add record-level ownership check`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_inventory_report.py"` passes, and `python scripts/inventory-report.py --owners` exits 0 and prints owned and total counts per app.
+
+> **Verified:** 2026-11-13 | §22 | 8d7b5cebea57965371008e814ffb3784c536afc6
+> **Review:** `docs/reviews/d02-t01-s22.json`
 
 ## 23. Audit Schema Checker
 
