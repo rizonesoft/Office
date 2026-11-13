@@ -1242,6 +1242,8 @@ Filed 2026-11-12 after §54 was stamped. `.conclave/automations/run.py`, which r
 
 ## 56. Digest Delivery When No Evidence Remains
 
+> **Started:** 2026-11-13T00:06:58Z
+
 Filed 2026-11-12 from the review of §53 (`docs/reviews/00-workspace/D00-T03-s53.md`, reconciliations 6 to 9). The weekly digest claims its notices before sending, records SMTP2GO's acceptance in a second store, and settles every claim daily against SMTP2GO's activity log. One state stays undecidable: SMTP2GO accepted the digest, every write to the notice queue failed until the PC went off, and the PC stayed off past SMTP2GO's activity history (five days on its free plan). Nothing can then say whether the owner received it, and the two failures trade against each other: (a) count the acceptance as delivery, as §53 does now and as its contract reads ("marked reported only after the send succeeds"), so a bounce SMTP2GO no longer shows goes unseen; or (b) deliver those notices again in full, labelled "may already have reached you", so a delivered digest can repeat once. The reviewer holds §53 to both, which no design can meet; the owner chooses, and §53 is reconciled to that choice.
 
 **Owner's choice, 2026-11-13 (in session, asked with both options and their worst cases):** repeat. Where SMTP2GO no longer holds a digest's record and no local record of its delivery was written, the next digest carries those notices again in full, labelled "may already have reached you" (option b). The `owner-decision` Need is removed with this answer.
