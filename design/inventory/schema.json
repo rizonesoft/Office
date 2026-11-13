@@ -183,6 +183,7 @@
           "minLength": 1,
           "pattern": "^\\s*\\S",
           "description": "on a shortcut: the state the key does this only in, in our own words",
+          "maxLength": 200,
           "allOf": [
             {
               "$ref": "#/$defs/noLink"

@@ -136,6 +136,7 @@ class Enumeration(Fixture):
                             for r in rules))
         self.assertTrue(any("properties." in r.name for r in rules))
         self.assertTrue(any(r.name.endswith(" then") for r in rules))
+        self.assertTrue(any(r.name.endswith(" if") for r in rules))  # a conditional's test is a rule of its own
 
 
 class Outcomes(Fixture):

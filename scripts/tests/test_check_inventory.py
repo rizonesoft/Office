@@ -248,6 +248,10 @@ class Inventory(unittest.TestCase):
         sources = ci.load(real / ci.SOURCES)
         problems = ci.check_baseline(Path("outlook/baseline.json"), data, ci.load(ci.BASELINE_SCHEMA), sources)
         self.assertTrue(any("$.rows[0].window" in p and "not a window name" in p for p in problems))
+        # D02 T01 §27: a number can be looked up in a set, so only the type rule says it is no window name.
+        data["rows"][1][0] = 7
+        problems = ci.check_baseline(Path("outlook/baseline.json"), data, ci.load(ci.BASELINE_SCHEMA), sources)
+        self.assertTrue(any(p.endswith("$.rows[1].window: 7 is not a window name") for p in problems), problems[:3])
         (self.inv / "outlook").mkdir()
         (self.inv / "outlook" / "baseline.json").write_text(json.dumps(data), encoding="utf-8")
         (self.inv / ci.SOURCES).write_text((real / ci.SOURCES).read_text(encoding="utf-8"), encoding="utf-8")
@@ -326,11 +330,14 @@ class Inventory(unittest.TestCase):
         # Audit round 4, finding 3: each field below must refuse "" on its own, so removing any one field's rule fails
         # this test. The list is written out here, not read from the schema.
         fields = ("label", "parent", "keytip", "shortcut", "target", "menuPath", "captureProfile", "behaviour",
-                  "idMso", "uiaId", "source", "capturedFrom", "id")
+                  "idMso", "uiaId", "source", "capturedFrom", "id", "condition")
         for field in fields:
             rec = dict(BOLD, **{field: ""})
             self.write("word/ribbon.json", [TAB, GROUP, rec])
-            self.assertTrue(any(f".{field}" in p for p in self.problems()), field)
+            # D02 T01 §27: the length rule's own word, so a pattern that also refuses "" cannot stand in for it; id
+            # and source have no length rule, and their patterns refuse it.
+            expected = "does not match" if field in ("id", "source") else "empty"
+            self.assertTrue(any(f".{field}: " in p and expected in p for p in self.problems()), field)
 
     def test_any_address_in_text_is_refused(self):
         # Audit round 5, findings 1 and 3: punycode hosts and URI schemes other than scheme:// in text a person reads.
@@ -378,6 +385,48 @@ class Inventory(unittest.TestCase):
             self.assertEqual(f(glued), "1-REGISTER.ID(", glued)
         self.assertIsNone(f("=1-REGISTER.ID(SUM(1) )"))
         self.assertIsNone(f("No call here: STDEV.S without a hyphen before it."))
+
+    def test_nesting_depth_never_changes_the_address_verdict(self):
+        # D02 T01 §27: the scan exists only for the depth noHost's pattern cannot count, so over generated calls it
+        # must (1) refuse nothing the pattern accepts at a depth the pattern counts, and (2) give a deep call the
+        # verdict the pattern gives the same call nested one, two and three times. Without the scan, (2) fails for a
+        # call glued to its hyphen; a scan that also took a spaced hyphen failed (1) 1,728 times over these texts, and
+        # one that took only a name before the hyphen failed (2) after `)` and `]`.
+        schema = ci.load(ci.SCHEMA)
+        host = ci.ecma(schema["$defs"]["noHost"]["not"]["pattern"])
+        endings = (")", ") is a lookup.", "+1)", " desk)", "", ' "help desk"', ' "desk")', " .x)", " [x])", "desk)")
+
+        def shapes(n):
+            nested = "SUM(" * n + "1" + ")" * n
+            return [nested + end for end in endings] + [
+                "SUM(" * n + "1" + ")" * (n - 1) + " help desk",
+                "SUM(" * n + '"help' + ")" * n + ")",
+                "SUM(" * n + '"help" desk' + ")" * n + ")",
+                "SUM(" * n + '"a ""b"""' + ")" * n + ")"]
+
+        def accepted(text):
+            return host.search(ci.utf16(text)) is None and ci.unfinished_call(text) is None
+
+        heads = [prefix + left + hyphen + function
+                 for prefix in ("=", "Type =")
+                 for left in ("1", "x_1", "A1", "SUM(1)", "Table1[Amount]", '"a"', "1%", "(1)")
+                 for hyphen in ("-", " - ", " -", "- ")
+                 for function in ("REGISTER.ID(", "NORM.S.DIST(", "register.id(")]
+        verdicts = set()
+        for head in heads:
+            shallow = [[(host.search(ci.utf16(head + shape)) is None, ci.unfinished_call(head + shape))
+                        for shape in shapes(n)] for n in (1, 2, 3)]
+            for n, row in zip((1, 2, 3), shallow):
+                for (by_pattern, call), shape in zip(row, shapes(n)):
+                    self.assertFalse(by_pattern and call, f"the scan refuses what the pattern accepts: {head + shape}")
+            by_shape = [[by_pattern for by_pattern, _ in row] for row in shallow]
+            self.assertEqual(by_shape[0], by_shape[1], head)
+            self.assertEqual(by_shape[0], by_shape[2], head)
+            for n in (20, 40):
+                deep = [accepted(head + shape) for shape in shapes(n)]
+                self.assertEqual(deep, by_shape[0], f"{head} nested {n} times")
+            verdicts.update(by_shape[0])
+        self.assertEqual(verdicts, {True, False})  # the texts hold both calls that stand and calls that are refused
 
     def test_unicode_host_names_are_refused(self):
         # Audit round 6, finding 1: host names with the full-stop forms IDNA normalises, and in other scripts.
@@ -841,6 +890,17 @@ class Inventory(unittest.TestCase):
             (self.inv / ci.REFERENCE).write_text(reference, encoding="utf-8")
             with self.assertRaises(ci.Unreadable):
                 ci.check([str(named)], inventory=self.inv)
+        # D02 T01 §27: two Commit rows are refused even when the first is the manifest's, since which one binds the
+        # baselines cannot be told.
+        row = next(line for line in text.splitlines() if line.startswith("| Commit |"))
+        real["commit"] = row.split("`")[1]
+        (self.inv / ci.SOURCES).write_text(json.dumps(real), encoding="utf-8")
+        (self.inv / ci.REFERENCE).write_text(text, encoding="utf-8")
+        ci.check([str(named)], inventory=self.inv)  # one row naming the manifest's commit reads
+        (self.inv / ci.REFERENCE).write_text(text.replace(row, row + "\n" + row, 1), encoding="utf-8")
+        with self.assertRaises(ci.Unreadable) as raised:
+            ci.check([str(named)], inventory=self.inv)
+        self.assertIn("pins 2 commits, not one", str(raised.exception))
 
     def test_a_baseline_with_the_wrong_columns_is_refused(self):
         # Audit round 20, finding 3: the column-layout guard, on its own.
@@ -1077,7 +1137,7 @@ class Inventory(unittest.TestCase):
 
     def test_identifier_fields_hold_no_colon(self):
         # Audit round 15, finding 1: a scheme with no slashes (https:localhost) resolves too; identifiers take no colon.
-        for field in ("uiaId", "idMso", "parent", "target", "captureProfile", "capturedFrom"):
+        for field in ("id", "uiaId", "idMso", "parent", "target", "captureProfile", "capturedFrom"):
             for text in ("https:localhost", "x：y"):
                 self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, **{field: text})])
                 self.assertTrue(any(f".{field}" in p and "colon" in p for p in self.problems()), (field, ascii(text)))
@@ -1160,7 +1220,7 @@ class Inventory(unittest.TestCase):
         # Audit round 12, finding 2: each field below must refuse one character over its limit, written out here.
         limits = {"id": 200, "label": 200, "parent": 200, "keytip": 16, "shortcut": 64, "target": 200, "menuPath": 500,
                   "captureProfile": 64, "behaviour": 1000, "idMso": 200, "uiaId": 200, "source": 100,
-                  "capturedFrom": 64}
+                  "capturedFrom": 64, "condition": 200}
         for field, limit in limits.items():
             self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, **{field: "a" * (limit + 1)})])
             self.assertTrue(any(f".{field}: longer than {limit}" in p for p in self.problems()), field)
@@ -1228,10 +1288,11 @@ class Inventory(unittest.TestCase):
     def test_every_string_field_refuses_a_control_character(self):
         # Audit round 10, finding 5: each string field below must refuse U+0001 on its own, written out here.
         fields = ("id", "label", "parent", "keytip", "shortcut", "target", "menuPath", "captureProfile", "behaviour",
-                  "idMso", "uiaId", "source", "capturedFrom")
+                  "idMso", "uiaId", "source", "capturedFrom", "condition")
         for field in fields:
             self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, **{field: BOLD.get(field, "x") + "\u0001"})])
-            self.assertTrue(any(f".{field}" in p for p in self.problems()), field)
+            # D02 T01 §27: the rule's own word, so a field's pattern that also refuses U+0001 cannot stand in for it.
+            self.assertTrue(any(f".{field}: control character" in p for p in self.problems()), field)
 
     def test_a_baseline_source_names_the_pinned_baseline(self):
         # Audit round 9, finding 1: baseline: names the commit the manifest pins (a prefix of it), not any hex.
@@ -1317,11 +1378,14 @@ class Inventory(unittest.TestCase):
                 rec[field] = -1
             self.write("word/ribbon.json", [TAB, GROUP, rec])
             self.assertTrue(any(f".{field}: below 0" in p for p in self.problems()), field)
+        schema = ci.load(ci.SCHEMA)  # D02 T01 §27: a menu's item count starts at one
+        self.assertEqual(ci.validate([dict(BOLD, itemCount=0)], schema, schema), ["$[0].itemCount: below 1"])
+        self.assertEqual(ci.validate([dict(BOLD, itemCount=1)], schema, schema), [])
 
     def test_every_text_and_reference_field_refuses_a_blank_value(self):
         # Audit round 5, finding 4: each field below must refuse a value of spaces on its own, written out here.
         fields = ("label", "parent", "keytip", "shortcut", "target", "menuPath", "captureProfile", "behaviour",
-                  "idMso", "uiaId", "source", "capturedFrom", "id")
+                  "idMso", "uiaId", "source", "capturedFrom", "id", "condition")
         for field in fields:
             self.write("word/ribbon.json", [TAB, GROUP, dict(BOLD, **{field: "  "})])
             self.assertTrue(any(f".{field}" in p or f" {field} " in p or "orphan" in p and field == "parent"
@@ -1386,6 +1450,7 @@ class Inventory(unittest.TestCase):
             ".size: 'huge' is not one of": dict(BOLD, size="huge"),
             ".bounds: unknown field z": dict(BOLD, bounds={"x": 1, "y": 2, "width": 3, "height": 4, "z": 5}),
             ".kind: 'widget' is not one of": dict(BOLD, kind="widget"),
+            ".scope: 'everywhere' is not one of": dict(BOLD, scope="everywhere"),
             ".baselineMissing: expected boolean": dict(BOLD, baselineMissing="yes"),
             ".bounds: expected object": dict(BOLD, bounds=[1, 2, 3, 4]),
         }
@@ -1436,6 +1501,109 @@ class Inventory(unittest.TestCase):
             path.unlink()
 
 
+    # D02 T01 §27, the mutation sweep (docs/reviews/02-interface/inventory-mutation-sweep.md): each test from here to
+    # the end of the class holds a rule whose removal no test noticed. Their lists are written out, never read from
+    # the schema, so a rule removed from the schema is still asked for here.
+
+    def test_every_string_field_refuses_another_type(self):
+        # The type rule's own diagnostic and nothing else: without it a number would reach the field's other rules,
+        # which either pass it (they read strings only) or refuse it under another name.
+        schema = ci.load(ci.SCHEMA)
+        for field in ("id", "parent", "keytip", "shortcut", "condition", "target", "menuPath", "captureProfile",
+                      "idMso", "uiaId", "source", "capturedFrom"):
+            self.assertEqual(ci.validate([dict(BOLD, **{field: 7})], schema, schema),
+                             [f"$[0].{field}: expected string"], field)
+        self.assertEqual(ci.validate([dict(BOLD, itemCount="3")], schema, schema),
+                         ["$[0].itemCount: expected integer"])
+
+    def test_a_condition_is_text_a_person_reads(self):
+        # A shortcut's condition takes the address rule of every field a person reads.
+        schema = ci.load(ci.SCHEMA)
+        self.assertEqual(ci.validate([dict(BOLD, condition="Only while a table is selected")], schema, schema), [])
+        self.assertEqual(ci.validate([dict(BOLD, condition="See a.b for the state")], schema, schema),
+                         ["$[0].condition: host name or address"])
+
+    def test_a_record_without_a_kind_owes_no_kind_specific_field(self):
+        # What a control or a shortcut owes is asked only of a record that says it is one: a record with no kind is
+        # told its kind is missing, not also that it lacks a control type, a source and a chord.
+        schema = ci.load(ci.SCHEMA)
+        rec = {k: v for k, v in TAB.items() if k != "kind"}
+        self.assertEqual(ci.validate([rec], schema, schema), ["$[0]: missing kind"])
+
+    def test_each_link_mark_is_refused_alone(self):
+        # Each text holds one mark of a link that no other alternative of the link rule reads.
+        schema = ci.load(ci.SCHEMA)
+        for text in ("www.internal", "mailto:someone"):
+            self.assertIn("$[0].label: link", ci.validate([dict(BOLD, label=text)], schema, schema), text)
+        # A scheme and its two slashes are also read by the scheme-and-one-slash alternative, so the rule shows in what
+        # the whole-record scan names: the mark as written.
+        link = ci.ecma(schema["$defs"]["noLink"]["not"]["pattern"])
+        self.assertEqual(ci.links({"extra": "see https://example"}, "$[0]", link),
+                         ["$[0].extra: link 'https://' in a record"])
+
+    def test_a_hexadecimal_number_before_a_full_stop_and_a_bare_decimal_point_are_address_marks(self):
+        # Each text is refused by one alternative of the address rule alone: a hexadecimal number followed by a full
+        # stop (a resolver reads 0x7f.1), and a full stop followed by a digit with no digit before it.
+        schema = ci.load(ci.SCHEMA)
+        for text in ("Set the mask to 0x1F.", "Scale by .5 of the width"):
+            self.assertEqual(ci.validate([dict(BOLD, label=text)], schema, schema),
+                             ["$[0].label: host name or address"], text)
+
+    def test_the_whole_inventory_gate_names_a_missing_baseline_and_a_window_without_rows(self):
+        real = ci.INVENTORY
+        sources = json.loads((real / ci.SOURCES).read_text(encoding="utf-8"))
+        data = json.loads((real / "outlook" / "baseline.json").read_text(encoding="utf-8"))
+        gone, kept, rows = ci.outlook_windows(sources)[0], set(), []
+        for row in data["rows"]:  # one row for each window but the first: enough for the gate, and quick to check
+            if row[0] != gone and row[0] not in kept:
+                kept.add(row[0])
+                rows.append(row)
+        data["rows"] = rows
+        (self.inv / "outlook").mkdir()
+        (self.inv / "outlook" / "baseline.json").write_text(json.dumps(data), encoding="utf-8")
+        (self.inv / ci.SOURCES).write_text(json.dumps(sources), encoding="utf-8")
+        whole = ci.check([str(self.inv)], inventory=self.inv)
+        # Outlook's baseline is there, so a missing one is reported for the app that lacks it, not as a file that
+        # cannot be read.
+        self.assertIn(f"{self.inv / 'word' / 'baseline.json'}: missing baseline", whole)
+        self.assertNotIn(f"{self.inv / 'outlook' / 'baseline.json'}: missing baseline", whole)
+        self.assertIn(f"{self.inv / 'outlook' / 'baseline.json'}: no rows for the windows {[gone]}", whole)
+
+    def test_a_manifest_of_the_wrong_shape_is_named_as_such(self):
+        # A commit that is not a string is refused as no manifest, before it is compared with the reference's commit.
+        (self.inv / ci.REFERENCE).write_text((ci.INVENTORY / ci.REFERENCE).read_text(encoding="utf-8"),
+                                             encoding="utf-8")
+        (self.inv / ci.SOURCES).write_text(json.dumps({"commit": 7, "blobs": {}}), encoding="utf-8")
+        named = self.write("word/ribbon.json", [TAB])
+        with self.assertRaises(ci.Unreadable) as raised:
+            ci.check([str(named)], inventory=self.inv)
+        self.assertIn("not a manifest (an object with a commit string and a blobs object)", str(raised.exception))
+
+    def test_the_inventory_files_with_rules_of_their_own_take_them(self):
+        # check() hands the shell chrome file, and the repository's Word ribbon, Backstage and shortcut files, to their
+        # own checks. Those rules have their own tests; here each check is stood in for, and what is held is that it
+        # runs for its file in the repository's inventory and not for a file of that name in a scratch inventory.
+        from unittest import mock
+        for name in (ci.SOURCES, ci.REFERENCE):
+            (self.inv / name).write_text((ci.INVENTORY / name).read_text(encoding="utf-8"), encoding="utf-8")
+        self.write("shell/chrome.json", [])
+        checks = {"ribbon": "check_word_ribbon", "backstage": "check_word_backstage",
+                  "shortcuts": "check_word_shortcuts"}
+        for name in checks:
+            self.write(f"word/{name}.json", [])
+        with contextlib.ExitStack() as stack:
+            for name, function in checks.items():
+                stack.enter_context(mock.patch.object(ci, function, return_value=[f"{name}: its own check ran"]))
+            scratch = self.problems()
+            with mock.patch.object(ci, "INVENTORY", self.inv):
+                own = self.problems()
+        for name in checks:
+            self.assertIn(f"{name}: its own check ran", own)
+            self.assertNotIn(f"{name}: its own check ran", scratch)
+        chrome = f"{self.inv / 'shell' / 'chrome.json'}: shell chrome inventory holds 0 records"
+        self.assertTrue(any(p.startswith(chrome) for p in scratch), scratch[:5])
+
+
 class Cli(unittest.TestCase):
     def test_validation_failure_exits_1(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1455,6 +1623,39 @@ class Cli(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()) as out:
             code = ci.main([])
         self.assertEqual(code, 0, out.getvalue())
+
+    def test_the_program_reports_an_unfinished_call_an_orphan_and_a_missing_target(self):
+        # D02 T01 §27 (mutation sweep): each of these three rules stands before a lookup that raises without it, so a
+        # test inside this process only errors when the rule is removed. Run as a program, the checker either prints
+        # the rule's line or it does not.
+        import sys
+        sys.path.insert(0, str(SCRIPTS / "lib"))
+        import process_tree
+        deep = "=1-REGISTER.ID(" + "SUM(" * 20 + "1" + ")" * 19 + " help desk"  # closed one level short of its end
+        records = [
+            {"id": "word.sweepprobe", "app": "word", "kind": "tab", "label": "Probe", "behaviour": deep},
+            {"id": "word.sweepprobe.orphan", "app": "word", "kind": "group", "label": "Orphan",
+             "parent": "word.sweepprobe.nobody"},
+            {"id": "word.sweepprobe.pointer", "app": "word", "kind": "group", "label": "Pointer",
+             "parent": "word.sweepprobe", "target": "word.sweepprobe.nothing"},
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "capture.json"
+            path.write_text(json.dumps(records), encoding="utf-8")
+            out = Path(tmp) / "out.txt"
+            outcome = process_tree.run([sys.executable, "-B", str(SCRIPTS / "check-inventory.py"), str(path)],
+                                       cwd=str(SCRIPTS.parent), stdout_path=str(out), stderr_path=str(out),
+                                       timeout=300, max_bytes=1024 * 1024)
+            text = out.read_text(encoding="utf-8", errors="replace")
+        self.assertEqual((outcome.stopped, outcome.exit), (None, 1), text[-2000:])
+        lines = text.splitlines()
+        self.assertEqual(len(lines), 3, text[-2000:])
+        self.assertTrue(lines[0].endswith("capture.json: $[0].behaviour: host name or address (the call "
+                                          "1-REGISTER.ID( is not completed)"), lines[0])
+        self.assertTrue(lines[1].endswith("capture.json[1]: orphan, parent word.sweepprobe.nobody names no record"),
+                        lines[1])
+        self.assertTrue(lines[2].endswith("capture.json[2]: target word.sweepprobe.nothing names no record"),
+                        lines[2])
 
 
 if __name__ == "__main__":

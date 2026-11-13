@@ -242,8 +242,12 @@ def ecma(pattern):
     return _PATTERNS[pattern]
 
 
-# A hyphenated dotted-function call, as noHost's exemption reads one: `1-REGISTER.ID(`, `x - NORM.S.DIST(`.
-HYPHENATED_CALL = re.compile(r"[A-Za-z0-9_]+\s*-\s*[A-Z0-9]+\.[A-Z0-9.]+\(")
+# A hyphenated dotted-function call, as noHost's exemption reads one: `1-REGISTER.ID(`, `SUM(1)-NORM.S.DIST(`. The
+# hyphen is glued on both sides, to a name, a number, a closing parenthesis or a closing bracket before it: that is
+# the one form the pattern asks a completed call of. With a space on either side of the hyphen the pattern reads the
+# function as any dotted call, which it lets stand unfinished, so the scan must leave it alone too (measured over
+# generated texts: scripts/tests/test_check_inventory.py, test_nesting_depth_never_changes_the_address_verdict).
+HYPHENATED_CALL = re.compile(r"[A-Za-z0-9_)\]]-[A-Z0-9]+\.[A-Z0-9.]+\(")
 AFTER_ARGUMENT = set("),;+-*/^&=<>%:#!\\}")  # what may follow a completed inner call or a string, as noHost's pattern allows
 # After a space, a completed inner call may also meet the next reference or name: Excel's intersection operator.
 INTERSECTED = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789$'(@_\\")
@@ -267,8 +271,7 @@ def unfinished_call(text):
                 i += 1
                 while i < len(text) and not (text[i] == '"' and text[i + 1:i + 2] != '"'):
                     i += 2 if text[i] == '"' else 1
-                if i >= len(text):
-                    return match.group(0)  # a string that never closes
+                # A string that never closes has run to the end of the text, where the loop's own guard refuses it.
             elif c == "(":
                 depth += 1
             elif c == ")":
