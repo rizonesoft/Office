@@ -2048,6 +2048,56 @@ class Launched:
     def word_action(self, action, timeout=None, **kwargs):
         return self._call_com(lambda: self._word_action_impl(action, **kwargs), timeout=timeout)
 
+    def _pane_toggles(self):
+        """Whether each pane command that is a toggle is pressed now, as Word's object model says: None for a
+        command that is not a toggle (Word raises for it; whether its pane shows is then known to UI Automation
+        only, and such a pane is not one Word shows again by itself in a later session)."""
+        bars, pressed = self.app.CommandBars, {}
+        for command in sorted(word_panes.COMMANDS):
+            try:
+                pressed[command] = bool(bars.GetPressedMso(command))
+            except Exception:  # COM's own error for a control that has no pressed state: recorded as None
+                pressed[command] = None
+        return pressed
+
+    def _panes_differing(self):
+        """The toggle commands whose pane shows now and did not when the capture began, or the reverse."""
+        was = getattr(self, "_pane_snapshot", None) or {}
+        now = self._pane_toggles() if was else {}
+        return [command for command, pressed in was.items() if pressed is not None and now.get(command) != pressed]
+
+    def _drop_pane_shape(self):
+        """Delete the capture's own shape from its own blank document and leave that document as it was."""
+        doc = self.created[0] if getattr(self, "created", None) else None
+        if doc is None:
+            return
+        for index in range(int(doc.Shapes.Count), 0, -1):
+            shape = doc.Shapes(index)
+            if shape.Name == "PaneCaptureShape":
+                shape.Delete()
+        doc.Saved = True  # the capture's own blank document, as it was: nothing of it is kept
+
+    def _restore_panes_impl(self):
+        """Put Word's panes back from this process when the capture did not: its worker was stopped (Ctrl+C, a time
+        limit) or died before it could. It runs before Word is closed, on every path, and does nothing after a
+        capture that put the panes back itself. A toggle is pressed again until every one is as it was found (the
+        Navigation pane is the one Word shows again in a later session); the capture's shape is deleted. When a
+        pane cannot be put back the close is refused and Word is left running, so that it can be put right."""
+        if getattr(self, "_pane_snapshot", None) is None:
+            return
+        self._drop_pane_shape()
+        bars = self.app.CommandBars
+        for _ in range(2 * len(word_panes.COMMANDS)):
+            differing = self._panes_differing()
+            if not differing:
+                break
+            bars.ExecuteMso(differing[0])
+        differing = self._panes_differing()
+        if differing:
+            raise Refused("Word's panes could not be put back after the capture stopped (" + ", ".join(differing) +
+                          "); Word is left running so that they can be put right")
+        self._pane_snapshot = None
+
     def _word_action_impl(self, action, **kwargs):
         import hashlib
         if getattr(self, "key", None) != "word":
@@ -2369,6 +2419,16 @@ class Launched:
                 raise Refused(f"Word's command {command} is not available now")
             bars.ExecuteMso(command)
             return {"hwnd": int(self.hwnd or 0)}
+        if action == "pane_snapshot":  # D02 T01 §32: kept here, in the process that outlives the capture worker
+            self._pane_snapshot = self._pane_toggles()
+            return {"hwnd": int(self.hwnd or 0)}
+        if action == "pane_restored":  # the worker put the panes back; the object model must agree before it is so
+            differing = self._panes_differing()
+            if differing:
+                raise Refused("Word's panes are not as they were found (" + ", ".join(differing) +
+                              "); nothing is published")
+            self._pane_snapshot = None
+            return {"hwnd": int(self.hwnd or 0)}
         if action in ("pane_shape", "drop_pane_shape"):  # D02 T01 §32: Format Shape exists for a selected shape
             doc = self.created[0] if self.created else None
             if doc is None:
@@ -2378,11 +2438,7 @@ class Launched:
                 shape.Name = "PaneCaptureShape"
                 shape.Select()
             else:
-                for index in range(int(doc.Shapes.Count), 0, -1):
-                    shape = doc.Shapes(index)
-                    if shape.Name == "PaneCaptureShape":
-                        shape.Delete()
-                doc.Saved = True  # the capture's own blank document, as it was: nothing of it is kept
+                self._drop_pane_shape()
             return {"hwnd": int(self.hwnd or 0)}
         if action == "options_sample":  # D02 T01 §31: read before and after an Options capture, never printed
             options, sample = app.Options, {}
@@ -2587,6 +2643,7 @@ class Launched:
             open_created = None
 
     def _close_impl(self, wait=60.0):
+        self._restore_panes_impl()  # D02 T01 §32: a stopped pane capture is put right before Word closes
         others, failure, clipboard_failure = None, None, None  # unknown until counted: an instance whose contents are unknown is never quit
         metas = list(getattr(self, "_created_meta", ()))
         try:
@@ -3643,22 +3700,35 @@ def capture_word_panes(launched, uia, win, ctx, ready=PANE_READY_SECONDS):
     if strangers:
         raise Refused("a pane the capture could not put back is showing (" + ", ".join(strangers) +
                       "); close it and run again")
+    launched.word_action("pane_snapshot")  # kept by the process that owns Word, should this one be stopped
     records, shaped = [], [False]
 
     def put_back():
+        """Every step is attempted whatever an earlier one did: a pane that will not close must not leave another
+        pane closed or the shape behind. What failed is reported together."""
+        failures = []
+
+        def attempt(step):
+            try:
+                step()
+            except (Refused, Gone) as exc:
+                failures.append(str(exc))
         for title, dock in now():
             if (title, dock) not in initial:
-                close_pane(uia, hwnd, title, ready)
+                attempt(lambda title=title: close_pane(uia, hwnd, title, ready))
         if shaped[0]:
-            launched.word_action("drop_pane_shape")
+            attempt(lambda: launched.word_action("drop_pane_shape"))
             shaped[0] = False
         for title, dock in initial:
             if (title, dock) not in now():
                 spec = next(s for s in word_panes.PANES if s["title"] == title and dock in s["docks"])
-                _open_pane(launched, uia, hwnd, spec, ready)
-        if now() != initial:
-            raise Refused("Word's panes could not be put back as they were (" +
-                          ", ".join(f"{t} {d}" for t, d in initial) + "); nothing is published")
+                attempt(lambda spec=spec: _open_pane(launched, uia, hwnd, spec, ready))
+        if not failures and now() != initial:
+            failures.append("the panes showing are not those that were found")
+        if failures:
+            raise Refused("Word's panes could not all be put back as they were found (" + "; ".join(failures) +
+                          "); nothing is published")
+        launched.word_action("pane_restored")
     try:
         for order, spec in enumerate(word_panes.PANES):
             for title in sorted({title for title, _dock in now()}):  # each pane is captured alone
@@ -3669,8 +3739,16 @@ def capture_word_panes(launched, uia, win, ctx, ready=PANE_READY_SECONDS):
                 shaped[0] = True
             _open_pane(launched, uia, hwnd, spec, ready)
             records += _record_pane(uia, hwnd, ctx, spec, order, ready)
-    finally:
+    except (Refused, Gone) as exc:
+        try:
+            put_back()
+        except Refused as back:
+            raise Refused(f"{exc}; and {back}") from None
+        raise
+    except BaseException:
         put_back()
+        raise
+    put_back()
     return records
 
 

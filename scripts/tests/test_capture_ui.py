@@ -5724,8 +5724,9 @@ class WordPanes(unittest.TestCase):
         self.assertIn("Clipboard pane (clipboard): 1 text(s) not read (a pane's texts are its data and its state)",
                       ctx.notes)
         # Each pane by its own command, the shape only for Format Shape, and Word as it was found.
-        self.assertEqual(word.log, [("run_mso", spec["command"]) for spec in cu.word_panes.PANES[:-1]] + [
-            ("pane_shape",), ("run_mso", "ObjectFormatDialog"), ("drop_pane_shape",)])
+        self.assertEqual(word.log, [("pane_snapshot",)] + [
+            ("run_mso", spec["command"]) for spec in cu.word_panes.PANES[:-1]] + [
+            ("pane_shape",), ("run_mso", "ObjectFormatDialog"), ("drop_pane_shape",), ("pane_restored",)])
         self.assertEqual((word.showing(), word.shape), ([], False))
         cu.word_panes_check(records)  # whole by the hand-written list, each opener a record of the ribbon inventory
         schema = json.loads((ci.INVENTORY / "schema.json").read_text(encoding="utf-8"))
@@ -5740,8 +5741,8 @@ class WordPanes(unittest.TestCase):
         self.assertEqual(word.showing(), found)
         self.assertEqual(found, [("Navigation", "left"), ("Revisions", "bottom")])
         self.assertEqual({r["id"]: r["dock"] for r in records if r["kind"] == "pane"}["word.panes.editor"], "right")
-        self.assertEqual(word.log[-2:], [("run_mso", "NavigationPaneShowHide"),
-                                         ("run_mso", "ReviewReviewingPaneHorizontal")])
+        self.assertEqual(word.log[-3:], [("run_mso", "NavigationPaneShowHide"),
+                                         ("run_mso", "ReviewReviewingPaneHorizontal"), ("pane_restored",)])
         # A pane the capture has no command for could not be put back, so nothing is touched.
         word = FakeWordPanes()
         word.specs["stranger"] = {"slug": "stranger", "title": "Researcher", "command": "X", "docks": ("right",),
@@ -5774,6 +5775,7 @@ class WordPanes(unittest.TestCase):
         # A pane that will not close, and one that cannot be put back.
         word = FakeWordPanes(stuck=("styles",))
         self.refused(word, "the Styles pane could not be closed; Word is left as it is and nothing is published")
+        self.assertNotIn(("pane_restored",), word.log)  # the parent is never told the panes are back
         word = FakeWordPanes(showing=("clipboard",))
         word.unopenable.add("clipboard")  # it shows now and will not open again
         self.refused(word, "the Clipboard pane did not open within")
@@ -5781,6 +5783,126 @@ class WordPanes(unittest.TestCase):
         word = FakeWordPanes(bodies={"format-shape": [E("Button", "Fill")]})
         self.refused(word, "the Format Shape pane does not show Line (button)")
         self.assertEqual((word.shape, word.showing()), (False, []))
+
+    def test_one_cleanup_step_that_fails_does_not_stop_the_others(self):
+        # Navigation was showing; the Styles pane will not close. Navigation is still put back and the shape still
+        # dropped, and what failed is said with the rest.
+        word = FakeWordPanes(showing=("navigation",), stuck=("styles",))
+        self.refused(word, "the Styles pane could not be closed", "and Word's panes could not all be put back as "
+                     "they were found (the Styles pane could not be closed")
+        self.assertEqual(word.showing(), [("Navigation", "left"), ("Styles", "floating")])
+        self.assertEqual(word.shape, False)
+        # A later pane fails after Format Shape's shape exists: the shape is dropped although a pane is stuck.
+        word = FakeWordPanes(showing=("navigation",), stuck=("format-shape",),
+                             bodies={"format-shape": [E("Button", "Fill")]})
+        self.refused(word, "the Format Shape pane does not show Line (button)",
+                     "the Format Shape pane could not be closed")
+        self.assertEqual((word.shape, ("Navigation", "left") in word.showing()), (False, True))
+
+    def stopped_word(self, pressed, obeys=True):
+        """Word as the parent process sees it by its object model: which pane toggles are pressed, a document of
+        the capture's own, and a launcher object built without starting anything."""
+        ran = []
+
+        class Bars:
+            def GetPressedMso(self, command):
+                if command not in pressed:
+                    raise RuntimeError("this control has no pressed state")
+                return pressed[command]
+
+            def ExecuteMso(self, command):
+                ran.append(command)
+                if not obeys:
+                    return
+                pressed[command] = not pressed[command]
+                twin = {"ReviewReviewingPaneVertical": "ReviewReviewingPaneHorizontal",
+                        "ReviewReviewingPaneHorizontal": "ReviewReviewingPaneVertical"}.get(command)
+                if twin and pressed[command]:
+                    pressed[twin] = False
+        deleted = []
+
+        class Shape:
+            def __init__(self, name):
+                self.Name = name
+
+            def Delete(self):
+                deleted.append(self.Name)
+
+        class Shapes:
+            items = [Shape("Operator's own"), Shape("PaneCaptureShape")]
+            Count = 2
+
+            def __call__(self, index):
+                return self.items[index - 1]
+        doc = type("Doc", (), {"Shapes": Shapes(), "Saved": False})()
+        launched = object.__new__(cu.Launched)
+        launched.key, launched.hwnd, launched.created = "word", 5, [doc]
+        launched.app = type("App", (), {"CommandBars": Bars()})()
+        launched._check_alone_impl = lambda: None
+        return launched, ran, deleted, doc
+
+    def test_a_capture_that_was_stopped_is_put_right_by_the_process_that_owns_word(self):
+        # The worker that walks the panes can be stopped (Ctrl+C, a time limit) between closing a pane and putting
+        # it back. The parent kept what the object model says of the panes, and puts that back before Word closes.
+        found = {"NavigationPaneShowHide": True, "SelectionPane": False, "ReviewReviewingPaneVertical": False,
+                 "ReviewReviewingPaneHorizontal": True}
+        pressed = dict(found)
+        launched, ran, deleted, doc = self.stopped_word(pressed)
+        launched._word_action_impl("pane_snapshot")
+        self.assertEqual(launched._pane_snapshot, dict(found, StylesPane=None, ShowClipboard=None,
+                                                       WritingAssistanceCheckDocument=None, ObjectFormatDialog=None))
+        # The worker closed Navigation, left Selection open and the Reviewing pane in its other form, and died.
+        pressed.update(NavigationPaneShowHide=False, SelectionPane=True, ReviewReviewingPaneVertical=True,
+                       ReviewReviewingPaneHorizontal=False)
+        launched._restore_panes_impl()
+        self.assertEqual(pressed, found)
+        self.assertEqual((deleted, doc.Saved), (["PaneCaptureShape"], True))  # its own shape, and no other
+        self.assertIsNone(launched._pane_snapshot)
+        ran.clear()
+        launched._restore_panes_impl()  # nothing is kept, so nothing is done
+        self.assertEqual(ran, [])
+        # Word is closed only after that: the close begins with it.
+        launched._restore_panes_impl = lambda: (_ for _ in ()).throw(KeyError("restored first"))
+        with self.assertRaises(KeyError):
+            launched._close_impl(1.0)
+
+    def test_a_pane_the_parent_cannot_put_back_leaves_word_running_and_says_so(self):
+        pressed = {"NavigationPaneShowHide": True, "SelectionPane": False, "ReviewReviewingPaneVertical": False,
+                   "ReviewReviewingPaneHorizontal": False}
+        launched, ran, _deleted, _doc = self.stopped_word(pressed, obeys=False)
+        launched._word_action_impl("pane_snapshot")
+        pressed["NavigationPaneShowHide"] = False
+        with self.assertRaises(cu.Refused) as ctx:
+            launched._restore_panes_impl()
+        self.assertIn("Word's panes could not be put back after the capture stopped (NavigationPaneShowHide); Word "
+                      "is left running so that they can be put right", str(ctx.exception))
+        self.assertIsNotNone(launched._pane_snapshot)
+        self.assertLessEqual(len(ran), 16)  # it tries, and stops trying
+        # The worker's own word that the panes are back is checked against the object model too.
+        with self.assertRaises(cu.Refused) as ctx:
+            launched._word_action_impl("pane_restored")
+        self.assertIn("Word's panes are not as they were found (NavigationPaneShowHide)", str(ctx.exception))
+        pressed["NavigationPaneShowHide"] = True
+        launched._word_action_impl("pane_restored")
+        self.assertIsNone(launched._pane_snapshot)
+        # A launcher that never took a snapshot (every other capture) asks Word nothing when it closes.
+        bare = object.__new__(cu.Launched)
+        self.assertIsNone(bare._restore_panes_impl())
+
+    def test_an_interrupted_capture_still_closes_word_which_puts_the_panes_back(self):
+        closed = []
+        launched = type("L", (), {"hwnd": 5, "close": lambda self: closed.append(1)})()
+
+        def interrupted(*args):
+            raise KeyboardInterrupt
+        real, cu.capture = cu.capture, interrupted
+        try:
+            with tempfile.TemporaryDirectory() as tmp, self.assertRaises(KeyboardInterrupt):
+                cu.main(["--app", "word", "--panes", "--out", str(Path(tmp) / "panes.json")],
+                        launcher=lambda app: launched, uia_factory=lambda: None, win_factory=lambda: None)
+        finally:
+            cu.capture = real
+        self.assertEqual(closed, [1])
 
     def run_main(self, out, capture, merge=True):
         launched = type("L", (), {"hwnd": 5, "close": lambda self: None})()
