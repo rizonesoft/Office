@@ -12,7 +12,7 @@ Sections: 66 | Checklist items: 502
 
 #### Workspace and tooling
 
-Sections: 65 | Checklist items: 494 | Verified: 60
+Sections: 65 | Checklist items: 494 | Verified: 61
 
 | Status | Reference   | Deliverable                                           | Needs                  | Items |
 | ------ | ----------- | ----------------------------------------------------- | ---------------------- | ----- |
@@ -21,7 +21,7 @@ Sections: 65 | Checklist items: 494 | Verified: 60
 | [x]    | D00 T01 §3  | Continuous Integration Workflow                       | none                   | 7     |
 | [x]    | D00 T02 §1  | SPDX Headers and Checker                              | none                   | 7     |
 | [x]    | D00 T02 §2  | Third-Party Notices File                              | none                   | 3     |
-| [ ]    | D00 T02 §3  | Contributor Agreement Text                            | none                   | 6     |
+| [x]    | D00 T02 §3  | Contributor Agreement Text                            | none                   | 6     |
 | [x]    | D00 T02 §5  | Contributing Guide                                    | none                   | 4     |
 | [x]    | D00 T03 §1  | Automation Runner, Alert and Installer                | none                   | 7     |
 | [x]    | D00 T03 §2  | Run Guard and Stop Hook                               | none                   | 7     |
@@ -288,6 +288,6 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 | [ ]    | D03 T01 §25 | Interoperability Domain Authoring  | 3              |
 | [ ]    | D03 T01 §26 | VBA Domain Authoring               | 4              |
 
-Progress: 90/163 verified sections, 18 ready to run now, 2 parked, 84 TODO files still to author (not counted here).
+Progress: 91/163 verified sections, 17 ready to run now, 2 parked, 84 TODO files still to author (not counted here).
 
-Checklist: 662/1180 items completed (includes Commit items).
+Checklist: 663/1180 items completed (includes Commit items).

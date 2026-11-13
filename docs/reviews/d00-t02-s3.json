@@ -1,0 +1,85 @@
+{
+  "ref": "D00 T02 \u00a73",
+  "title": "Contributor Agreement Text",
+  "implementation_sha": "4787643202097179a260b8c0ccd61acba13271af",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T02-s3.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python scripts/build-contributor-agreements.py --check -> contributor agreements current",
+    "python scripts/run-tests.py -p \"test_contributor_agreements.py\" -> Ran 9 tests in 1 files in 0.2 s (4 at a time) OK",
+    "python scripts/check-design-doc.py docs/legal/rizonesoft-cla.md --require Review -> exit 0"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T02-s3.md",
+    "verdict": "complete",
+    "candidate": "4787643202097179a260b8c0ccd61acba13271af",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T02-s3.md",
+    "candidate": "53c5222e995bca2bc1be65545d211b9c0b6eae80",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "53c5222e995bca2bc1be65545d211b9c0b6eae80",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}

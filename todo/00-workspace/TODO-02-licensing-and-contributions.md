@@ -37,7 +37,7 @@ title: "TODO-02 -- Licensing and Contributions"
 | ----- | ------- | ----------- | ---------- | ------ |
 | 1 | §1 | SPDX headers and checker | -- | [x] |
 | 2 | §2 | Third-party notices file | -- | [x] |
-| 3 | §3 | Contributor agreement text | -- | [ ] |
+| 3 | §3 | Contributor agreement text | -- | [x] |
 | 4 | §4 | Contributor agreement PR check | §3 | [ ] |
 | 5 | §5 | Contributing guide | §1 | [x] |
 | 6 | §6 | Runtime and icon notices | §2, D02 T02 §2, D03 T01 §11, D03 T01 §12 | [ ] |
@@ -121,9 +121,12 @@ The agreement lets Rizonesoft relicense contributions (for example a commercial 
 - [x] Record in both files under `## Review` that the text is the Harmony template with its choices filled in and nothing reworded, that the owner approved it on 2026-11-13, and that a lawyer's review is still owed as a later audit, with a place for its date and firm. Done when: both files carry the section and a reader can tell the agreement has had no legal review. Cheaper substitute: a `## Review` section that reads as if a lawyer had seen it. **Corrected 2026-11-13:** was the lawyer's review itself, which the owner's decision above makes a later audit.
 - [x] Record the owner's approval of 2026-11-13 in this section, under the decision above. Done when: the approval line carries the date and names both files as approved in the form committed. **Corrected 2026-11-13:** the Needs were removed with the owner's decision. Cheaper substitute: treating the draft as final.
 - [x] Link the agreement from the Licence and agreement section of `CONTRIBUTING.md`, replacing its pending-review note. Done when: the link resolves to `docs/legal/rizonesoft-cla.md`. Cheaper substitute: leaving the guide saying the agreement is pending. (Deferred from §5 on 2026-10-21.) **Corrected 2026-11-13 (plan review, gap 2):** the guide links both agreements and `docs/legal/README.md`, which says which agreement applies to an individual and which to an organisation, how to sign, and what to do about work the contributor does not own (the instructions both agreements point to). Done when, in addition: a test shows the three links resolving and the pending wording gone.
-- [ ] Commit: `legal: add contributor agreements`
+- [x] Commit: `legal: add contributor agreements`
 
 **Test checkpoint:** `python scripts/check-design-doc.py docs/legal/rizonesoft-cla.md --require Review` and the same for `docs/legal/rizonesoft-cla-entity.md` exit 0. **Corrected 2026-11-13 (plan review, gap 1):** and `python scripts/build-contributor-agreements.py --check` exits 0 and `python -m unittest discover -s scripts/tests -p "test_contributor_agreements.py"` passes.
+
+> **Verified:** 2026-11-13 | §3 | 4787643202097179a260b8c0ccd61acba13271af
+> **Review:** `docs/reviews/d00-t02-s3.json`
 
 ## 4. Contributor Agreement PR Check
 
@@ -156,7 +159,7 @@ A GitHub check blocks merging until each pull request author has signed. CLA Ass
 
 **Corrected 2026-10-21:** the agreement text and the foundation plan do not exist yet (§3 waits on a lawyer and an owner decision; D03 T01 §12 is Phase 3), so the guide names the agreement's path and status in plain text instead of a dead link, and its Build and test section lists the commands that run today (the ones CI runs), with the application build commands to follow.
 
-> **Deferred:** the link to `docs/legal/rizonesoft-cla.md` in `CONTRIBUTING.md`, once the agreement exists -> XREF: D00 T02 §3
+> **Resolved:** the link to `docs/legal/rizonesoft-cla.md` in `CONTRIBUTING.md`, once the agreement exists -> XREF: D00 T02 §3
 > **Deferred:** the application build and test commands in `CONTRIBUTING.md`, from the foundation plan's Toolchain section -> XREF: D03 T01 §12
 
 **Phase:** 0
