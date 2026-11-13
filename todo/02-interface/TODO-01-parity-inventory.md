@@ -65,7 +65,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 24 | §24 | Audit capture tool | §3 | [x] |
 | 25 | §25 | Audit control ID baseline | §19 | [x] |
 | 26 | §26 | Audit Microsoft-free rule | §21 | [x] |
-| 27 | §27 | Checker mutation sweep | §23 | [ ] |
+| 27 | §27 | Checker mutation sweep | §23 | [x] |
 | 28 | §28 | Record dispositions | §18, §22, §23 | [ ] |
 | 29 | §29 | Inventory layout tables | §22 | [ ] |
 | 30 | §30 | Built-app layout check | §3 | [ ] |
@@ -786,9 +786,12 @@ Parity is 1:1: every element the inventory records for Word, Excel, PowerPoint, 
 - [x] Record the sweep's output in `docs/reviews/02-interface/inventory-mutation-sweep.md`. Done when: the file quotes the full run and the survivor count. **Measured 2026-11-13 (first run, operator stop after it):** 271 rules, 222 killed, 42 survived and 7 only erroring; the next session resumes at the item below with those 49. **Measured 2026-11-13 (second run):** the record now also quotes the full second run and its survivor count of zero. **Measured 2026-11-13 (third run, commit `ee2e913`, after the round's fix):** 271 rules, 271 killed, no survivor and no other outcome, quoted in full in the record.
 - [x] Add a regression test to `scripts/tests/test_check_inventory.py` for every survivor. Done when: a re-run of the sweep reports zero survivors. **Corrected 2026-11-13 (resume):** the removals whose tests only error count too (the sweep exits 1 on them), so each of those seven rules also gets a test that fails by assertion: where the rule stands before a lookup that raises without it, the test runs the checker as a program and reads the line it prints. Two survivors were not missing tests but defects, repaired at their cause: the guard for a string that never closes inside `unfinished_call` could never decide anything (the loop's own end-of-text guard refuses first), so it is removed; and `condition` had no `maxLength` in `design/inventory/schema.json`, against the schema's own statement that every string field has one, so it takes 200 (the longest in the inventory is 57 characters) with its test. **Measured 2026-11-13 (second run, commit `3dea566`):** 270 rules, 270 killed, no survivor and no other outcome; the run is quoted in the record.
 - [x] Run independent review rounds on `D02 T01 §23`'s round 22 fix commit (`fe3620f`), `D02 T01 §26`'s round 33 fix commit (`015ff91`), and this section's changes, recording each with `--record docs/reviews/02-interface/D02-T01-s27.md`. Done when: a round approves, or the severity cutoff or the 33-round cap stops the loop with every finding fixed or filed. **Corrected 2026-11-13 (fact check):** `fe3620f` is no longer in the history; its round 22 fixes are `6e0db0f` (with CI's follow-up `b481dd4`), which the round reviews in its place; the three-pass policy gives the section one round, which reviews all three. **Done 2026-11-13:** round 1 (astra, candidate `0d3b6bf`) read `6e0db0f`, `b481dd4`, `015ff91` and this section's changes and returned one finding (P2, the quoted sheet name above), fixed with its tests; the three-pass policy allows no second round, so the completion review reads the fix.
-- [ ] Commit: `inventory: prove every checker rule with a mutation sweep (D02 T01 §27)`
+- [x] Commit: `inventory: prove every checker rule with a mutation sweep (D02 T01 §27)`
 
 **Test checkpoint:** `python -B scripts/mutation-sweep-inventory.py` exits 0 and prints `survivors: 0`; `python -m unittest discover -s scripts/tests -p "test_check_inventory.py"` passes.
+
+> **Verified:** 2026-11-13 | §27 | 7ba7c990f82305fbf8b6bf365b535e402de4a0ef
+> **Review:** `docs/reviews/d02-t01-s27.json`
 
 ## 28. Record Dispositions
 

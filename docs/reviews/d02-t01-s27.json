@@ -1,0 +1,85 @@
+{
+  "ref": "D02 T01 \u00a727",
+  "title": "Checker Mutation Sweep",
+  "implementation_sha": "7ba7c990f82305fbf8b6bf365b535e402de4a0ef",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/D02-T01-s27.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -B scripts/mutation-sweep-inventory.py -> rules: 271, killed: 271, other outcomes: 0; survivors: 0; exit 0 (each line 133 of 133 run)",
+    "python -m unittest discover -s scripts/tests -p \"test_check_inventory.py\" -> Ran 133 tests, OK",
+    "python -m unittest discover -s scripts/tests -p \"test_mutation_sweep_inventory.py\" -> Ran 6 tests, OK"
+  ],
+  "completion": {
+    "report": "docs/reviews/02-interface/D02-T01-s27.md",
+    "verdict": "reconciled",
+    "candidate": "7ba7c990f82305fbf8b6bf365b535e402de4a0ef",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/02-interface/D02-T01-s27.md",
+    "candidate": "7f4144aa2a2d994c2d5a54f27ea75bc00c52868e",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "7f4144aa2a2d994c2d5a54f27ea75bc00c52868e",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 4,
+  "pass_cap": 33
+}
