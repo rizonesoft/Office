@@ -590,7 +590,7 @@ class Layout(Fixture):
                 "with --layout\n"
         for change in (("39     24      U", "38     24      U"),            # one width
                        ("(capture profile `fhd-100`)", "(capture profile `qhd-150`)"),  # the line alone
-                       ("Sort...", "Sort"), ("```text\n", "```text\n\n")):
+                       ("Sort...", "Sort"), ("children  bullets  2", "children  bullets  3")):
             section.body = claim + self.BLOCK.replace(*change) + "\n\n**Build order:**\n"
             self.assertNotEqual(section.body, claim + self.BLOCK + "\n\n**Build order:**\n", change)
             code, out, err = self.check()
@@ -601,7 +601,10 @@ class Layout(Fixture):
         line = self.BLOCK.splitlines()[0]
         cases = {
             line + "\n\nNo block follows.\n": "has no fenced `text` block after its Layout line",
-            self.BLOCK[:-4] + "\n\nThe fence is still open.\n": "has a block whose fence never closes",
+            self.BLOCK[:-4] + "\n\nThe fence is still open.\n": ir.inventory_layout.UNCLOSED,
+            self.BLOCK[:-4] + "\n": ir.inventory_layout.UNCLOSED,                       # the section ends first
+            self.BLOCK.replace("```text\n", "```text\n\n"): ir.inventory_layout.UNCLOSED,  # a blank line inside
+            self.BLOCK.replace("\n0 ", "\n```python\n0 "): ir.inventory_layout.UNCLOSED,  # another fence inside
             self.BLOCK + "\n\n" + self.BLOCK + "\n": "has two layout blocks in this section",
         }
         section = self.section("D09 T01 §1", "")
@@ -613,6 +616,37 @@ class Layout(Fixture):
         code, _, err = self.check()
         self.assertEqual((code, err), (1, "refused: D09 T01 §1: the layout of `word.gone` cannot be laid out: "
                                           "word.gone is not a record of the inventory\n"))
+
+    def test_an_unclosed_block_never_takes_in_what_follows_it(self):
+        # Round 1, finding 1: a block whose closing fence was left out ran on to the next fence in the section, so
+        # --write replaced everything between, the instructions and the next block included.
+        bullets = self.layout("word.home.para.bullets")[1].rstrip("\n")
+        stale = self.BLOCK.replace("Sort...", "Sort")
+        instructions = "Build the group as laid out above, then its Bullets menu as laid out below.\n\n```python\nx = 1\n```"
+        text = ("# TODO-01 -- A\n\n## 1. Open\n\n" + stale[:-4] + "\n\n" + instructions + "\n\n" + bullets
+                + "\n\n**Build order:**\n\n## Verification\n\n- v\n")
+        path = self.root / "todo" / "09-x" / "TODO-01-a.md"
+        path.parent.mkdir(parents=True)
+        path.write_bytes(text.encode("utf-8"))
+        self.section("D09 T01 §1", ir.todo_graph.section_text(text, 1))
+        found = ir.inventory_layout.units(self.sections[0].body)
+        self.assertEqual([(parent, problem) for parent, _, _, problem in found],
+                         [("word.home.para", ir.inventory_layout.UNCLOSED), ("word.home.para.bullets", None)])
+        self.assertEqual(self.sections[0].body[found[1][1]:found[1][2]], bullets)  # the next block, whole and alone
+        code, out, err = self.check("--write", str(path))
+        self.assertEqual(path.read_bytes(), text.encode("utf-8"))  # nothing was rewritten, so nothing was lost
+        self.assertEqual(code, 1)
+        self.assertNotIn("rewritten", out)
+        self.assertEqual(err, f"refused: D09 T01 §1: the layout of `word.home.para` {ir.inventory_layout.UNCLOSED}\n")
+        # With the fence put back, the stale block is rewritten and the instructions and the next block are untouched.
+        closed = text.replace(stale[:-4] + "\n\n" + instructions, stale + "\n\n" + instructions, 1)
+        self.assertNotEqual(closed, text)
+        path.write_bytes(closed.encode("utf-8"))
+        self.sections[0].body = ir.todo_graph.section_text(closed, 1)
+        code, out, err = self.check("--write", str(path))
+        self.assertEqual((code, err), (0, ""))
+        self.assertEqual(path.read_bytes(), closed.replace(stale, self.BLOCK, 1).encode("utf-8"))
+        self.assertIn(instructions, path.read_text(encoding="utf-8"))
 
     def test_a_section_that_claims_a_parents_children_carries_that_parents_block(self):
         section = self.section("D09 T01 §1", "> **Implements:** `word.home.para.sort` `word.home.para.bullets`\n")

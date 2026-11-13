@@ -106,22 +106,45 @@ def render(by_id, children, parent_id):
     return "\n".join([f"**Layout:** `{parent_id}` ({profile})", "", OPEN, *lines, CLOSE])
 
 
+UNCLOSED = "has a block that is not closed before a blank line, another Layout line or another fence"
+
+
 def units(body):
     """The units of a section body, in order: (parent id, start, end, problem). `body[start:end]` is the unit as the
     section holds it, from its `**Layout:**` line to its closing fence. A line with no fenced block after it, or a
-    fence that never closes, has a problem instead and ends at the line's own end."""
-    out = []
+    block that does not close, has a problem instead and ends at the line's own end.
+
+    A block is rows and nothing else, so it ends at the first line that is its closing fence, and a blank line,
+    another `**Layout:**` line or another fence before that means it was never closed: the search for the closing
+    fence never runs on into the text after the block, where the next fence belongs to something else. A unit
+    therefore never holds a line of the section that the generator did not write, which is what lets `rewrite`
+    replace one without touching anything around it."""
+    out, inside = [], 0
     for match in LINE.finditer(body):
+        if match.start() < inside:
+            continue  # a Layout line inside the block before it: that block is already refused as not closed
         rest = body[match.end():]
         opened = re.match(r"\n\n" + re.escape(OPEN) + r"\n", rest)
         if opened is None:
             out.append((match[1], match.start(), match.end(), "has no fenced `text` block after its Layout line"))
             continue
-        closed = re.search(r"^" + re.escape(CLOSE) + r"[ \t]*$", rest[opened.end():], re.M)
+        at, closed = match.end() + opened.end(), None
+        while at < len(body):
+            stop = body.find("\n", at)
+            stop = len(body) if stop == -1 else stop
+            line = body[at:stop]
+            if line.rstrip(" \t") == CLOSE:
+                closed = at + len(CLOSE)
+                break
+            if not line.strip() or line.startswith(CLOSE) or LINE.match(line):
+                break
+            at = stop + 1
         if closed is None:
-            out.append((match[1], match.start(), match.end(), "has a block whose fence never closes"))
+            out.append((match[1], match.start(), match.end(), UNCLOSED))
+            inside = at  # nothing up to the line that interrupted it is read as another unit's start
             continue
-        out.append((match[1], match.start(), match.end() + opened.end() + closed.start() + len(CLOSE), None))
+        out.append((match[1], match.start(), closed, None))
+        inside = closed
     return out
 
 
