@@ -248,10 +248,6 @@ class Inventory(unittest.TestCase):
         sources = ci.load(real / ci.SOURCES)
         problems = ci.check_baseline(Path("outlook/baseline.json"), data, ci.load(ci.BASELINE_SCHEMA), sources)
         self.assertTrue(any("$.rows[0].window" in p and "not a window name" in p for p in problems))
-        # D02 T01 §27: a number can be looked up in a set, so only the type rule says it is no window name.
-        data["rows"][1][0] = 7
-        problems = ci.check_baseline(Path("outlook/baseline.json"), data, ci.load(ci.BASELINE_SCHEMA), sources)
-        self.assertTrue(any(p.endswith("$.rows[1].window: 7 is not a window name") for p in problems), problems[:3])
         (self.inv / "outlook").mkdir()
         (self.inv / "outlook" / "baseline.json").write_text(json.dumps(data), encoding="utf-8")
         (self.inv / ci.SOURCES).write_text((real / ci.SOURCES).read_text(encoding="utf-8"), encoding="utf-8")
@@ -890,17 +886,6 @@ class Inventory(unittest.TestCase):
             (self.inv / ci.REFERENCE).write_text(reference, encoding="utf-8")
             with self.assertRaises(ci.Unreadable):
                 ci.check([str(named)], inventory=self.inv)
-        # D02 T01 §27: two Commit rows are refused even when the first is the manifest's, since which one binds the
-        # baselines cannot be told.
-        row = next(line for line in text.splitlines() if line.startswith("| Commit |"))
-        real["commit"] = row.split("`")[1]
-        (self.inv / ci.SOURCES).write_text(json.dumps(real), encoding="utf-8")
-        (self.inv / ci.REFERENCE).write_text(text, encoding="utf-8")
-        ci.check([str(named)], inventory=self.inv)  # one row naming the manifest's commit reads
-        (self.inv / ci.REFERENCE).write_text(text.replace(row, row + "\n" + row, 1), encoding="utf-8")
-        with self.assertRaises(ci.Unreadable) as raised:
-            ci.check([str(named)], inventory=self.inv)
-        self.assertIn("pins 2 commits, not one", str(raised.exception))
 
     def test_a_baseline_with_the_wrong_columns_is_refused(self):
         # Audit round 20, finding 3: the column-layout guard, on its own.
@@ -1578,6 +1563,31 @@ class Inventory(unittest.TestCase):
         with self.assertRaises(ci.Unreadable) as raised:
             ci.check([str(named)], inventory=self.inv)
         self.assertIn("not a manifest (an object with a commit string and a blobs object)", str(raised.exception))
+
+    def test_a_number_in_a_window_cell_is_no_window_name(self):
+        # A number can be looked up in a set without raising, so only the type rule says it is no window name; without
+        # that rule it would be reported as a window the manifest lacks.
+        real = ci.INVENTORY
+        data = json.loads((real / "outlook" / "baseline.json").read_text(encoding="utf-8"))
+        data["rows"] = data["rows"][:2]
+        data["rows"][1][0] = 7
+        problems = ci.check_baseline(Path("outlook/baseline.json"), data, ci.load(ci.BASELINE_SCHEMA),
+                                     ci.load(real / ci.SOURCES))
+        self.assertEqual([p.split(": ", 1)[1] for p in problems], ["$.rows[1].window: 7 is not a window name"])
+
+    def test_a_reference_that_pins_two_commits_is_unreadable(self):
+        # Two Commit rows are refused even when the first is the manifest's: which one binds the baselines cannot be
+        # told, and taking the first would pass.
+        text = (ci.INVENTORY / ci.REFERENCE).read_text(encoding="utf-8")
+        row = next(line for line in text.splitlines() if line.startswith("| Commit |"))
+        (self.inv / ci.SOURCES).write_text((ci.INVENTORY / ci.SOURCES).read_text(encoding="utf-8"), encoding="utf-8")
+        named = self.write("word/ribbon.json", [TAB])
+        (self.inv / ci.REFERENCE).write_text(text, encoding="utf-8")
+        self.assertEqual(ci.check([str(named)], inventory=self.inv), [])  # one row naming the manifest's commit reads
+        (self.inv / ci.REFERENCE).write_text(text.replace(row, row + "\n" + row, 1), encoding="utf-8")
+        with self.assertRaises(ci.Unreadable) as raised:
+            ci.check([str(named)], inventory=self.inv)
+        self.assertIn("pins 2 commits, not one", str(raised.exception))
 
     def test_the_inventory_files_with_rules_of_their_own_take_them(self):
         # check() hands the shell chrome file, and the repository's Word ribbon, Backstage and shortcut files, to their
