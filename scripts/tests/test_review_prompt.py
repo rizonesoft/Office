@@ -111,6 +111,63 @@ class CommitItem(Filler):
                 self.assertIn(self.SENTENCE, self.ok(kind))
 
 
+class OwnerDecision(Filler):
+    """D00 T03 §61: a reconciliation closes an obligation the owner gave up, and only the owner can give one up."""
+
+    CONDITIONS = (
+        "the writer cannot narrow, reclassify or waive them to obtain approval",
+        "Only the owner can decide between two of them that conflict",
+        "cannot both be met in the same state",
+        "a numbered, dated decision in the governing document named above",
+        "which is the owner's record and not the writer's",
+        "it identifies the gap, by naming this section, or the section filed to settle the gap (which names this one), "
+        "or by saying plainly which behaviour is chosen",
+        "is closed by the repair, shown by the `path:line` or test and the writer's `- Implemented:` line, with one "
+        "exception: an obligation the owner gave up, which check 4 closes and nothing else does",
+        "it was made after the failed completion review",
+        "`- Decided: <gap> by owner decision <N> of <record>`",
+        "Read the decision in the record itself",
+        "The obligation the owner kept is checked like any other",
+        "`closed by owner decision <N>` when the candidate does exactly what the decision says",
+        "no more of the given-up behaviour than the decision allows",
+        "a test holds that behaviour; say which test",
+        "A writer's note, a re-think, a filed section by itself, a decision that does not identify the gap in one of "
+        "those ways, or one that predates the completion review, settles nothing: the gap stays open",
+        "A decision never closes a gap the repair could have closed without giving anything up",
+    )
+
+    def test_the_reconciliation_prompt_carries_every_condition(self):
+        text = " ".join(self.ok("reconciliation", "--ref", REF).split())
+        for condition in self.CONDITIONS:
+            self.assertIn(condition, text)
+        self.assertNotIn("they cannot be narrowed, reclassified or waived", text)  # the rule now names who it binds
+        self.assertNotIn("is closed only by the repair", text)  # no unconditional rule left to contradict check 4
+
+    def test_the_decision_this_rule_was_written_for_qualifies(self):
+        # Decision 46 chose the digest's behaviour and names D00 T03 §56, the section filed to settle the gap of
+        # D00 T03 §53's reconciliations; §56 names §53. That is the second way the prompt lets a decision identify a gap.
+        record = (DOCS / "specs" / "2026-10-23-campaign-scope-design.md").read_text(encoding="utf-8")
+        decision = next(line for line in record.splitlines() if line.startswith("46. "))
+        self.assertIn("(2026-11-13)", decision)
+        self.assertIn("The weekly digest repeats, labelled, the notices of a digest whose delivery no record can show "
+                      "(D00 T03 §56)", decision)
+        todo = (SCRIPTS.parent / "todo/00-workspace/TODO-03-automations-and-keep-alive.md").read_text(encoding="utf-8")
+        settled_by = todo.split("\n## 56. ", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("from the review of §53", settled_by)
+        self.assertIn("**Owner's choice, 2026-11-13", settled_by)
+
+    def test_no_other_prompt_lets_an_owner_decision_close_anything(self):
+        for name in TEMPLATES[:3]:  # the plan review, the round and the completion review
+            self.assertNotIn("owner decision", (DOCS / name).read_text(encoding="utf-8"), name)
+
+    def test_the_skill_names_the_line_and_who_decides(self):
+        skill = (SCRIPTS.parent / ".claude" / "skills" / "review-todo-section" / "SKILL.md").read_text(encoding="utf-8")
+        for phrase in ("`- Decided: <gap> by owner decision <N> of <record>`", "the choice is the owner's, never the writer's",
+                       "file it as an `owner-decision` section and park this one on it",
+                       "The line is never written for a gap the repair can close"):
+            self.assertIn(phrase, skill)
+
+
 class FillEachKind(Filler):
     def test_every_kind_fills_with_no_placeholder_left(self):
         for kind in KINDS:
