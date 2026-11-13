@@ -1102,22 +1102,37 @@ class Notices(Send):
         with self.assertRaises(KeyboardInterrupt):
             self.run_main([], opener=interrupted)
 
-    def test_a_delivered_digest_whose_mark_failed_is_never_repeated_even_after_the_log_is_gone(self):
-        # Reconciliation review 6: delivered, the mark fails, the PC is off past SMTP2GO's history.
+    def test_a_digest_smtp2go_accepted_whose_record_is_gone_is_repeated_once_labelled(self):
+        # The owner's choice of 2026-11-13 (D00 T03 §56) for the one state nothing can decide: SMTP2GO accepted the
+        # digest, the mark failed, and the PC was off past SMTP2GO's history. Acceptance is not delivery (a bounce
+        # follows it as easily), so the next digest carries those notices again in full, labelled.
         ids = self.queue(1)
         self.delivered_then_mark_fails()
+        self.assertEqual(len(list((self.root / "scratch" / "office-digest-evidence").glob("*.json"))), 1)
         self.age_claims(hours=24 * 6)
         self.activity = OSError("SMTP2GO no longer holds it")
         code, out, second = self.run_main([])
         self.assertEqual(code, 0)
-        self.assertNotIn("Notices since the last digest", second[0]["text_body"])
-        self.assertNotIn("could not be confirmed", second[0]["text_body"])
-        self.assertNotIn("attachments", second[0])
-        self.assertIn("1 confirmed sent", out)
+        body = " ".join(second[0]["text_body"].split())
+        self.assertNotIn("Notices since the last digest", body)  # not presented as new
+        self.assertIn("1 notice(s) of the digest of", body)
+        self.assertIn("could not be confirmed delivered", body)
+        self.assertIn("may already have reached you", body)
+        self.assertNotIn("1 confirmed sent", out)  # the record of acceptance is not taken as delivery
+        self.assertIn("0 confirmed sent, 0 not sent, 0 kept to ask again, 1 past the log (sent again in full, labelled)",
+                      out)  # what the run prints says what the email does
+        self.assertNotIn("not sent again", out)
+        attached = {a["filename"]: base64.b64decode(a["fileblob"]).decode() for a in second[0]["attachments"]}
+        self.assertIn("it may already have reached you", attached["notices.txt"])  # the one labelled repeat
+        self.assertIn("log line 59 of failure 0", attached["notices.txt"])  # in full: nothing is lost
         queue = [json.loads(line) for line in (self.root / "build/automations/notices.jsonl").read_text(
             encoding="utf-8").splitlines()]
-        self.assertEqual([n["id"] for n in queue if n["reported"]], ids)
-        self.assertEqual(list((self.root / "scratch" / "office-digest-evidence").glob("*.json")), [])
+        self.assertEqual([n["id"] for n in queue if n["reported"]], ids)  # delivered and recorded by this digest
+        code, _, third = self.run_main([])
+        self.assertEqual(code, 0)
+        self.assertNotIn("could not be confirmed", third[0]["text_body"])  # once, and never again
+        self.assertNotIn("Notices since the last digest", third[0]["text_body"])
+        self.assertNotIn("attachments", third[0])
 
     def test_a_log_that_cannot_be_read_keeps_the_claim_until_it_can_judge_it_or_the_evidence_is_gone(self):
         ids = self.queue(1)
@@ -1165,8 +1180,9 @@ class Notices(Send):
             encoding="utf-8").splitlines()]
         self.assertEqual([n["id"] for n in queue if n["reported"]], ids)
 
-    def test_an_unconfirmed_notice_once_delivered_is_never_delivered_again(self):
-        # Reconciliation review 7: the digest that carries an unconfirmed notice claims it like any other.
+    def test_an_unconfirmed_notice_is_carried_until_a_digest_that_delivers_it_is_recorded(self):
+        # Reconciliation review 7: the digest that carries an unconfirmed notice claims it like any other. Under the
+        # owner's choice (D00 T03 §56) a second digest whose record is lost the same way carries it once more.
         ids = self.queue(1)
         self.interrupted_send()
         self.age_claims(hours=24 * 6)
@@ -1178,14 +1194,18 @@ class Notices(Send):
         self.assertEqual(code, 1)
         self.assertIn("could not be confirmed delivered", " ".join(carried[0]["text_body"].split()))
         self.age_claims(hours=24 * 6)
-        code, out, after = self.run_main([])
+        code, out, again = self.run_main([])  # that digest's record is gone too: carried again, and now recorded
         self.assertEqual(code, 0)
-        self.assertNotIn("could not be confirmed", after[0]["text_body"])
-        self.assertNotIn("Notices since the last digest", after[0]["text_body"])
-        self.assertIn("1 confirmed sent", out)
+        self.assertIn("could not be confirmed delivered", " ".join(again[0]["text_body"].split()))
+        self.assertNotIn("Notices since the last digest", again[0]["text_body"])
+        self.assertNotIn("1 confirmed sent", out)
         queue = [json.loads(line) for line in (self.root / "build/automations/notices.jsonl").read_text(
             encoding="utf-8").splitlines()]
         self.assertEqual([n["id"] for n in queue if n["reported"]], ids)
+        code, _, after = self.run_main([])
+        self.assertEqual(code, 0)
+        self.assertNotIn("could not be confirmed", after[0]["text_body"])  # delivered and recorded: never again
+        self.assertNotIn("Notices since the last digest", after[0]["text_body"])
 
     def test_another_digest_with_the_same_counts_is_never_taken_as_the_evidence(self):
         # Reconciliation review 4: subjects repeat week to week, so each digest's subject carries its own id.

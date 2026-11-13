@@ -195,8 +195,11 @@ def settle_claims(root: str = REPO, ask=None, now=None) -> dict:
     released and sent again in full. One it cannot judge yet (the log unreadable, the email in flight, or absent but
     younger than YOUNG_MINUTES) is kept and asked again at the next settlement, which every scheduled task runs; only
     a claim still undecided after SETTLE_DAYS, when SMTP2GO no longer holds its evidence, is marked unconfirmed: never
-    sent again and never dropped, the next digest names it in one line and `alert.py --list` shows its text. `ask(subject, since)`
-    answers for SMTP2GO (default: `delivery` with this repository's key). Returns the count per outcome."""
+    dropped, the next digest carries it again in full, labelled as possibly already received, and `alert.py --list`
+    shows its text. That holds whether or not the digest's own record says SMTP2GO accepted it (the owner's choice
+    of 2026-11-13, D00 T03 §56: acceptance is not delivery, and of an unseen bounce and a labelled repeat the repeat
+    is the one the owner can see). `ask(subject, since)` answers for SMTP2GO (default: `delivery` with this
+    repository's key). Returns the count per outcome."""
     import datetime
     if ask is None:
         def ask(subject, since):
@@ -219,12 +222,14 @@ def settle_claims(root: str = REPO, ask=None, now=None) -> dict:
         expired = age > datetime.timedelta(days=SETTLE_DAYS)
         # Within the log's history the log alone decides: delivered, or rejected and bounced, settle the claim, and
         # anything else (in flight, unreadable, or absent while the digest's own record says SMTP2GO accepted it, or
-        # while the log may still lag the send) waits for the next settlement, so a late bounce is still seen. Only
-        # once the log can no longer decide does the digest's own record of acceptance count as delivered.
+        # while the log may still lag the send) waits for the next settlement, so a late bounce is still seen. Once
+        # the log can no longer decide, nothing can: the digest's own record shows only that SMTP2GO accepted it,
+        # which a bounce follows as easily as a delivery, so the claim expires and its notices are sent again,
+        # labelled (D00 T03 §56).
         if answer in ("sent", "not-sent"):
             pass
         elif expired:
-            answer = "sent" if sent_evidence(digest) else "expired"
+            answer = "expired"
         elif answer == "absent" and not sent_evidence(digest) and age >= datetime.timedelta(minutes=YOUNG_MINUTES):
             answer = "not-sent"  # never reached SMTP2GO at all
         else:
@@ -237,7 +242,8 @@ def settle_claims(root: str = REPO, ask=None, now=None) -> dict:
             release_claim(digest, root)
             counts["released"] += len(ids)
         elif age > datetime.timedelta(days=SETTLE_DAYS):
-            mark_unconfirmed(digest, root)  # neither sent again nor dropped: the next digest names them once
+            mark_unconfirmed(digest, root)  # never dropped: the next digest carries them again, labelled
+            clear_sent(digest)  # the record of acceptance has served: the notices now ride with another digest
             counts["expired"] += len(ids)
         else:
             counts["kept"] += len(ids)

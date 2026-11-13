@@ -529,14 +529,15 @@ def deliver(args, root, rows, today, alert, opener, runner, sent, now):
         return 0
     # The batch is captured here, before the email is composed, and claimed before it is sent: only these are marked
     # reported, once the send succeeded, so a notice recorded meanwhile, a dry run and a refused send leave notices
-    # pending, and a delivered digest that then cannot mark its batch never sends it again (D00 T03 §53).
+    # pending, and a delivered digest that then cannot mark its batch is not sent again while SMTP2GO's log can
+    # still confirm it (D00 T03 §53); past the log's history it is repeated once, labelled (D00 T03 §56).
     try:
         # A claim no digest confirmed: SMTP2GO's log says whether that digest went out. Sent, it is marked; not
         # sent, or the log cannot be read, it is sent again, marked as a possible repeat (D00 T03 §53).
         claims = alert.settle_claims(str(root), ask)
         if any(claims.values()):
             print(f"earlier claims: {claims['confirmed']} confirmed sent, {claims['released']} not sent, "
-                  f"{claims['kept']} kept to ask again, {claims['expired']} past the log (named, not sent again)")
+                  f"{claims['kept']} kept to ask again, {claims['expired']} past the log (sent again in full, labelled)")
         batch = alert.pending_notices(str(root))
         unconfirmed = alert.unconfirmed_notices(str(root))
     except alert.Refused as error:

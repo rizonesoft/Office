@@ -916,7 +916,9 @@ class DeliveryEvidence(unittest.TestCase):
             ("absent", day, False): ("released", 1, 0), ("absent", datetime.timedelta(minutes=5), False): ("kept", 0, 1),
             ("absent", day, True): ("kept", 0, 1),  # accepted, not yet in the log: wait, a bounce may still come
             ("pending", day, True): ("kept", 0, 1), ("pending", day, False): ("kept", 0, 1),
-            ("pending", 6 * day, True): ("confirmed", 0, 0),  # the log can no longer decide: the record does
+            # The log can no longer decide, and acceptance is not delivery (the owner's choice, D00 T03 §56): the
+            # claim expires and the next digest carries the notice again, labelled.
+            ("pending", 6 * day, True): ("expired", 0, 0), ("absent", 6 * day, True): ("expired", 0, 0),
             ("pending", 6 * day, False): ("expired", 0, 0), ("absent", 6 * day, False): ("expired", 0, 0),
             ("sent", 6 * day, False): ("confirmed", 0, 0),
         }
@@ -925,8 +927,9 @@ class DeliveryEvidence(unittest.TestCase):
                 counts, now_pending, now_claimed = self.settle(answer, age, evidence)
                 self.assertEqual(counts[outcome], 1)
                 self.assertEqual((len(now_pending), len(now_claimed)), (pending, claimed))
-                if outcome == "expired":  # neither sent again nor dropped: kept, named once by the next digest
+                if outcome == "expired":  # never dropped: kept for the next digest, which carries it labelled
                     self.assertEqual(len(alert.unconfirmed_notices(self.last_root)), 1)
+                    self.assertFalse(alert.sent_evidence("d1"))  # the record of acceptance is not kept past it
         counts, now_pending, now_claimed = self.settle(alert.Refused("down"), hour)
         self.assertEqual((counts["kept"], len(now_claimed)), (1, 1))  # an unreadable log keeps the claim
 
