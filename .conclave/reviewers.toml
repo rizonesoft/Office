@@ -27,7 +27,12 @@ effort = "medium"
 # Claude Code and Antigravity write, and Astra reviews both. Codex's own work
 # needs a reviewer of another family: add one (cli = "claude" or "agy") and a
 # `codex = ["<name>"]` route. Until then a review of Codex work refuses.
+[reviewers.carbon]
+cli = "agy"
+model = "gemini-4-carbon-medium"
+
 [routes]
+codex = ["carbon"]
 claude = ["astra"]
 agy = ["astra"]
 

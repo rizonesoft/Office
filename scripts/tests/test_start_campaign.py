@@ -48,9 +48,9 @@ class StartCampaignModelTest(unittest.TestCase):
         self.assertEqual(carbon, ["agy --model $carbon --dangerously-skip-permissions -i $goal"])  # the same goal
 
     def test_claude_runs_at_medium_effort_and_carbon_at_medium(self):
-        # Owner, 2026-11-12: Opus (latest, by alias) at medium effort; Antigravity on Gemini 4 Carbon at medium.
+        # Owner, 2026-11-12: Opus (latest, by alias) at medium effort; Antigravity on Orchestrator (Carbon).
         self.assertRegex(self.text, r"(?m)^\$effort = 'medium'$")
-        self.assertRegex(self.text, r"(?m)^\$carbon = 'gemini-4-carbon-medium'$")
+        self.assertRegex(self.text, r"(?m)^\$carbon = 'gemini-pro-orchestrator'$")
 
     def test_every_claude_start_passes_the_model(self):
         lines = [line.strip() for line in self.text.splitlines() if not line.lstrip().startswith("#")]
@@ -91,6 +91,13 @@ PWSH = shutil.which("pwsh")
 @unittest.skipUnless(sys.platform == "win32", "the launcher and its Stop control are Windows only")
 class StopControlTest(unittest.TestCase):
     """The owner's Stop shortcut (owner, 2026-11-10): `-Stop` writes the request, `-Stop -Now` also ends the launcher."""
+
+    def run(self, result=None):
+        # unittest skips registered cleanups when KeyboardInterrupt escapes a test.
+        try:
+            return super().run(result)
+        finally:
+            self.doCleanups()
 
     def setUp(self):
         self.assertIsNotNone(PWSH, "pwsh is not on PATH; the launcher cannot run")
@@ -221,6 +228,13 @@ sys.exit(0)
 class LauncherRunTest(unittest.TestCase):
     """The launcher run for real in a scratch clone, with a stand-in for Claude Code and for the host check."""
 
+    def run(self, result=None):
+        # unittest skips registered cleanups when KeyboardInterrupt escapes a test.
+        try:
+            return super().run(result)
+        finally:
+            self.doCleanups()
+
     def setUp(self):
         self.assertIsNotNone(PWSH, "pwsh is not on PATH; the launcher cannot run")
         self.tmp = tempfile.TemporaryDirectory()
@@ -277,6 +291,18 @@ class LauncherRunTest(unittest.TestCase):
         (self.root / "build").mkdir(exist_ok=True)
         (self.root / "build" / "campaign-stop-request").write_text("now", encoding="utf-8")
 
+    def test_codex_runs_with_native_flags_and_no_claude_token(self):
+        (self.bin / "codex.ps1").write_text(FAKE_CLAUDE, encoding="utf-8")
+        self.env["CLAUDE_CODE_OAUTH_TOKEN"] = "test-token"
+        launcher = self.launch("-Runner", "codex", "-RestartSeconds", "1")
+        self.wait_for(self.root / "session-args.txt", seconds=10)
+        self.request_stop()
+        output, _ = launcher.communicate(timeout=30)
+        self.assertEqual((self.root / "session-args.txt").read_text(encoding="utf-8").split(),
+                         ["--dangerously-bypass-approvals-and-sandbox", "-c", "model_reasoning_effort=medium"])
+        self.assertFalse((self.root / "token-seen.txt").exists())
+        self.assertEqual(len(self.calls()), 1, output)
+
     def test_the_carbon_runner_starts_antigravity_with_the_goal_and_no_claude_token(self):
         # Owner, 2026-11-12: a Gemini Carbon launcher. The stand-in is the same script under agy's name.
         (self.bin / "agy.ps1").write_text(FAKE_CLAUDE, encoding="utf-8")
@@ -289,10 +315,10 @@ class LauncherRunTest(unittest.TestCase):
         output, _ = launcher.communicate(timeout=120)
         self.assertEqual(len(self.calls()), 1, output)
         self.assertEqual((self.root / "session-args.txt").read_text(encoding="utf-8").split(),
-                         ["--model", "gemini-4-carbon-medium", "--dangerously-skip-permissions", "-i"])
-        self.assertTrue(self.calls()[0].startswith("--model gemini-4-carbon-medium"), self.calls())
+                         ["--model", "gemini-pro-orchestrator", "--dangerously-skip-permissions", "-i"])
+        self.assertTrue(self.calls()[0].startswith("--model gemini-pro-orchestrator"), self.calls())
         self.assertFalse((self.root / "token-seen.txt").exists(), "Claude's token reached Antigravity")
-        self.assertIn("Lead model: gemini-4-carbon-medium in Google Antigravity", output)
+        self.assertIn("Lead model: gemini-pro-orchestrator in Google Antigravity", output)
         self.assertNotIn("clangd", output)
 
     def test_a_missing_carbon_cli_is_named_and_nothing_starts(self):

@@ -105,6 +105,7 @@ class Unreadable(Exception):
 
 
 class Host:
+    writer = "claude"
     """The real readers. Each returns raw facts; the checks below judge them, so tests replace only this class."""
 
     root = ROOT
@@ -408,10 +409,10 @@ class Host:
         return github_origin.parse(result.stdout) if result.returncode == 0 else None
 
     def reviewer_cli(self):
-        """(reviewer name, CLI name) the pin routes Claude's work to; review-dispatch's Refused when the pin is bad."""
+        """(reviewer name, CLI name) the pin routes this writer's work to; review-dispatch's Refused when the pin is bad."""
         dispatch = todo_graph.review_dispatch()
         pin = dispatch.load_pin(self.root / ".conclave" / "reviewers.toml")
-        name = pin["routes"]["claude"][0]
+        name = pin["routes"][self.writer][0]
         return name, pin["reviewers"][name]["cli"]
 
     def free_bytes(self):
@@ -817,8 +818,10 @@ def report(results):
 def main(argv=None, host=None, mail=None):
     parser = argparse.ArgumentParser(description="Say whether this PC can run an unattended campaign.")
     parser.add_argument("--notify", action="store_true", help="record a notice for the weekly owner digest when a check fails")
+    parser.add_argument("--writer", choices=("claude", "gemini", "codex"), default="claude")
     args = parser.parse_args(argv)
     host = host or Host()
+    host.writer = args.writer
     results = run_checks(host)
     lines = report(results)
     print("\n".join(lines))

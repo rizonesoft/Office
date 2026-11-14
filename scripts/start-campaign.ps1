@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+﻿# SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Rizonesoft
 #Requires -Version 7.0
 <#
@@ -10,9 +10,10 @@
   first (scripts/check-campaign-host.py, without the email), and then starts an interactive session that skips
   permission prompts and opens with a /goal: the plan finished to 100 percent through the process-plan skill, or
   the campaign ended by its own park. Claude Code runs on the latest Opus (the 'opus' model alias, never a pinned
-  version) at medium effort, signed in with the one-year token; Antigravity runs on Gemini 4 Carbon at medium
-  with its own account, following .agents/rules/antigravity-runtime-and-safety.md. One launcher runs at a time,
-  whichever runner it starts, and a run left open by one runner is taken over by the other the same way.
+  version) at medium effort, signed in with the one-year token; Antigravity runs on Orchestrator (Carbon)
+  (`gemini-pro-orchestrator`) with its own account, following .agents/rules/antigravity-runtime-and-safety.md. One
+  launcher runs at a time, whichever runner it starts, and a run left open by one runner is taken over by the other the
+  same way.
 
   Starting it is the operator's word to start or resume the campaign. When a guard file from an earlier session
   exists, it says whose it is and waits for Enter before the new session takes the run over, because two
@@ -37,14 +38,14 @@
 .EXAMPLE
   pwsh scripts/start-campaign.ps1
   pwsh scripts/start-campaign.ps1 -DryRun            # run the checks and print the command, start nothing
-  pwsh scripts/start-campaign.ps1 -Runner agy        # the same campaign in Google Antigravity on Gemini 4 Carbon
+  pwsh scripts/start-campaign.ps1 -Runner agy        # the same campaign in Google Antigravity on Orchestrator (Carbon)
   pwsh scripts/start-campaign.ps1 -InstallShortcut   # create or refresh both desktop shortcuts for this clone
   pwsh scripts/start-campaign.ps1 -Stop              # ask the campaign to stop at its next section boundary
   pwsh scripts/start-campaign.ps1 -Stop -Now         # stop it immediately, without the question
 #>
 [CmdletBinding()]
-param(# The campaign runner: Claude Code (`claude`) or Google Antigravity on Gemini 4 Carbon (`agy`).
-      [ValidateSet('claude', 'agy')][string]$Runner = 'claude',
+param(# The campaign runner: Claude Code (`claude`) or Google Antigravity on Orchestrator (Carbon) (`agy`).
+      [ValidateSet('claude', 'agy', 'codex')][string]$Runner = 'claude',
       [switch]$DryRun, [switch]$InstallShortcut, [switch]$Stop, [switch]$Now, [ValidateRange(1, 3600)][int]$RestartSeconds = 30,
       # The program that ends a process tree. Only the tests pass another one, to see a failed stop reported.
       [string]$TaskKillPath = (Join-Path $env:SystemRoot 'System32\taskkill.exe'))
@@ -70,7 +71,9 @@ if ($InstallShortcut) {
         @{ Runner = 'claude'; Name = 'Office Claude campaign'; Icon = 'office-campaign-claude.ico'; Fill = '#D97757'; Mark = 'claude.svg'
            Description = 'Start the unattended Rizonesoft Office campaign in Claude Code' },
         @{ Runner = 'agy'; Name = 'Office Carbon campaign'; Icon = 'office-campaign-carbon.ico'; Fill = '#4C8DF6'; Mark = 'gemini.svg'
-           Description = 'Start the unattended Rizonesoft Office campaign in Google Antigravity on Gemini 4 Carbon' }
+           Description = 'Start the unattended Rizonesoft Office campaign in Google Antigravity on Orchestrator (Carbon)' },
+        @{ Runner = 'codex'; Name = 'Office Codex campaign'; Icon = 'office-campaign-codex.ico'; Fill = '#10A37F'; Mark = 'codex.svg'
+           Description = 'Start the unattended Office campaign with Codex as writer' }
     )
     foreach ($s in $shortcuts) {
         $icon = Join-Path $local $s.Icon
@@ -143,8 +146,8 @@ if ($Stop) {
     exit 0
 }
 
-$runnerName = @{ claude = 'Claude Code'; agy = 'Google Antigravity (Gemini 4 Carbon)' }[$Runner]
-$windowTitle = @{ claude = 'Office Claude campaign'; agy = 'Office Carbon campaign' }[$Runner]
+$runnerName = @{ codex = 'Codex'; claude = 'Claude Code'; agy = 'Google Antigravity (Orchestrator (Carbon))' }[$Runner]
+$windowTitle = @{ codex = 'Office Codex campaign'; claude = 'Office Claude campaign'; agy = 'Office Carbon campaign' }[$Runner]
 $Host.UI.RawUI.WindowTitle = $windowTitle
 
 # The lock is taken as the first statement inside one try that runs to the end of the file, so nothing can
@@ -324,7 +327,7 @@ if ($Runner -ne 'claude') {
     Write-Host 'clangd: none (the pinned clangd is not installed: run python scripts/bootstrap-tools.py). The clangd-lsp plugin is off for this session, so no other clangd is used.' -ForegroundColor Yellow
 }
 # The campaign's own first check, shown here so a host that is not ready costs no session and no park commit.
-python scripts/check-campaign-host.py
+python scripts/check-campaign-host.py --writer $(if ($Runner -eq "agy") { "gemini" } else { $Runner })
 if ($LASTEXITCODE -ne 0) {
     Write-Host ''
     Write-Host 'Not started: apply the fixes above, then run this shortcut again.' -ForegroundColor Red
@@ -397,12 +400,14 @@ if (Test-Path -LiteralPath $modeFile) {
         $modeSource = 'the fallback (the verdict file does not parse)'
     }
 }
-# Claude Code runs at medium effort (owner, 2026-11-12). Antigravity's model name carries its effort; it is the
-# writer the owner named for that runner, Gemini 4 Carbon at medium, and the measured verdict above is Claude's alone.
+# Claude Code runs at medium effort (owner, 2026-11-12). Antigravity runs Orchestrator (Carbon), which manages effort
+# internally across Gemini 4 Carbon planning and Gemini 4 Hydrogen execution, and the measured verdict above is Claude's alone.
 $effort = 'medium'
-$carbon = 'gemini-4-carbon-medium'
+$carbon = 'gemini-pro-orchestrator'
 if ($Runner -eq 'claude') { Write-Host "Lead model: $model at $effort effort, from $modeSource" }
+elseif ($Runner -eq 'codex') { Write-Host 'Lead model: Codex configured model, medium effort' }
 else { Write-Host "Lead model: $carbon in $runnerName" }
+$codexGoal = $goal.TrimStart().Substring(6) + ' Set this as your Codex session goal. Read docs/codex-campaign.md and use the Codex process-plan skill; writer codex.'
 
 if ($DryRun) {
     if (Test-Path -LiteralPath $stopFile) { Write-Host 'A stop request is present; a real start removes it.' }
@@ -410,6 +415,8 @@ if ($DryRun) {
     Write-Host "Would run in ${root}:"
     if ($Runner -eq 'claude') {
         Write-Host ((@('claude', '--model', $model, '--effort', $effort, '--dangerously-skip-permissions') + $sessionArgs + "`"$goal`"") -join ' ')
+    } elseif ($Runner -eq 'codex') {
+        Write-Host ('codex --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=medium ' + $codexGoal)
     } else {
         Write-Host ((@('agy', '--model', $carbon, '--dangerously-skip-permissions', '-i', "`"$goal`"")) -join ' ')
     }
@@ -424,6 +431,8 @@ while ($true) {
     $started.Add((Get-Date))
     if ($Runner -eq 'claude') {
         claude --model $model --effort $effort --dangerously-skip-permissions @sessionArgs $goal
+    } elseif ($Runner -eq 'codex') {
+        codex --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=medium $codexGoal
     } else {
         # -i runs the opening prompt and keeps the conversation open, as Claude Code does with its prompt argument.
         agy --model $carbon --dangerously-skip-permissions -i $goal
@@ -451,7 +460,7 @@ while ($true) {
     Write-Host ''
     Write-Host "The session ended cleanly with the run still open. A new session starts in $RestartSeconds seconds; close this window or press Ctrl+C to stop." -ForegroundColor Yellow
     Start-Sleep -Seconds $RestartSeconds
-    python scripts/check-campaign-host.py
+    python scripts/check-campaign-host.py --writer $(if ($Runner -eq "agy") { "gemini" } else { $Runner })
     if ($LASTEXITCODE -ne 0) {
         Write-Host ''
         Write-Host 'Not restarted: apply the fixes above, then run this shortcut again.' -ForegroundColor Red

@@ -994,6 +994,13 @@ def alive(pid):
     return True
 
 
+class CodexReviewerRoute(unittest.TestCase):
+    def test_host_checks_codex_writers_carbon_reviewer(self):
+        host = host_check.Host()
+        host.writer = "codex"
+        self.assertEqual(host.reviewer_cli(), ("carbon", "agy"))
+
+
 class Probe(unittest.TestCase):
     """The real Host.run: a deadline and an output bound hold even when the probe leaves a grandchild behind."""
 
