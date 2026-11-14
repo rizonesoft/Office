@@ -6870,5 +6870,607 @@ class WordDialogs(unittest.TestCase):
         self.assertIn("Word's dialogs only", str(ctx.exception))
 
 
+class MenuEl(E):
+    """An element of a fake menu (D02 T01 §35): it can be disabled, carry a tick and open a submenu. `tick` is the
+    raw toggle state, "?" for one that cannot be read; `expands` is called with the element and True or False."""
+
+    def __init__(self, ctype, name="", cls="", kids=(), enabled=True, tick=None, expands=None, hwnd=0,
+                 rect=(0, 0, 10, 10), key=""):
+        super().__init__(ctype, name, key=key, cls=cls, rect=rect, kids=kids, toggle=tick is not None)
+        self.is_enabled, self.tick, self.expands, self.native_window = enabled, tick, expands, hwnd
+
+    def pattern(self, name):
+        return object() if name == "expand" and self.expands is not None else None
+
+    def toggle_state(self):
+        return None if self.tick == "?" else self.tick
+
+    def expand(self):
+        self.expands(self, True)
+
+    def collapse(self):
+        self.expands(self, False)
+
+
+class Secret(MenuEl):
+    """An element of a menu whose name is this PC's data (a colour last used, a clipboard entry, an author): it
+    counts how often its name is read, and a capture must count none."""
+
+    @property
+    def name(self):
+        self.__dict__["seen"] = self.__dict__.get("seen", 0) + 1
+        return self.__dict__["text"]
+
+    @name.setter
+    def name(self, value):
+        self.__dict__["text"] = value
+
+    def read(self):
+        return self.__dict__.get("seen", 0)
+
+
+class COMError(Exception):
+    """What comtypes raises for an element that is gone; the capture tells it by its name."""
+
+
+class FakeWordMenus:
+    """Word with the capture's own document, its context menus and mini toolbars built from the hand-written
+    lists, and a comment card (D02 T01 §35). A menu is a window of its own, a mini toolbar another, an open submenu
+    a third; a selected picture or shape brings the Layout Options window, which is none of the menu's. Logs every
+    request for a menu, every submenu opened, and where Escape went."""
+    ROOT, MENU, BAR, SUB, LAYOUT, PAGE = 5, 88, 89, 90, 91, 77
+
+    def __init__(self, lost=(), proofing_first=True, drift=(), expand_fails=(), stuck=None, unread_tick=None,
+                 stranger=None, bar_at_spelling=False, card=True, closes=True, required=None):
+        wm = cu.word_menus
+        self.required = required or wm.REQUIRED
+        self.lost, self.drift, self.expand_fails = set(lost), set(drift), set(expand_fails)
+        self.proofing_first, self.stuck, self.unread_tick, self.stranger = proofing_first, stuck, unread_tick, stranger
+        self.bar_at_spelling, self.closes = bar_at_spelling, closes
+        self.actions, self.clicks, self.escapes, self.opened, self.pressed = [], [], [], [], []
+        self.asked, self.shown, self.secrets = {}, 0, []
+        self.target = self.spec = self.menu_top = self.bar_top = self.sub = None
+        self.open = self.document = False
+        self.elements_asked = []
+        self.opener = Secret("Button", "More thread actions of A. Author", expands=self.card)
+        persona = Secret("Button", "A. Author", cls=wm.PERSONA_CLASS, expands=lambda el, on: self.pressed.append("persona"))
+        self.secrets += [self.opener, persona]
+        thread = MenuEl("TreeItem", kids=[
+            MenuEl("ToolBar", kids=[persona, self.opener, MenuEl("Button"), MenuEl("Button", tick=0)]),
+            self.secret("TreeItem", "What A. Author wrote", kids=[self.secret("Edit", "A note")])])
+        margin = MenuEl("Group", kids=[MenuEl("Group", kids=[MenuEl("Pane", kids=[MenuEl("Group", kids=(
+            [thread] if card else []))])])])
+        self.page = MenuEl("Document", "The capture's document", cls="_WwG", hwnd=self.PAGE, kids=[
+            MenuEl("Group", kids=[MenuEl("Pane", kids=[MenuEl("Group", kids=[MenuEl("Button")])])]),
+            MenuEl("Custom", kids=[self.secret("Edit", "Plain words here."), margin])])
+        self.root = MenuEl("Window", "Document2 - Word", kids=[
+            MenuEl("Pane", cls="MsoCommandBarDock"),
+            MenuEl("Pane", cls="_WwF", kids=[MenuEl("Pane", cls="_WwB", kids=[self.page])])])
+
+    def secret(self, ctype, name, **kw):
+        made = Secret(ctype, name, **kw)
+        self.secrets.append(made)
+        return made
+
+    # ---- what the capture asks of Word
+    def word_action(self, action, **kw):
+        self.actions.append((action, kw.get("kind")))
+        if action == "menus_document":
+            self.document = True
+        elif action == "menus_target":
+            if self.open:
+                raise AssertionError("a selection was made while a menu was open")
+            self.target = kw["kind"]
+            self.spec = next(c for c in cu.word_menus.CONTEXTS if c["select"] == self.target)
+            return {"hwnd": self.ROOT, "rect": [300, 400, 40, 20]}
+        elif action == "close_fixture":
+            self.document = False
+        return {"hwnd": self.ROOT}
+
+    def element(self, hwnd):
+        self.elements_asked.append(hwnd)
+        return {self.ROOT: self.root, self.MENU: self.menu_top, self.BAR: self.bar_top,
+                self.SUB: MenuEl("Menu", cls="Net UI Tool Window")}[hwnd]
+
+    def windows(self, class_name=None):
+        layout = [self.LAYOUT] if self.target in ("picture", "shape") else []
+        if class_name is not None:
+            return layout if class_name == "NUIDialog" else []
+        return ([self.ROOT] + layout + ([self.MENU] if self.open else [])
+                + ([self.BAR] if self.open and self.bar_top is not None else [])
+                + ([self.SUB] if self.sub else []))
+
+    def right_click(self, hwnd, x, y):
+        self.clicks.append((hwnd, x, y))
+        if self.spec.get("card"):
+            raise AssertionError("the comment's menu is the card's own, never asked for over the text")
+        self.ask()
+
+    def card(self, el, on):
+        if on:
+            self.ask()
+        else:
+            self.open = False
+
+    def dismiss(self, hwnd):
+        self.escapes.append(hwnd)
+        if self.closes:
+            self.open, self.sub = False, None
+
+    # ---- the menus
+    def ask(self):
+        slug = self.spec["slug"]
+        self.asked[slug] = self.asked.get(slug, 0) + 1
+        if (slug, self.asked[slug]) in self.lost:
+            return  # the request was not taken: nothing opens
+        self.shown += 1
+        self.build(slug, self.asked[slug])
+        self.open, self.sub = True, None
+
+    def item(self, entry, slug, nth, group):
+        wm = cu.word_menus
+        label, ctype, flags = entry[0], entry[1], set(entry[2:])
+        enabled = "disabled" not in flags
+        if (slug, nth, label) in self.drift:
+            enabled = not enabled
+        tick = (1 if "checked" in flags else 0) if flags & {"checked", "unchecked"} else None
+        if label == self.unread_tick:
+            tick = "?"
+        if ctype == "editBox":
+            return MenuEl("Edit", label, cls="NetUISearchBoxTextbox", key="")
+        if ctype == "gallery":
+            entries = [self.secret("ListItem", "What the clipboard of this PC holds")]
+            return MenuEl("Menu", label, cls=wm.GALLERY_CLASS, kids=[MenuEl("Group", label, kids=entries)])
+        if ctype == "galleryItem":
+            return MenuEl("ListItem", label, enabled=enabled)
+        if ctype == "splitButton":
+            inner = self.secret("MenuItem", f"{label} last used on this PC", tick=0)
+            made = MenuEl("SplitButton", label, enabled=enabled, expands=self.submenu,
+                          kids=[inner, MenuEl("Button", label)])
+        elif ctype == "menu":
+            made = MenuEl("MenuItem", label, cls="NetUIAnchor", enabled=enabled, expands=self.submenu)
+        else:
+            made = MenuEl("MenuItem", label, enabled=enabled, tick=tick, key=f"Alt, {label[0]}")
+        made.group = group
+        return made
+
+    def build(self, slug, nth):
+        wm, wanted = cu.word_menus, self.required[slug]
+        entries = list(wanted["menu"])
+        if self.proofing_first and self.shown == 1:  # the first menu of a session, while the proofing tools load
+            entries = [("Proofing", "button") if e[0] == "Synonyms" else e for e in entries]
+        if self.spec.get("card"):
+            box = MenuEl("Group", cls=wm.CARD_MENU_CLASS, kids=[self.item(e, slug, nth, None) for e in entries])
+            frame = MenuEl("Menu", cls=wm.FRAME_CLASS, kids=[box])
+        else:
+            first = [self.item(entries[0], slug, nth, None)] if entries[0][1] == "editBox" else []
+            rest = entries[len(first):]
+            half = (len(rest) + 1) // 2
+            groups = []
+            for part in (rest[:half], rest[half:]):
+                kids = [self.item(e, slug, nth, None) for e in part]
+                if kids:
+                    groups.append(MenuEl("Group", " ", cls="NetUITWMenuItemGroup", kids=kids))
+                    for kid in kids:
+                        kid.group = groups[-1].kids  # where a split button's submenu opens: beside it
+            if self.stranger == slug:
+                groups.append(MenuEl("Group", " ", kids=[MenuEl("Slider", "Zoom")]))
+            box = MenuEl("Menu", cls=wm.MENU_CLASS, kids=first + groups)
+            frame = MenuEl("Menu", "Context Menu", cls=wm.FRAME_CLASS, kids=[MenuEl("Pane", kids=[box])])
+        self.menu_top = MenuEl("Menu", cls="Net UI Tool Window", rect=(300, 420, 524, 900), kids=[frame])
+        self.bar_top = None
+        tools = wanted.get("toolbar") or ((("Bold", "toggleButton", "unchecked"),)
+                                          if self.bar_at_spelling and slug == "spelling-error" else None)
+        if tools:
+            self.bar_top = MenuEl("ToolBar", cls="Net UI Tool Window", rect=(300, 340, 700, 407), kids=[
+                MenuEl("ToolBar", cls=wm.FRAME_CLASS, kids=[self.secret("Group", "MiniBar", kids=[
+                    self.tool(e, n) for n, e in enumerate(tools)])])])
+
+    def tool(self, entry, n):
+        label, ctype, flags = entry[0], entry[1], set(entry[2:])
+        tick = (1 if "checked" in flags else 0) if flags & {"checked", "unchecked"} else None
+        if label == self.unread_tick:
+            tick = "?"
+        rect = (306 + 24 * n, 344, 328 + 24 * n, 368)
+        if ctype == "comboBox":
+            return self.secret("ComboBox", "Aptos, the font chosen on this PC", rect=rect,
+                               kids=[self.secret("Edit", "Aptos"), MenuEl("Button", "Open")])
+        if ctype == "menu":
+            return self.secret("MenuItem", "", cls="NetUIAnchor", rect=rect,
+                               kids=[self.secret("MenuItem", f"{label} Orange, Accent 2")])
+        if ctype == "splitButton":
+            return MenuEl("SplitButton", label, tick=tick, rect=rect, enabled="disabled" not in flags,
+                          kids=[self.secret("Button", f"{label} Red"), MenuEl("MenuItem", "More Options")])
+        return MenuEl("Button", label + " ", tick=tick, rect=rect, enabled="disabled" not in flags)
+
+    def submenu(self, el, on):
+        wm, label = cu.word_menus, el.name
+        if not on:
+            if self.stuck == label:
+                return
+            if getattr(el, "frame", None) is not None:
+                (el.group if el.control_type == "SplitButton" else el.kids).remove(el.frame)
+                el.frame = None
+            self.sub = None
+            return
+        self.opened.append((self.spec["slug"], label))
+        if (label, sum(1 for o in self.opened if o == (self.spec["slug"], label))) in self.expand_fails:
+            self.open = False  # Word closed the menu by itself: its elements are gone
+            raise COMError("element not available")
+        fixed = self.required[self.spec["slug"]].get("submenus", {}).get(label)
+        if fixed is None:  # a submenu that holds this PC's data: synonyms, recent links
+            kids = [self.secret("ListItem", "A recent document of this PC")]
+        else:
+            kids = [self.item(e, self.spec["slug"], 0, None) for e in fixed]
+        if any(k.control_type == "ListItem" for k in kids):
+            inside = [MenuEl("Menu", label, cls=wm.GALLERY_CLASS, kids=[MenuEl("Group", " ", kids=kids)])]
+        else:
+            box = MenuEl("Menu", cls=wm.MENU_CLASS, kids=[MenuEl("Group", " ", kids=kids)])
+            inside = [MenuEl("Pane", kids=[box])]
+        el.frame = MenuEl("Menu", label, cls=wm.FRAME_CLASS, kids=inside)
+        if el.control_type == "SplitButton":  # beside the split button, in its group
+            at = next(n for n, k in enumerate(el.group) if k.__dict__ is el.__dict__)  # a walk gives wrappers
+            el.group.insert(at + 1, el.frame)
+        else:
+            el.kids.append(el.frame)
+        self.sub = label
+
+    def reads(self):
+        return sum(s.read() for s in self.secrets)
+
+
+class WordMenus(unittest.TestCase):
+    """The --menus capture against a fake Word (D02 T01 §35)."""
+
+    def run_capture(self, word, ready=0.3, origin=(0, 0)):
+        uia = type("U", (), {"element": lambda self, h: word.element(h)})()
+
+        class W:
+            def windows_of(self, pid, class_name=None):
+                return word.windows(class_name)
+
+            def right_click(self, hwnd, x, y):
+                word.right_click(hwnd, x, y)
+
+            def dismiss_surface(self, hwnd, element=None):
+                word.dismiss(hwnd)
+        launched = type("L", (), {"hwnd": 5, "proc": type("P", (), {"pid": 9})(), "check_alone": lambda self: None,
+                                  "word_action": lambda self, action, **kw: word.word_action(action, **kw)})()
+        ctx = cu.Context("word", BUILD, set(), origin=origin)
+        real_sleep, cu.time.sleep = cu.time.sleep, lambda s: None
+        try:
+            return cu.capture_word_menus(launched, uia, W(), ctx, ready=ready), ctx
+        finally:
+            cu.time.sleep = real_sleep
+
+    def refused(self, word, *said):
+        with self.assertRaises(cu.Refused) as ctx:
+            self.run_capture(word)
+        for text in said:
+            self.assertIn(text, str(ctx.exception))
+        # whatever went wrong, the menu is closed and the capture's document is closed unsaved
+        self.assertEqual((word.open, word.sub, word.document), (False, None, False))
+        self.assertEqual(word.actions[-1], ("close_fixture", None))
+        return str(ctx.exception)
+
+    def test_every_context_is_recorded_with_its_menu_its_submenus_and_its_mini_toolbar(self):
+        wm, word = cu.word_menus, FakeWordMenus()
+        records, ctx = self.run_capture(word)
+        cu.word_menus_check(records)
+        self.assertEqual(ci.check_word_menus("menus.json", records), [])
+        by_id = {r["id"]: r for r in records}
+        self.assertEqual([r["id"] for r in records if r["kind"] == "contextMenu"],
+                         [wm.menu_id(c) for c in wm.CONTEXTS])
+        self.assertEqual(sum(1 for r in records if r["kind"] == "miniToolbar"), 9)
+        table = [(r["id"][len("word.menus.table."):], r["controlType"]) for r in records
+                 if r["kind"] == "menuItem" and r["parent"] in ("word.menus.table", "word.menus.table.insert")]
+        self.assertEqual(table[:4], [("type-to-search-and-use-the-up-and-down-arrow-keys-to-navigate", "editBox"),
+                                     ("cut", "button"), ("copy", "button"), ("paste-options", "gallery")])
+        self.assertIn(("separator", "separator"), table)  # the line between two groups is recorded
+        self.assertEqual([t[0] for t in table if t[0].startswith("insert.")], [
+            "insert.insert-columns-to-the-left", "insert.insert-columns-to-the-right", "insert.insert-rows-above",
+            "insert.insert-rows-below", "insert.insert-cells"])
+        # a submenu beside its split button and a gallery submenu are read as one under its item is
+        self.assertEqual([r["label"] for r in records if r.get("parent") == "word.menus.shape.bring-to-front"],
+                         ["Bring to Front", "Bring Forward", "Bring in Front of Text"])
+        wrap = [r for r in records if r.get("parent") == "word.menus.picture.wrap-text"]
+        self.assertEqual((wrap[0]["label"], wrap[0]["controlType"]), ("In Line with Text", "galleryItem"))
+        self.assertIs(by_id["word.menus.picture.wrap-text.edit-wrap-points"]["enabled"], False)
+        self.assertIs(by_id["word.menus.shape.wrap-text.move-with-text"]["checked"], True)
+        # states: a disabled item, a tick, a toggle, the selection the menu was opened over
+        self.assertIs(by_id["word.menus.text-caret.cut"]["enabled"], False)
+        self.assertNotIn("enabled", by_id["word.menus.text-selected.cut"])
+        self.assertNotIn("enabled", by_id["word.menus.text-caret.paste-options"])
+        self.assertIs(by_id["word.menus.tracked-change.track-changes"]["checked"], False)
+        self.assertIs(by_id["word.menus.hyperlink.mini-toolbar.underline"]["checked"], True)
+        self.assertEqual(by_id["word.menus.footer"]["condition"], "the caret stands in the page footer")
+        # a control with no name of its own is named by its place; an item keeps its access key
+        bar = [r["label"] for r in records if r.get("parent") == "word.menus.shape.mini-toolbar"]
+        self.assertEqual(bar, ["Style", "Fill", "Outline"])
+        self.assertEqual(by_id["word.menus.text-selected.cut"]["keytip"], "C")
+        # places: an item from its menu's corner, the toolbar from the menu's, a control from its toolbar's
+        self.assertEqual(by_id["word.menus.text-selected"]["bounds"], {"x": 0, "y": 0, "width": 224, "height": 480})
+        self.assertEqual(by_id["word.menus.text-selected.mini-toolbar"]["bounds"],
+                         {"x": 0, "y": -80, "width": 400, "height": 67})
+        self.assertEqual(by_id["word.menus.text-selected.mini-toolbar.bold"]["bounds"],
+                         {"x": 150, "y": 4, "width": 22, "height": 24})
+        # how the menus were asked for and closed
+        self.assertEqual(word.actions[0], ("menus_document", None))
+        self.assertEqual(word.actions[-1], ("close_fixture", None))
+        self.assertTrue(all(click == (FakeWordMenus.PAGE, 320, 410) for click in word.clicks))
+        self.assertEqual(set(word.opened), {("table", "Insert"), ("picture", "Change Picture"),
+                                            ("picture", "Wrap Text"), ("shape", "Bring to Front"),
+                                            ("shape", "Send to Back"), ("shape", "Wrap Text")})
+        self.assertEqual((word.open, word.sub, word.document), (False, None, False))
+        self.assertNotIn(FakeWordMenus.LAYOUT, word.elements_asked + word.escapes)
+        self.assertIn("menus: 11 contexts, 9 with a mini toolbar", ctx.notes)
+
+    def test_no_name_that_is_this_pcs_is_read_and_nothing_is_pressed(self):
+        word = FakeWordMenus()
+        self.run_capture(word)
+        # the comment card's names, the clipboard's entries, the inner buttons of split buttons, the combo boxes'
+        # edits and the unnamed drop-downs of the toolbars, the document's own text: each counts its reads
+        self.assertGreater(len(word.secrets), 200)
+        self.assertEqual(word.reads(), 0)
+        self.assertEqual(word.pressed, [])  # the author's picture offers a menu too, and is passed over
+        # no submenu that holds data was opened: only those the list names as fixed
+        named = {(c["slug"], label) for c in cu.word_menus.CONTEXTS for label in c["submenus"]}
+        self.assertLessEqual(set(word.opened), named)
+
+    def test_the_first_menu_of_a_session_is_not_the_record_and_is_not_passed_over_in_silence(self):
+        word = FakeWordMenus()
+        records, ctx = self.run_capture(word)
+        labels = [r["label"] for r in records if r.get("parent") == "word.menus.text-selected"]
+        self.assertIn("Synonyms", labels)
+        self.assertNotIn("Proofing", labels)
+        self.assertEqual(word.asked["text-selected"], 3)  # the first differed: two more agreed
+        self.assertEqual(word.asked["text-caret"], 2)
+        self.assertIn("menus: the Text, a word selected context was asked for 3 times before two readings in a "
+                      "row agreed", ctx.notes)
+
+    def test_a_menu_word_did_not_open_or_closed_by_itself_is_asked_for_again(self):
+        # the request was not taken twice (asked once more at once, then as a lost reading), and Word closed the
+        # menu while a submenu was being opened
+        word = FakeWordMenus(lost={("table", 1), ("table", 2), ("hyperlink", 2)}, expand_fails={("Wrap Text", 1)})
+        records, ctx = self.run_capture(word)
+        cu.word_menus_check(records)
+        self.assertEqual((word.asked["table"], word.asked["hyperlink"], word.asked["picture"]), (4, 3, 3))
+        self.assertTrue(any("the Picture context was asked for 3 times" in n for n in ctx.notes))
+        self.assertEqual((word.open, word.sub), (False, None))
+
+    def test_a_menu_that_never_opens_or_never_agrees_refuses_the_capture(self):
+        word = FakeWordMenus(lost={("table", n) for n in range(1, 40)})
+        self.refused(word, "the Table cell context menu did not open with its mini toolbar and settle", "in each "
+                     "of 6 tries; nothing is published")
+        self.assertEqual(word.asked["table"], 12)  # each try asks once more when nothing shows
+        word = FakeWordMenus(drift={("footer", n, "Cut") for n in (1, 3, 5)})
+        said = self.refused(word, "the Footer context was not the same at two readings in a row in 6 tries",
+                            "the menu: Cut (button)")
+        self.assertIn("Cut (button, disabled)", said)
+        self.assertEqual(word.asked["footer"], 6)
+
+    def test_what_the_list_does_not_allow_refuses_the_capture_and_leaves_word_closed(self):
+        self.refused(FakeWordMenus(stranger="hyperlink"), "the Hyperlink menu holds a Slider", "it is not passed over")
+        self.refused(FakeWordMenus(unread_tick="Track Changes"),
+                     "whether Track Changes of the Tracked change menu is ticked could not be read")
+        self.refused(FakeWordMenus(unread_tick="Bold"),
+                     "whether Bold of the Text, a word selected mini toolbar is on could not be read")
+        self.refused(FakeWordMenus(bar_at_spelling=True), "the Spelling error context menu shows a mini toolbar, and "
+                     "scripts/lib/word_menus.py says it shows none")
+        self.refused(FakeWordMenus(card=False), "the comment's card was not found in the document's margin")
+        self.refused(FakeWordMenus(stuck="Insert"), "the Insert submenu of the Table cell context menu could not "
+                     "be closed again")
+        required = copy.deepcopy(cu.word_menus.REQUIRED)
+        required["header"]["menu"] = tuple(e for e in required["header"]["menu"] if e[0] != "Translate")
+        said = self.refused(FakeWordMenus(required=required), "the Header context does not show Translate (button) in "
+                            "its menu", "it was not captured whole")
+        self.assertIn("scripts/lib/word_menus.py says it must", said)
+        required = copy.deepcopy(cu.word_menus.REQUIRED)
+        required["table"]["submenus"]["Insert"] = required["table"]["submenus"]["Insert"][:-1]
+        self.refused(FakeWordMenus(required=required), "the Table cell context does not show Insert Cells... "
+                     "(button) under Insert")
+        required = copy.deepcopy(cu.word_menus.REQUIRED)
+        required["shape"]["menu"] = tuple((e[0], e[1], "disabled") if e[0] == "Wrap Text" else e
+                                          for e in required["shape"]["menu"])
+        self.refused(FakeWordMenus(required=required), "Wrap Text of the Shape context menu is disabled, and "
+                     "scripts/lib/word_menus.py says its submenu holds fixed choices")
+
+    def test_a_menu_that_cannot_be_closed_refuses_and_nothing_else_is_asked(self):
+        word = FakeWordMenus(closes=False)
+        with self.assertRaises(cu.Refused) as ctx:
+            self.run_capture(word)
+        self.assertIn("the Text, a word selected context menu could not be closed with Escape; Word is left as it "
+                      "is and nothing is published", str(ctx.exception))
+        self.assertEqual(word.asked, {"text-selected": 1})
+        self.assertEqual(word.actions[-1], ("close_fixture", None))
+
+    def test_no_bounds_without_the_capture_profile(self):
+        records, _ = self.run_capture(FakeWordMenus(), origin=None)
+        self.assertFalse(any(key in r for r in records for key in ("bounds", "captureProfile", "size")))
+        cu.word_menus_check(records)
+
+    def run_main(self, out, capture, merge=True):
+        launched = type("L", (), {"hwnd": 5, "close": lambda self: None})()
+        real, cu.capture = cu.capture, capture
+        try:
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                code = cu.main(["--app", "word", "--menus", "--out", str(out)] + (["--merge"] if merge else []),
+                               launcher=lambda app: launched, uia_factory=lambda: None, win_factory=lambda: None)
+        finally:
+            cu.capture = real
+        return code, stdout.getvalue(), stderr.getvalue()
+
+    def test_publishing_and_merging_follow_the_rule_of_the_other_surfaces(self):
+        fresh, ctx = self.run_capture(FakeWordMenus())
+        sentence = "Removes the selection and puts it on the clipboard. Available when something is selected."
+        cut = "word.menus.text-selected.cut"
+        old = [dict(r, behaviour=sentence) if r["id"] == cut else r for r in copy.deepcopy(fresh)]
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "menus.json"
+            code, _, _ = self.run_main(out, lambda *a: (copy.deepcopy(fresh), [], ctx), merge=False)
+            self.assertEqual(code, 0)
+            self.assertEqual(out.read_text(encoding="utf-8"), cu.render(fresh))
+            out.write_text(cu.render(old), encoding="utf-8")
+            code, _, _ = self.run_main(out, lambda *a: (copy.deepcopy(fresh), [], ctx))
+            self.assertEqual(code, 0)
+            written = {r["id"]: r for r in json.loads(out.read_text(encoding="utf-8"))}
+            self.assertEqual(written[cut]["behaviour"], sentence)  # written by hand: carried
+            before = out.read_bytes()
+            # A capture that is not whole, and one that failed in the middle, publish nothing: the file stays
+            # byte for byte what it was, with the menu closed and the capture's document closed unsaved.
+            broken = [r for r in copy.deepcopy(fresh) if r["id"] != "word.menus.footer.translate"]
+            code, _, err = self.run_main(out, lambda *a: (broken, [], ctx))
+            self.assertEqual(code, 1)
+            self.assertIn("the menus capture is not whole", err)
+            self.assertIn("word.menus.footer: holds 27 of the 28 records the capture recorded", err)
+            word = FakeWordMenus(stranger="hyperlink")
+            code, _, err = self.run_main(out, lambda *a: (self.run_capture(word)[0], [], None))
+            self.assertEqual(code, 1)
+            self.assertIn("the Hyperlink menu holds a Slider", err)
+            self.assertEqual((word.open, word.sub, word.document), (False, None, False))
+            self.assertEqual(out.read_bytes(), before)
+
+    def test_menus_are_words_alone(self):
+        args = type("A", (), {"app": "excel", "menus": True})()
+        with self.assertRaises(cu.Refused) as ctx:
+            cu.capture(args, None, None, None)
+        self.assertIn("--menus captures Word's context menus and mini toolbars only", str(ctx.exception))
+
+
+class WordMenusOwner(unittest.TestCase):
+    """What the process that owns Word does for the menus capture (D02 T01 §35): the document is the capture's own
+    new blank one before anything is written to it, and a selection is one a listed context names."""
+
+    class Doc:
+        closed = False
+
+        def __init__(self, path="", end=1):
+            self.Path, self.Name, self.FullName, self.writes = path, "Document2", "Document2", []
+            outer = self
+
+            class Content:
+                End = end
+
+                def __getattr__(self, name):
+                    outer.writes.append(name)
+                    raise AssertionError(f"the document was written to ({name})")
+            self.Content = Content()
+
+        def __getattr__(self, name):
+            self.writes.append(name)
+            raise AssertionError(f"the document was touched ({name})")
+
+    def owner(self, doc):
+        launched = cu.Launched.__new__(cu.Launched)
+        launched.key, launched.hwnd, launched.created = "word", 5, []
+        launched._check_alone_impl = lambda: None
+        launched.app = type("App", (), {"Documents": type("Docs", (), {"Add": lambda self: doc})()})()
+        return launched
+
+    def test_a_document_that_is_not_the_captures_own_blank_one_is_refused_before_any_write(self):
+        for doc in (self.Doc(path="C:\\Users\\someone\\Report.docx"), self.Doc(end=412)):
+            launched = self.owner(doc)
+            with self.assertRaises(cu.Refused) as ctx:
+                launched._word_action_impl("menus_document")
+            self.assertIn("is not a new blank one; nothing was written to it and it is left as it is",
+                          str(ctx.exception))
+            self.assertEqual(doc.writes, [])
+            self.assertIsNone(getattr(launched, "_fixture_doc", None))  # it is not taken as the capture's to close
+
+    def test_a_second_document_is_never_started_over_one_still_open(self):
+        launched = self.owner(self.Doc())
+        launched._fixture_doc = object()
+        with self.assertRaises(cu.Refused) as ctx:
+            launched._word_action_impl("menus_document")
+        self.assertIn("another document of the capture's is still open", str(ctx.exception))
+
+    def test_only_a_listed_selection_is_made_and_only_in_the_captures_document(self):
+        launched = self.owner(self.Doc())
+        with self.assertRaises(cu.Refused) as ctx:
+            launched._word_action_impl("menus_target", kind="text-selected")
+        self.assertIn("the capture's own document for the menus is not open", str(ctx.exception))
+        launched._fixture_doc = self.Doc()
+        with self.assertRaises(cu.Refused) as ctx:
+            launched._word_action_impl("menus_target", kind="everything")
+        self.assertIn("menus_target selects what a listed context names only, not 'everything'", str(ctx.exception))
+        self.assertEqual(launched._fixture_doc.writes, [])
+
+    def test_a_right_click_needs_the_documents_own_window(self):
+        win = cu.Win.__new__(cu.Win)
+        posted = []
+        win.user32 = type("U", (), {"IsWindow": lambda self, h: h == 77,
+                                    "ScreenToClient": lambda self, h, p: None,
+                                    "PostMessageW": lambda self, *a: posted.append(a)})()
+        win.wt = type("WT", (), {"POINT": lambda self, x, y: type("P", (), {"x": x - 100, "y": y - 50})()})()
+        win.ct = type("CT", (), {"byref": lambda self, p: p})()
+        for hwnd in (0, None, True, 78, "77"):
+            with self.assertRaises(cu.Refused):
+                win.right_click(hwnd, 300, 400)
+        self.assertEqual(posted, [])
+        win.right_click(77, 300, 400)
+        where = (350 << 16) | 200
+        self.assertEqual(posted, [(77, 0x0204, 0x0002, where), (77, 0x0205, 0, where)])
+
+    def test_a_menu_a_stopped_capture_left_open_is_closed_by_the_process_that_owns_word(self):
+        # The capture runs in a worker that a time limit or Ctrl+C ends; the menu it left open is closed from the
+        # process that outlives it, before Word is asked to close anything else.
+        class Win:
+            def __init__(self, closes=True):
+                self.open, self.sent, self.closes = [88, 89], [], closes
+
+            def windows_of(self, pid, class_name=None):
+                if class_name is not None:
+                    return [91] if class_name == "NUIDialog" else []
+                return [5, 91] + self.open
+
+            def dismiss_surface(self, hwnd, element=None):
+                self.sent.append(hwnd)
+                if self.closes:
+                    self.open = []
+        real_sleep, cu.time.sleep = cu.time.sleep, lambda s: None
+        try:
+            for known, closes, sent in (({5}, True, [88, 89, 5]), ({5}, False, [88, 89, 5] * 3), (None, True, []),
+                                        ({5, 88, 89}, True, [])):
+                launched, win = self.owner(self.Doc()), Win(closes)
+                launched.proc = type("P", (), {"pid": 9})()
+                launched._get_win = lambda win=win: win
+                launched._menus_known = known
+                launched._dismiss_left_menus()
+                self.assertEqual(win.sent, sent, (known, closes))  # never the Layout Options window (91)
+                self.assertIsNone(launched._menus_known)
+        finally:
+            cu.time.sleep = real_sleep
+
+    def test_an_element_that_went_away_while_it_was_walked_is_gone_not_a_crash(self):
+        # A menu Word is still building, or has just closed, answers a walk of its elements with a COM error: the
+        # wrapper says Gone, as it does for an element that went away while it was read, and nothing else is hidden.
+        class Raw:
+            CurrentAutomationId = CurrentAccessKey = CurrentClassName = CurrentName = ""
+            CurrentControlType, CurrentIsOffscreen, CurrentIsEnabled = "MenuItem", False, True
+            CurrentBoundingRectangle = type("R", (), {"left": 0, "top": 0, "right": 10, "bottom": 10})()
+
+        def walker(first, following):
+            def step(answer):
+                def ask(self, raw):
+                    if isinstance(answer, Exception):
+                        raise answer
+                    return answer
+                return ask
+            return type("Walker", (), {"GetFirstChildElement": step(first), "GetNextSiblingElement": step(following)})()
+
+        def element(first, following):
+            uia = type("Uia", (), {"walker": walker(first, following), "type_name": lambda self, role: role})()
+            return cu.Element(uia, Raw())
+        for walk in ("children", "quiet_children"):
+            self.assertEqual(len(list(getattr(element(Raw(), None), walk)())), 1)
+            with self.assertRaises(cu.Gone):
+                list(getattr(element(COMError("element not available"), None), walk)())
+            with self.assertRaises(cu.Gone):  # the first child was there, the next was not
+                list(getattr(element(Raw(), COMError("element not available")), walk)())
+            with self.assertRaises(ZeroDivisionError):  # any other failure is not an element that went away
+                list(getattr(element(ZeroDivisionError("a fault of the tool's own"), None), walk)())
+
+
 if __name__ == "__main__":
     unittest.main()

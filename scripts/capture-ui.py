@@ -47,6 +47,7 @@ import zlib
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import word_backstage  # noqa: E402  (scripts/lib, on the path above)
 import word_dialogs  # noqa: E402
+import word_menus  # noqa: E402
 import word_options  # noqa: E402
 import word_panes  # noqa: E402
 import word_statusbar  # noqa: E402
@@ -373,11 +374,23 @@ class Element:
     def runtime_id(self):
         return tuple(self.raw.GetRuntimeId())
 
-    def children(self):
-        child = self.uia.walker.GetFirstChildElement(self.raw)
+    def _walk(self, quiet):
+        """The children one after another. An element that went away while it was walked raises Gone, as one that
+        went away while it was read does: a menu that is still being built answers so (D02 T01 §35)."""
+        def step(ask, of):
+            try:
+                return ask(of)
+            except Exception as exc:
+                if type(exc).__name__ == "COMError":
+                    raise Gone(str(exc)) from None
+                raise
+        child = step(self.uia.walker.GetFirstChildElement, self.raw)
         while child:
-            yield Element(self.uia, child)
-            child = self.uia.walker.GetNextSiblingElement(child)
+            yield Element(self.uia, child, quiet=quiet)
+            child = step(self.uia.walker.GetNextSiblingElement, child)
+
+    def children(self):
+        return self._walk(False)
 
     def show_context_menu(self):
         """Ask the element for its context menu through UI Automation itself: no pointer moves and no key is sent."""
@@ -385,10 +398,7 @@ class Element:
 
     def quiet_children(self):
         """The children, each with its name left unread until it is asked for (Word Options, panes, status bar)."""
-        child = self.uia.walker.GetFirstChildElement(self.raw)
-        while child:
-            yield Element(self.uia, child, quiet=True)
-            child = self.uia.walker.GetNextSiblingElement(child)
+        return self._walk(True)
 
     def pattern(self, name):
         u = self.uia.U
@@ -398,6 +408,11 @@ class Element:
                       "scroll": (u.UIA_ScrollPatternId, u.IUIAutomationScrollPattern)}[name]
         raw = self.raw.GetCurrentPattern(pid)
         return raw.QueryInterface(iface) if raw else None
+
+    @property
+    def native_window(self):
+        """The window handle of the element's own window, 0 when it has none."""
+        return int(getattr(self.raw, "CurrentNativeWindowHandle", 0) or 0)
 
     def can_toggle(self):
         return self.pattern("toggle") is not None
@@ -563,6 +578,18 @@ class Win:
         return {"zoomed": bool(self.user32.IsZoomed(hwnd)), "dpi": self.user32.GetDpiForWindow(hwnd),
                 "window": (rect.left, rect.top, rect.right, rect.bottom), "origin": (origin.x, origin.y),
                 "monitor": monitor}
+
+    def right_click(self, hwnd, x, y):
+        """Ask the window `hwnd` for what a right click at the screen point (x, y) shows, with the two messages
+        the right button sends, posted to that window alone: no pointer moves and no key is sent, and the window
+        need not be in front (D02 T01 §35)."""
+        if not isinstance(hwnd, int) or isinstance(hwnd, bool) or hwnd == 0 or not self.user32.IsWindow(hwnd):
+            raise Refused("cannot ask for a context menu without the document's own window")
+        point = self.wt.POINT(int(x), int(y))
+        self.user32.ScreenToClient(hwnd, self.ct.byref(point))
+        where = ((point.y & 0xFFFF) << 16) | (point.x & 0xFFFF)
+        self.user32.PostMessageW(hwnd, 0x0204, 0x0002, where)  # WM_RBUTTONDOWN, MK_RBUTTON
+        self.user32.PostMessageW(hwnd, 0x0205, 0, where)       # WM_RBUTTONUP
 
     def windows_of(self, pid, class_name=None):
         """All visible top-level windows of one process, matching class_name when given."""
@@ -2091,6 +2118,67 @@ class Launched:
         box = getattr(self, "_dialog_box", None)
         return box is not None and box.empty()
 
+    MENUS_PICTURE = INVENTORY.parents[1] / "assets" / "brand" / "png" / "rizonesoft-flow-lockup-dark-96.png"
+
+    def _write_menus_content(self, doc):
+        """What the context menus are asked over, written into the capture's own new document through Word's
+        object model: nothing of the operator's is opened, typed over or read (D02 T01 §35)."""
+        lines = ("Plain words here.", "A link here.", "A mispeled word.", "Added words here.", "Noted words here.")
+        doc.Content.InsertAfter(lines[0])
+        for line in lines[1:]:
+            doc.Content.InsertParagraphAfter()
+            doc.Content.InsertAfter(line)
+        doc.Hyperlinks.Add(doc.Paragraphs(2).Range.Words(2), "https://example.invalid/")
+        doc.Comments.Add(doc.Paragraphs(5).Range.Words(1), "A note")
+        doc.TrackRevisions = True
+        try:
+            doc.Paragraphs(4).Range.Words(1).InsertAfter("more ")
+        finally:
+            doc.TrackRevisions = False
+
+        def end():
+            doc.Content.InsertParagraphAfter()
+            at = doc.Content
+            at.Collapse(0)  # wdCollapseEnd
+            return at
+        table = doc.Tables.Add(end(), 2, 2)
+        table.Cell(1, 1).Range.Text = "Cell"
+        doc.InlineShapes.AddPicture(str(self.MENUS_PICTURE), False, True, end())
+        doc.Shapes.AddShape(1, 330, 100, 80, 40)  # msoShapeRectangle, to the right of the short lines
+
+    @staticmethod
+    def _word_point(window, target):
+        """Where `target` (a range or a shape) stands on the screen, as Word's own window says: left, top, width,
+        height in pixels. Refused when Word cannot say, which it cannot for what is not in view."""
+        import pythoncom
+        try:
+            dispid = window._oleobj_.GetIDsOfNames("GetPoint")
+            got = window._oleobj_.InvokeTypes(dispid, 0, pythoncom.DISPATCH_METHOD, (24, 0),
+                                              ((16387, 3), (16387, 3), (16387, 3), (16387, 3), (9, 1)),
+                                              0, 0, 0, 0, target._oleobj_)
+        except Exception as exc:
+            said = f"Word could not say where the selection stands on the screen ({type(exc).__name__})"
+            raise Refused(said) from None
+        return tuple(int(v) for v in got)
+
+    def _dismiss_left_menus(self, tries=3):
+        """Close with Escape a menu a stopped menus capture left open, from this process, before Word is asked
+        anything else: a window Word shows that it did not show when the capture's document was made."""
+        known = getattr(self, "_menus_known", None)
+        if known is None:
+            return
+        win, pid = self._get_win(), int(self.proc.pid)
+        for _ in range(tries):
+            ignored = {h for cls in word_menus.IGNORED_WINDOWS for h in win.windows_of(pid, cls)}
+            left = [h for h in win.windows_of(pid) if h not in known and h not in ignored]
+            if not left:
+                break
+            for hwnd in left + [int(self.hwnd or 0)]:
+                if hwnd:
+                    win.dismiss_surface(hwnd)
+            time.sleep(0.5)
+        self._menus_known = None
+
     def _cancel_left_dialog(self, seconds=10.0):
         """Cancel the dialog a stopped capture left open, from this process: each window Word has shown since the
         dialog's command was started is sent the message its title bar's Close sends, which discards what the
@@ -2210,6 +2298,64 @@ class Launched:
             # dialog). Where the document ends is asked, never what it holds: its text is not fetched.
             return {"hwnd": int(self.hwnd or 0), "new": not str(doc.Path or ""), "saved": bool(doc.Saved),
                     "empty": int(doc.Content.End) <= 1}
+        if action == "menus_document":  # D02 T01 §35: a second document of the capture's own, never saved
+            if getattr(self, "_fixture_doc", None) is not None:
+                raise Refused("another document of the capture's is still open; the menus are not started over it")
+            self._check_alone_impl()
+            doc = app.Documents.Add()
+            if str(doc.Path or "") or int(doc.Content.End) > 1:
+                raise Refused("the document Word gave the capture is not a new blank one; nothing was written to "
+                              "it and it is left as it is")
+            # From here the document is the capture's: close_fixture, and close() on its own, close it unsaved.
+            self._fixture_doc, self._fixture_meta = doc, self._doc_meta(doc)
+            self._fixture_path = self._fixture_sha256 = None
+            self._write_menus_content(doc)
+            wh = self.window_handle()
+            if wh is not None:
+                self.hwnd = self._get_win().top(wh)
+            # What Word shows now: a menu a stopped capture leaves open is a window that is not among these.
+            self._menus_known = set(self._get_win().windows_of(int(self.proc.pid)))
+            return {"hwnd": int(self.hwnd or 0)}
+        if action == "menus_target":  # D02 T01 §35: select what a context's menu is asked over; where it stands
+            doc, kind = getattr(self, "_fixture_doc", None), kwargs.get("kind")
+            if doc is None or getattr(doc, "closed", False):
+                raise Refused("the capture's own document for the menus is not open")
+            if kind not in word_menus.SELECTIONS:
+                raise Refused(f"menus_target selects what a listed context names only, not {kind!r}")
+            view = app.ActiveWindow.ActivePane.View
+            seek = {"header": 9, "footer": 10}.get(kind, 0)  # wdSeekCurrentPageHeader, wdSeekCurrentPageFooter
+            if int(view.SeekView) != seek:
+                view.SeekView = seek
+            selection = app.Selection
+
+            def caret(at):
+                selection.SetRange(at, at)
+                return doc.Range(at, at + 1)
+            if kind == "text-selected":
+                word = doc.Paragraphs(1).Range.Words(1)
+                target = doc.Range(word.Start, word.End - 1)
+                target.Select()
+            elif kind == "text-caret":
+                target = caret(doc.Paragraphs(1).Range.Words(2).Start + 2)
+            elif kind == "hyperlink":
+                target = caret(doc.Hyperlinks(1).Range.End - 4)
+            elif kind == "spelling":
+                target = caret(doc.Paragraphs(3).Range.Words(2).Start + 2)
+            elif kind == "revision":
+                target = caret(doc.Revisions(1).Range.Start + 2)
+            elif kind == "comment":
+                target = caret(doc.Comments(1).Scope.Start + 1)
+            elif kind == "table":
+                target = caret(doc.Tables(1).Cell(1, 1).Range.Start + 1)
+            elif kind == "picture":
+                target = doc.InlineShapes(1).Range
+                target.Select()
+            elif kind == "shape":
+                target = doc.Shapes(1)
+                target.Select()
+            else:  # the header or the footer the view has gone to
+                target = selection.Range
+            return {"hwnd": int(self.hwnd or 0), "rect": list(self._word_point(app.ActiveWindow, target))}
         if action == "open_fixture":
             self._restore_saved_clipboard()
             path = Path(kwargs.get("path") or WORD_DEFAULT_FIXTURE)
@@ -2767,6 +2913,10 @@ class Launched:
 
     def _close_impl(self, wait=60.0):
         self._restore_panes_impl()  # D02 T01 §32: a stopped pane capture is put right before Word closes
+        try:
+            self._dismiss_left_menus()  # D02 T01 §35: a menu a stopped capture left open is closed first
+        except Exception:
+            pass  # the documents are still closed below, and what cannot be closed there is said there
         others, failure, clipboard_failure = None, None, None  # unknown until counted: an instance whose contents are unknown is never quit
         metas = list(getattr(self, "_created_meta", ()))
         try:
@@ -3022,6 +3172,8 @@ def capture(args, launched, uia, win):
         raise Refused("--panes captures Word's task panes only (D02 T01 §32)")
     if getattr(args, "statusbar", False) and args.app != "word":
         raise Refused("--statusbar captures Word's status bar only (D02 T01 §33)")
+    if getattr(args, "menus", False) and args.app != "word":
+        raise Refused("--menus captures Word's context menus and mini toolbars only (D02 T01 §35)")
     if getattr(args, "dialogs", False) and args.app != "word":
         raise Refused("--dialogs captures Word's dialogs only (D02 T01 §34)")
     row = APPS[args.app][0]
@@ -3070,6 +3222,17 @@ def capture(args, launched, uia, win):
                 for key in ("bounds", "captureProfile", "size"):
                     rec.pop(key, None)
             problems += [why for why in ctx.dropped_reasons if why not in problems]
+        return records, problems, ctx
+    if getattr(args, "menus", False):
+        launched.check_alone()
+        check_licensing()
+        records = capture_word_menus(launched, uia, win, ctx)
+        launched.check_alone()
+        check_licensing()
+        if ctx.origin is None:  # a menu's positions are its own, measured from its own corner, under the profile
+            for rec in records:
+                for key in ("bounds", "captureProfile", "size"):
+                    rec.pop(key, None)
         return records, problems, ctx
     if getattr(args, "dialogs", False):
         launched.check_alone()
@@ -3947,10 +4110,12 @@ def _status_menu(uia, win, pid, known, ready):
     return settled(read, ready)
 
 
-def _close_status_menu(win, hwnd, pid, known, seconds):
-    """Close whatever the status bar's menu opened with Escape and see that it is gone. No item is ever pressed."""
+def _close_status_menu(win, hwnd, pid, known, seconds, what="the Customize Status Bar menu", ignored=()):
+    """Close whatever a menu opened with Escape and see that it is gone. No item is ever pressed. Windows of a
+    class in `ignored` are not the menu's and are not waited for."""
     def open_now():
-        return [h for h in win.windows_of(pid) if h not in known]
+        gone = {h for cls in ignored for h in win.windows_of(pid, cls)}
+        return [h for h in win.windows_of(pid) if h not in known and h not in gone]
     for _ in range(3):
         if not open_now():
             return
@@ -3962,8 +4127,7 @@ def _close_status_menu(win, hwnd, pid, known, seconds):
             win.dismiss_surface(target)
             if wait_for(lambda: not open_now(), seconds=min(seconds, 1.5)):
                 return
-    raise Refused("the Customize Status Bar menu could not be closed with Escape; Word is left as it is and nothing "
-                  "is published")
+    raise Refused(f"{what} could not be closed with Escape; Word is left as it is and nothing is published")
 
 
 def _read_status_menu(uia, win, hwnd, pid, bar, ready):
@@ -4311,6 +4475,374 @@ def capture_word_dialogs(launched, uia, win, ctx, ready=PANE_READY_SECONDS):
             if spec.get("recipients"):
                 launched.word_action("detach_recipients")
     return records
+
+
+class _Frozen(_NoElement):
+    """What an element was when it was read (where it stood, its own id and access key): a record is made from
+    this, never from the live element, so nothing is asked of a menu after it has closed."""
+
+    def __init__(self, rect, node=None):
+        self.rect = rect
+        self.automation_id = (node or {}).get("uia_id") or ""
+        self.access_key = (node or {}).get("access_key") or ""
+
+
+class _MenuLost(Refused):
+    """A menu that did not open, or that went away while it was read. Word shows a context menu without its window
+    being in front, and now and then closes it by itself; such a reading is asked for again, a bounded number of
+    times (word_menus.READINGS), and never counts as a reading."""
+
+
+MENU_ASK_SECONDS = 4.0  # with no window of the menu's after this long, the menu is asked for once more
+
+
+def _menu_node(element, parent=None):
+    """A plain node of one element of a menu for word_menus.menu_items. A name is fetched only when the rules
+    ask (`read`); only a group is walked into, so the inner button of a split button, the entries of a gallery and
+    an open submenu are never looked at from here. `_parent` is the element the node stands in."""
+    role = element.control_type
+    node = {"role": role, "class_name": element.class_name, "rect": element.rect,
+            "enabled": bool(getattr(element, "is_enabled", True)), "uia_id": element.automation_id,
+            "access_key": element.access_key, "read": lambda: element.name, "_el": element, "_parent": parent}
+    if role in ("MenuItem", "SplitButton"):
+        node["expandable"] = element.pattern("expand") is not None
+    if role == "MenuItem" and element.can_toggle():
+        node["toggle"] = element.toggle_state()  # the raw answer: the rules say which values count as read
+    if role == "Group":
+        node["children"] = [_menu_node(k, element) for k in quiet_children(element)]
+    return node
+
+
+def _tool_node(element):
+    """A plain node of one control of a mini toolbar for word_menus.toolbar_items; nothing below it is looked at."""
+    role = element.control_type
+    node = {"role": role, "class_name": element.class_name, "rect": element.rect,
+            "enabled": bool(getattr(element, "is_enabled", True)), "uia_id": element.automation_id,
+            "access_key": element.access_key, "read": lambda: element.name, "_el": element}
+    if role in ("Button", "SplitButton") and element.can_toggle():
+        node["toggle"] = element.toggle_state()
+    return node
+
+
+def _shape_of(nodes):
+    """What two looks at a menu must agree on before it is read: its controls, their places and states, no name."""
+    return tuple((n["role"], n["class_name"], n["enabled"], n.get("toggle"), tuple(n["rect"] or ()),
+                  _shape_of(n.get("children", []))) for n in nodes or ())
+
+
+def _menu_box(parent):
+    """The element that holds a menu's items, under `parent`: a menu's window, an item whose submenu is open, or
+    the group a split button stands in (its submenu opens beside it, not under it). Reached step by step by role
+    and class, no name fetched. None when it is not there."""
+    for frame in quiet_children(parent):
+        if frame.control_type != "Menu" or frame.class_name != word_menus.FRAME_CLASS:
+            continue
+        level = [frame]
+        for _ in range(3):
+            below = []
+            for el in level:
+                for kid in quiet_children(el):
+                    if kid.class_name in word_menus.BOX_CLASSES:
+                        return kid
+                    if kid.control_type == "Pane":
+                        below.append(kid)
+            level = below
+    return None
+
+
+def _menu_windows(win, pid, known):
+    """The windows Word shows that it did not show before the menu was asked for, but the Layout Options button
+    a selected picture or shape brings, which is the selection's and not the menu's."""
+    ignored = {h for cls in word_menus.IGNORED_WINDOWS for h in win.windows_of(pid, cls)}
+    return [h for h in win.windows_of(pid) if h not in known and h not in ignored]
+
+
+def _menus_shown(uia, win, pid, known, spec, ready):
+    """The menu a context opened, and its mini toolbar where the context shows one, once two looks agree:
+    (menu rect, items, bar rect or None, tools or None, whether a toolbar showed), the items and tools as
+    word_menus makes them. Each look reads the names the rules allow at once, from elements it has just fetched: a
+    menu Word is still building (the spelling menu opens its own submenu) gives elements that are gone a moment
+    later. None when the menu did not show; Refused when it showed and the rules never took it."""
+    refusal = []
+
+    def look():
+        menu = bar = None
+        try:
+            for hwnd in _menu_windows(win, pid, known):
+                top = uia.element(hwnd)
+                if top.control_type == "Menu" and menu is None:
+                    box = _menu_box(top)
+                    if box is not None:
+                        menu = (top, box)
+                elif top.control_type == "ToolBar" and bar is None:
+                    frame = next(iter(quiet_children(top)), None)
+                    group = (next((k for k in quiet_children(frame) if k.control_type == "Group"), None)
+                             if frame is not None else None)
+                    if group is not None:
+                        bar = (top, group)
+            if menu is None or (spec["toolbar"] and bar is None):
+                return None
+            nodes = [_menu_node(k, menu[1]) for k in quiet_children(menu[1])]
+            tool_nodes = [_tool_node(k) for k in quiet_children(bar[1])] if bar is not None else None
+            if not nodes:
+                return None
+            del refusal[:]
+            if bar is not None and not spec["toolbar"]:
+                refusal.append(f"the {spec['title']} context menu shows a mini toolbar, and "
+                               f"scripts/lib/word_menus.py says it shows none")
+                return None
+            try:
+                items = word_menus.menu_items(nodes, spec)
+                tools = word_menus.toolbar_items(tool_nodes, spec) if tool_nodes is not None else None
+            except word_menus.Invalid as exc:
+                refusal.append(str(exc))
+                return None
+        except Gone:
+            return None  # a menu that is still being built, or one that is going: looked at again
+        except Exception as exc:
+            if type(exc).__name__ == "COMError":  # an element that has gone answers so to a pattern
+                return None
+            raise
+        return ((menu[0].rect, items, bar[0].rect if bar else None, tools),
+                (_shape_of(nodes), _shape_of(tool_nodes), word_menus.signature(items),
+                 word_menus.signature(tools) if tools is not None else None))
+    shown = settled(look, ready)
+    if shown is None and refusal:
+        raise Refused(f"{refusal[-1]}; nothing is published")
+    return shown
+
+
+def _comment_opener(page):
+    """The More thread actions button of the first comment card in the document's margin, reached by role and
+    class alone: no name in the comments is fetched, the author's picture is passed over by its class, and the
+    button is told by offering a menu to expand. None when there is no card; Refused when it is not one button."""
+    def thread(el, depth):
+        for kid in quiet_children(el):
+            if kid.control_type == "TreeItem":
+                return kid
+            if depth and kid.control_type in ("Custom", "Group", "Pane", "Tree", "List"):
+                hit = thread(kid, depth - 1)
+                if hit is not None:
+                    return hit
+        return None
+    card = thread(page, 10)
+    if card is None:
+        return None
+    bars = [k for k in quiet_children(card) if k.control_type == "ToolBar"]
+    openers = [k for b in bars for k in quiet_children(b) if k.control_type == "Button"
+               and k.class_name != word_menus.PERSONA_CLASS and k.pattern("expand") is not None]
+    if len(openers) != 1:
+        raise Refused(f"the comment's card offers {len(openers)} buttons that open a menu, not one; none is pressed")
+    return openers[0]
+
+
+def _read_submenu(win, pid, item, spec, what, ready):
+    """Open one fixed submenu through UI Automation's own expand, read its choices and close it again. The choices
+    stand under the item, or, for a split button, beside it in its group. Closed on every path."""
+    label, node = item["label"], item["node"]
+    element, parent = node["_el"], node["_parent"]
+    if item.get("enabled") is False:
+        raise Refused(f"{label} of {what} is disabled, and scripts/lib/word_menus.py says its submenu holds fixed "
+                      f"choices in this context")
+    if not node.get("expandable"):
+        raise Refused(f"{label} of {what} does not open a submenu, and scripts/lib/word_menus.py says it holds "
+                      f"fixed choices")
+
+    refusal = []
+
+    def choices():
+        try:
+            box = _menu_box(element) or (_menu_box(parent) if parent is not None else None)
+            if box is None:
+                return None
+            kids = [_menu_node(k, box) for k in quiet_children(box)]
+            if not kids:
+                return None
+            del refusal[:]
+            try:
+                read = word_menus.menu_items(kids, spec, f"{label} submenu")
+            except word_menus.Invalid as exc:
+                refusal.append(str(exc))
+                return None
+        except Gone:
+            return None  # the item answers so while its submenu is being built
+        except Exception as exc:
+            if type(exc).__name__ == "COMError":
+                return None
+            raise
+        return read, (_shape_of(kids), word_menus.signature(read))
+    before = set(win.windows_of(pid))
+    try:
+        element.expand()
+        read = settled(choices, ready)
+        if read is None and refusal:
+            raise Refused(f"{refusal[-1]}; nothing is published")
+        if read is None:
+            raise _MenuLost(f"the {label} submenu of {what} did not open within {ready:.0f} s")
+        item["choices"] = read
+    finally:
+        try:
+            element.collapse()
+        except Exception:
+            pass  # seen below: a submenu whose window still shows refuses the reading
+        if not wait_for(lambda: not (set(win.windows_of(pid)) - before), seconds=min(ready, 3.0)):
+            raise _MenuLost(f"the {label} submenu of {what} could not be closed again")
+
+
+def _read_context(launched, uia, win, pid, page, spec, ready):
+    """Ask for one context's menu, read it (and its mini toolbar, and its fixed submenus one level deep) and close
+    it: (menu rect, items, bar rect or None, tools or None). The menu is closed on every path. _MenuLost when the
+    menu did not open or went away while it was read, which the caller may ask for again."""
+    what = f"the {spec['title']} context menu"
+    where = launched.word_action("menus_target", kind=spec["select"])
+    time.sleep(word_menus.IDLE_SECONDS)  # Word draws the selection, and marks a misspelling, in its idle time
+    known = set(win.windows_of(pid))
+    opener = None
+
+    def ask():
+        nonlocal opener
+        if spec.get("card"):
+            opener = wait_for(lambda: _comment_opener(page), seconds=ready)
+            if opener is None:
+                raise Refused("the comment's card was not found in the document's margin")
+            opener.expand()
+        else:
+            rect = where.get("rect") if isinstance(where, dict) else None
+            if not (isinstance(rect, list) and len(rect) == 4):
+                raise Refused(f"Word did not say where the selection of {what} stands")
+            win.right_click(page.native_window, rect[0] + max(3, rect[2] // 2), rect[1] + max(3, rect[3] // 2))
+    try:
+        try:
+            ask()
+            if not wait_for(lambda: _menu_windows(win, pid, known), seconds=min(ready, MENU_ASK_SECONDS)):
+                ask()  # nothing of the menu's showed: a posted message is not always taken, so it is asked once more
+            shown = _menus_shown(uia, win, pid, known, spec, ready)
+            if shown is None:
+                raise _MenuLost(f"{what} did not open" + (" with its mini toolbar" if spec["toolbar"] else "") +
+                                f" and settle within {ready:.0f} s")
+            menu_rect, items, bar_rect, tools = shown
+            for item in items:
+                if item["type"] != "separator" and item["label"] in spec["submenus"]:
+                    _read_submenu(win, pid, item, spec, what, ready)
+            return menu_rect, items, bar_rect, tools
+        except Gone:
+            raise _MenuLost(f"{what} went away while it was read") from None
+        except Exception as exc:
+            if type(exc).__name__ == "COMError":  # an element of a menu that has gone answers so to a pattern
+                raise _MenuLost(f"{what} went away while it was read") from None
+            raise
+    finally:
+        if opener is not None:
+            try:
+                opener.collapse()
+            except Exception:
+                pass  # Escape below closes it, or the refusal there says it is open
+        _close_status_menu(win, launched.hwnd, pid, known, min(5.0, ready), what, word_menus.IGNORED_WINDOWS)
+
+
+def _settled_context(launched, uia, win, pid, page, spec, ready, notes):
+    """One context's reading once two readings in a row agree, asked for at most word_menus.READINGS times. The
+    first menu of a session differs (Word shows Proofing in it while its proofing tools load), and Word now and
+    then closes a menu by itself: neither is recorded, and neither is passed over in silence (`notes`)."""
+    previous = lost = None
+    differs, asked = [], 0
+    for asked in range(1, word_menus.READINGS + 1):
+        try:
+            reading = _read_context(launched, uia, win, pid, page, spec, ready)
+        except _MenuLost as exc:
+            lost = str(exc)
+            continue
+        if previous is not None:
+            differs = []
+            for one, two, part in ((previous[1], reading[1], "menu"), (previous[3], reading[3], "mini toolbar")):
+                if (one is None) != (two is None) or (one is not None
+                                                      and word_menus.signature(one) != word_menus.signature(two)):
+                    told = [{f"{i['label']} ({i['type']}{'' if i.get('enabled', True) else ', disabled'})"
+                             for i in read or ()} for read in (one, two)]
+                    differs.append(f"the {part}: " + ("; ".join(sorted(told[0] ^ told[1]))
+                                                       or "the order, a state or a submenu's choices"))
+            if not differs:
+                if asked > 2:
+                    notes.append(f"menus: the {spec['title']} context was asked for {asked} times before two "
+                                 f"readings in a row agreed")
+                return reading
+        previous = reading
+    if previous is None:
+        raise Refused(f"{lost}, in each of {asked} tries; nothing is published")
+    raise Refused(f"the {spec['title']} context was not the same at two readings in a row in {asked} tries"
+                  + (f" ({'; '.join(differs)})" if differs else f" ({lost})") + "; nothing is published")
+
+
+def capture_word_menus(launched, uia, win, ctx, ready=PANE_READY_SECONDS):
+    """Records of Word's context menus and mini toolbars (scripts/lib/word_menus.py). The capture writes its own
+    content into a second document of its own, asks for each context's menu with right-button messages posted to
+    that document's window (no pointer moves, no key is sent), reads each menu until two readings in a row agree
+    and closes it with Escape. No item is pressed. The document is closed unsaved on every path, and Word is asked
+    before and after every context whether it still holds only the capture's own documents."""
+    pid = launched.proc.pid
+    launched.word_action("menus_document")
+    records = []
+    try:
+        page = wait_for(lambda: _document_page(uia.element(launched.hwnd)), seconds=ready)
+        if page is None or not page.native_window:
+            raise Refused("the capture's own document window was not found; no menu was asked for")
+        for order, spec in enumerate(word_menus.CONTEXTS):
+            launched.check_alone()
+            menu_rect, items, bar_rect, tools = _settled_context(launched, uia, win, pid, page, spec, ready,
+                                                                 ctx.notes)
+            saved_origin = ctx.origin
+
+            def base(rid, kind, label, at, node, parent, **extra):
+                # A menu's places are its own: measured from the menu's corner, the mini toolbar among them (it
+                # stands above or below its menu), and a control of the toolbar from the toolbar's corner.
+                corner = bar_rect if kind == "control" else menu_rect
+                rect = {"contextMenu": menu_rect, "miniToolbar": bar_rect}.get(kind, node["rect"] if node else None)
+                ctx.origin = (corner[0], corner[1]) if saved_origin is not None and corner and rect else None
+                try:
+                    made = ctx.base(rid, kind, label, at, _Frozen(rect, node), parent=parent, **extra)
+                finally:
+                    ctx.origin = saved_origin
+                if rect is None or ctx.origin is None:
+                    for key in ("bounds", "captureProfile", "size"):
+                        made.pop(key, None)
+                return made
+            made = word_menus.records(spec, order, None, items, None, tools, base)
+            lacking = word_menus.missing(spec, made[1:])
+            if lacking:
+                raise Refused(f"the {spec['title']} context does not show " + "; ".join(lacking) +
+                              ", which scripts/lib/word_menus.py says it must; it was not captured whole")
+            records += made
+            launched.check_alone()
+        ctx.notes.append(f"menus: {len(word_menus.CONTEXTS)} contexts, "
+                         f"{sum(1 for r in records if r['kind'] == 'miniToolbar')} with a mini toolbar")
+    finally:
+        launched.word_action("close_fixture")
+    return records
+
+
+def _document_page(root):
+    """The document's own element under Word's window, reached by class alone."""
+    level = [root]
+    for _ in range(6):
+        below = []
+        for el in level:
+            for kid in quiet_children(el):
+                if kid.class_name == "_WwG":
+                    return kid
+                if kid.control_type == "Pane":
+                    below.append(kid)
+        level = below
+    return None
+
+
+def word_menus_check(records, what="the menus capture"):
+    """Refuse menus records that are not whole (scripts/lib/word_menus.py's rules) or that the inventory's schema
+    would refuse."""
+    try:
+        word_menus.validate(records)
+    except word_menus.Invalid as exc:
+        raise Refused(f"{what} is not whole: {exc}") from None
+    schema_check(records, what)
 
 
 def word_dialogs_check(records, what="the dialog capture"):
@@ -8907,6 +9439,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     which.add_argument("--panes", action="store_true", help="Word's task panes (D02 T01 §32)")
     which.add_argument("--statusbar", action="store_true", help="Word's status bar and its menu (D02 T01 §33)")
     which.add_argument("--dialogs", action="store_true", help="Word's dialogs (D02 T01 §34)")
+    which.add_argument("--menus", action="store_true", help="Word's context menus and mini toolbars (D02 T01 §35)")
     parser.add_argument("--expand", action="store_true", help="open each menu and gallery and record its items")
     parser.add_argument("--layout", choices=("classic", "simplified"), default="classic")
     parser.add_argument("--merge", action="store_true", help="update an existing file, keeping hand-written fields")
@@ -8983,7 +9516,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     out = Path(args.out) if args.out else INVENTORY / args.app / (
         "backstage.json" if args.backstage else "options.json" if args.options else
         "panes.json" if args.panes else "statusbar.json" if args.statusbar else
-        "dialogs.json" if args.dialogs else
+        "dialogs.json" if args.dialogs else "menus.json" if args.menus else
         "ribbon-simplified.json" if args.layout == "simplified" else
         "ribbon.json")
     if out.exists() and not args.merge:
@@ -9031,6 +9564,8 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
             word_statusbar_check(records)
         elif args.dialogs:
             word_dialogs_check(records)
+        elif args.menus:
+            word_menus_check(records)
         elif args.app == "word":
             records, unverified_records = reconcile_word_unverified(records, unverified_records)
             try:
@@ -9050,7 +9585,8 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
                 raise Refused(f"{out} changed during the capture; re-run to merge cleanly")
             if current_bytes is not None:
                 existing_records = _load_existing_records(out, current_bytes)
-                if args.backstage or args.options or args.panes or args.statusbar or args.dialogs:
+                if (args.backstage or args.options or args.panes or args.statusbar or args.dialogs
+                        or args.menus):
                     try:
                         records = word_backstage.carry_behaviours(existing_records, records)
                     except word_backstage.Invalid as exc:
@@ -9065,6 +9601,8 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
                         word_statusbar_check(records, merged)
                     elif args.dialogs:
                         word_dialogs_check(records, merged)
+                    elif args.menus:
+                        word_menus_check(records, merged)
                     else:
                         schema_check(records, merged)
                 elif args.app == "word" and is_canonical_word_ribbon:

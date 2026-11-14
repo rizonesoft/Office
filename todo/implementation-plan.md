@@ -119,7 +119,7 @@ Sections: 17 | Checklist items: 90
 
 ### Phase 2: Interface inventory and specification
 
-Sections: 39 | Checklist items: 234
+Sections: 42 | Checklist items: 249
 
 | Status | Reference   | Deliverable                         | Needs                                           | Items |
 | ------ | ----------- | ----------------------------------- | ----------------------------------------------- | ----- |
@@ -154,6 +154,9 @@ Sections: 39 | Checklist items: 234
 | [ ]    | D02 T01 §39 | Word Status Bar Defaults            | office, windows-host, display-session, operator | 4     |
 | [ ]    | D02 T01 §40 | Word Command Dialogs                | office, windows-host, display-session           | 4     |
 | [ ]    | D02 T01 §41 | Word Options Dialogs                | office, windows-host, display-session           | 4     |
+| [ ]    | D02 T01 §42 | Word Proofing Submenus              | office, windows-host, display-session           | 5     |
+| [ ]    | D02 T01 §43 | Word Menus of Further Selections    | office, windows-host, display-session           | 5     |
+| [ ]    | D02 T01 §44 | Word Context Menu Commands          | none                                            | 5     |
 | [ ]    | D02 T02 §1  | Design Tokens and Themes            | none                                            | 6     |
 | [ ]    | D02 T02 §2  | Command Glyph Decision              | none                                            | 5     |
 | [ ]    | D02 T02 §3  | Shell Layout Chapter                | none                                            | 6     |
@@ -302,6 +305,6 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 | [ ]    | D03 T01 §25 | Interoperability Domain Authoring  | 3              |
 | [ ]    | D03 T01 §26 | VBA Domain Authoring               | 4              |
 
-Progress: 108/177 verified sections, 16 ready to run now, 1 parked, 84 TODO files still to author (not counted here).
+Progress: 108/180 verified sections, 16 ready to run now, 1 parked, 84 TODO files still to author (not counted here).
 
-Checklist: 759/1239 items completed (includes Commit items).
+Checklist: 761/1254 items completed (includes Commit items).

@@ -136,6 +136,25 @@ def check_word_dialogs(f, data):
     return []
 
 
+def is_word_menus(path, inventory=INVENTORY):
+    """Whether `path` is the repository's Word context menu inventory (`design/inventory/word/menus.json`)."""
+    return (Path(inventory).resolve() == INVENTORY.resolve()
+            and Path(path).resolve() == (INVENTORY / "word" / "menus.json").resolve())
+
+
+def check_word_menus(f, data):
+    """Problems in word/menus.json beyond the record schema (D02 T01 §35): every context the hand-written list
+    names is there under its selection, with the items, the states, the fixed submenus' choices and the mini
+    toolbar it must show. The rules are scripts/lib/word_menus.py's."""
+    sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+    import word_menus
+    try:
+        word_menus.validate(data)
+    except word_menus.Invalid as exc:
+        return [f"{f}: {exc}"]
+    return []
+
+
 def is_word_statusbar(path, inventory=INVENTORY):
     """Whether `path` is the repository's Word status bar inventory (`design/inventory/word/statusbar.json`)."""
     return (Path(inventory).resolve() == INVENTORY.resolve()
@@ -843,6 +862,8 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             problems += check_word_backstage(f, data, True)
         if is_word_dialogs(f, inventory):  # D02 T01 §34: the hand-written list of dialogs holds
             problems += check_word_dialogs(f, data)
+        if is_word_menus(f, inventory):  # D02 T01 §35: the hand-written list of contexts holds
+            problems += check_word_menus(f, data)
         if is_word_statusbar(f, inventory):  # D02 T01 §33: the hand-written lists of the bar and its menu hold
             problems += check_word_statusbar(f, data)
         if is_word_panes(f, inventory):  # D02 T01 §32: the hand-written list of panes holds

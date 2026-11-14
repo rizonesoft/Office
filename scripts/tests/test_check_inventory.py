@@ -1666,7 +1666,7 @@ class Inventory(unittest.TestCase):
         checks = {"ribbon": "check_word_ribbon", "backstage": "check_word_backstage",
                   "shortcuts": "check_word_shortcuts", "options": "check_word_options",
                   "panes": "check_word_panes", "statusbar": "check_word_statusbar",
-                  "dialogs": "check_word_dialogs"}
+                  "dialogs": "check_word_dialogs", "menus": "check_word_menus"}
         for name in checks:
             self.write(f"word/{name}.json", [])
         with contextlib.ExitStack() as stack:
@@ -1923,6 +1923,41 @@ class OptionsRules(unittest.TestCase):
         self.assertEqual(problems(dialog), [])
         self.assertTrue(problems(dialog, dock="left"))
         self.assertTrue(problems(dict(dialog, kind="dialogTab")))
+
+    def test_a_menu_and_its_mini_toolbar_carry_their_states_and_a_ribbon_control_carries_none(self):
+        # D02 T01 §35: a context menu says the selection it was opened over; an item of it and a control of its
+        # mini toolbar say when they were disabled, and whether they were ticked or on. A control of the ribbon
+        # carries neither: only an id that stands on a mini toolbar may.
+        schema = json.loads((Path(__file__).resolve().parents[2] / ci.SCHEMA).read_text(encoding="utf-8"))
+        menu = {"id": "word.menus.text-caret", "app": "word", "kind": "contextMenu", "label": "Text, a caret in a word",
+                "order": 1, "condition": "the caret stands in a word of body text, nothing selected", "itemCount": 2}
+        item = {"id": "word.menus.text-caret.cut", "app": "word", "kind": "menuItem", "label": "Cut",
+                "parent": menu["id"], "order": 0, "controlType": "button", "keytip": "T"}
+        bar = {"id": "word.menus.text-caret.mini-toolbar", "app": "word", "kind": "miniToolbar",
+               "label": "Mini Toolbar", "parent": menu["id"], "order": 1, "itemCount": 1}
+        tool = {"id": bar["id"] + ".bold", "app": "word", "kind": "control", "label": "Bold", "parent": bar["id"],
+                "order": 0, "controlType": "toggleButton"}
+        for record in (menu, item, bar, tool):
+            record.update(source=BOLD["source"], capturedFrom=BOLD["capturedFrom"])
+
+        def problems(record, **fields):
+            return ci.validate([dict(record, **fields)], schema, schema)
+        for record in (menu, item, bar, tool):
+            self.assertEqual(problems(record), [], record["id"])
+        self.assertEqual(problems(item, enabled=False), [])
+        self.assertEqual(problems(item, checked=False), [])
+        self.assertEqual(problems(tool, enabled=False, checked=True), [])
+        self.assertEqual(problems(dict(tool, controlType="splitButton"), checked=False), [])
+        self.assertTrue(problems(tool, enabled=True))
+        self.assertTrue(problems(menu, condition=""))
+        for record in (menu, bar):  # a state is an item's or a control's, never the menu's or the toolbar's own
+            self.assertTrue(problems(record, enabled=False), record["id"])
+            self.assertTrue(problems(record, checked=True), record["id"])
+        # a control whose id does not stand on a mini toolbar: the ribbon's, or one a level too deep
+        for rid in (BOLD["id"], "word.menus.text-caret.bold", bar["id"] + ".bold.inner", "word.mini-toolbar"):
+            self.assertTrue(problems(tool, id=rid, enabled=False), rid)
+            self.assertTrue(problems(tool, id=rid, checked=True), rid)
+            self.assertEqual(problems(tool, id=rid), [], rid)
 
 
 if __name__ == "__main__":
