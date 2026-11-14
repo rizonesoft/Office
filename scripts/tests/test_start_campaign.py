@@ -164,6 +164,9 @@ class StopControlTest(unittest.TestCase):
         # Owner, 2026-11-12: one shortcut for each runner, and the earlier single one is removed.
         self.assertIn("Name = 'Office Claude campaign'", text)
         self.assertIn("Name = 'Office Carbon campaign'", text)
+        self.assertNotIn("Name = 'Office Codex campaign'", text)
+        self.assertIn("$retired = Join-Path $desktop 'Office Codex campaign.lnk'", text)
+        self.assertIn("Remove-Item -LiteralPath $retired", text)
         self.assertIn("-Runner $($s.Runner)", text)
         self.assertRegex(text, r"\$old = Join-Path \$desktop 'Rizonesoft Office campaign\.lnk'\s+if \(Test-Path -LiteralPath \$old\) \{\s+Remove-Item -LiteralPath \$old")
         self.assertNotIn("Stop.lnk", text)
@@ -291,17 +294,12 @@ class LauncherRunTest(unittest.TestCase):
         (self.root / "build").mkdir(exist_ok=True)
         (self.root / "build" / "campaign-stop-request").write_text("now", encoding="utf-8")
 
-    def test_codex_runs_with_native_flags_and_no_claude_token(self):
-        (self.bin / "codex.ps1").write_text(FAKE_CLAUDE, encoding="utf-8")
-        self.env["CLAUDE_CODE_OAUTH_TOKEN"] = "test-token"
-        launcher = self.launch("-Runner", "codex", "-RestartSeconds", "1")
-        self.wait_for(self.root / "session-args.txt", seconds=10)
-        self.request_stop()
+    def test_codex_is_rejected_as_a_campaign_writer(self):
+        launcher = self.launch("-Runner", "codex")
         output, _ = launcher.communicate(timeout=30)
-        self.assertEqual((self.root / "session-args.txt").read_text(encoding="utf-8").split(),
-                         ["--dangerously-bypass-approvals-and-sandbox", "-c", "model_reasoning_effort=medium"])
-        self.assertFalse((self.root / "token-seen.txt").exists())
-        self.assertEqual(len(self.calls()), 1, output)
+        self.assertNotEqual(launcher.returncode, 0, output)
+        self.assertIn("ValidateSet", output)
+        self.assertEqual(self.calls(), [])
 
     def test_the_carbon_runner_starts_antigravity_with_the_goal_and_no_claude_token(self):
         # Owner, 2026-11-12: a Gemini Carbon launcher. The stand-in is the same script under agy's name.

@@ -3,7 +3,7 @@
 #
 # A route names exactly one reviewer for work written by one agent, never of
 # the writer's own model family (the CLI names it: codex is OpenAI, agy is
-# Google, claude is Anthropic). The writers are claude, codex and agy; gemini
+# Google, claude is Anthropic). The writers are claude and agy; gemini
 # is another name for agy. A reviewer that is not installed, fails, times out,
 # returns nothing or replies OVERALL: blocked is skipped and the reason
 # recorded: there is no review, never an approval, and no other reviewer runs.
@@ -24,14 +24,7 @@ cli = "codex"
 model = "gpt-6-astra"
 effort = "medium"
 
-# Claude Code and Antigravity keep Astra. Codex uses Orchestrator (Carbon)
-# through Antigravity, independently of the writer's OpenAI model family.
-[reviewers.carbon]
-cli = "agy"
-model = "gemini-pro-orchestrator"
-
 [routes]
-codex = ["carbon"]
 claude = ["astra"]
 agy = ["astra"]
 
@@ -56,24 +49,27 @@ agy = ["astra"]
 # effort, then one lens per round until a round is clean), replace this block
 # with the rotation block shown in kits/reviewer/README.md of the SDK. Delete
 # the whole [schedule] to review every round at the reviewer's own effort.
-# Orchestrator accepts no scheduled effort override. This shared omission also
-# leaves scheduled Astra passes to its CLI configuration, not its entry effort.
+# Astra gets medium for the plan and first defect review, then low for follow-ups.
 [schedule]
 policy = "three-pass"
 pass_cap = 33
 blocking = ["P1", "P2"]
 
 [schedule.plan]
+effort = "medium"
 lenses = ["plan"]
 
 # `design` runs only for a section with a surface (--surface).
 [[schedule.rounds]]
+effort = "medium"
 lenses = ["adversarial", "integration", "source-defect", "consistency", "quality", "optimization", "design"]
 
 [schedule.completion]
+effort = "low"
 lenses = ["plan-delivery", "record"]
 
 [schedule.reconciliation]
+effort = "low"
 lenses = ["adversarial", "integration", "plan-delivery", "record"]
 
 # Optional keys, shown as examples.

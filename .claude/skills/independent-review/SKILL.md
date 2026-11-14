@@ -9,13 +9,12 @@ Your own review is not enough for a nontrivial change: a different model reviews
 
 | Work written by | `--writer` | Reviewer (as installed) | Fallback |
 | --- | --- | --- | --- |
-| Claude Code | `claude` | GPT-6 Astra (`codex`, CLI effort) | none |
-| Antigravity | `agy` (or `gemini`) | GPT-6 Astra (`codex`, CLI effort) | none |
-| Codex | `codex` | Orchestrator (Carbon), `agy`, `gemini-pro-orchestrator` | none |
+| Claude Code | `claude` | GPT-6 Astra (`codex`, medium then low) | none |
+| Antigravity | `agy` (or `gemini`) | GPT-6 Astra (`codex`, medium then low) | none |
 
 Name your own agent as the writer. The pin as installed routes `claude` and `agy` to GPT-6 Astra through the Codex CLI in a read-only sandbox; the project owns its pin and may change it in `.conclave/reviewers.toml`. A route names exactly one reviewer, never of the writer's own model family, and the pin refuses an unrouted writer, an unknown CLI, a second reviewer or a same-family reviewer.
 
-The pin's `[schedule]` sets each pass's lenses and optional reasoning effort, so the writer never picks them, and it has two shapes. This repository omits all scheduled efforts for Orchestrator compatibility. Astra therefore uses its CLI configuration for scheduled passes, without inheriting its reviewer-level `medium` setting. Codex work routes to Orchestrator (Carbon) through `agy`. Check which one applies first: `python scripts/review_pin.py --check` loads the pin, and `[schedule] policy` says which flow runs. `python scripts/review_pin.py --lenses <kind>` prints a three-pass pin's lenses for a pass and `--caps` prints its `pass_cap` and `no_progress_cap`.
+The pin's `[schedule]` sets each pass's lenses and optional reasoning effort, so the writer never picks them, and it has two shapes. Codex is the sole reviewer for both Claude and Antigravity: medium for plan and the first defect round, then low for completion and reconciliation. Codex is not a campaign writer. A timeout, empty response or malformed verdict is never approval. Check which one applies first: `python scripts/review_pin.py --check` loads the pin, and `[schedule] policy` says which flow runs. `python scripts/review_pin.py --lenses <kind>` prints a three-pass pin's lenses for a pass and `--caps` prints its `pass_cap` and `no_progress_cap`.
 
 - **Three-pass** (`policy = "three-pass"`, what a new install starts on): a plan review before the build, one round after it, one completion review of the final candidate, and a reconciliation only after a pass that returned gaps.
 - **Rotation** (no `policy` key): a plan review, a completion review, then rounds at falling effort and one lens per round until a round has no `P1` or `P2` finding.

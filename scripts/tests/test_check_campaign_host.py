@@ -994,11 +994,13 @@ def alive(pid):
     return True
 
 
-class CodexReviewerRoute(unittest.TestCase):
-    def test_host_checks_codex_writers_carbon_reviewer(self):
-        host = host_check.Host()
-        host.writer = "codex"
-        self.assertEqual(host.reviewer_cli(), ("carbon", "agy"))
+class WriterReviewerRoutes(unittest.TestCase):
+    def test_both_writers_use_codex_as_the_only_reviewer(self):
+        for writer in ("claude", "agy", "gemini"):
+            with self.subTest(writer=writer):
+                host = host_check.Host()
+                host.writer = writer
+                self.assertEqual(host.reviewer_cli(), ("astra", "codex"))
 
 
 class Probe(unittest.TestCase):

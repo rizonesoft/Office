@@ -1,4 +1,4 @@
-﻿# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Rizonesoft
 #Requires -Version 7.0
 <#
@@ -45,7 +45,7 @@
 #>
 [CmdletBinding()]
 param(# The campaign runner: Claude Code (`claude`) or Google Antigravity on Orchestrator (Carbon) (`agy`).
-      [ValidateSet('claude', 'agy', 'codex')][string]$Runner = 'claude',
+      [ValidateSet('claude', 'agy')][string]$Runner = 'claude',
       [switch]$DryRun, [switch]$InstallShortcut, [switch]$Stop, [switch]$Now, [ValidateRange(1, 3600)][int]$RestartSeconds = 30,
       # The program that ends a process tree. Only the tests pass another one, to see a failed stop reported.
       [string]$TaskKillPath = (Join-Path $env:SystemRoot 'System32\taskkill.exe'))
@@ -71,9 +71,7 @@ if ($InstallShortcut) {
         @{ Runner = 'claude'; Name = 'Office Claude campaign'; Icon = 'office-campaign-claude.ico'; Fill = '#D97757'; Mark = 'claude.svg'
            Description = 'Start the unattended Rizonesoft Office campaign in Claude Code' },
         @{ Runner = 'agy'; Name = 'Office Carbon campaign'; Icon = 'office-campaign-carbon.ico'; Fill = '#4C8DF6'; Mark = 'gemini.svg'
-           Description = 'Start the unattended Rizonesoft Office campaign in Google Antigravity on Orchestrator (Carbon)' },
-        @{ Runner = 'codex'; Name = 'Office Codex campaign'; Icon = 'office-campaign-codex.ico'; Fill = '#10A37F'; Mark = 'codex.svg'
-           Description = 'Start the unattended Office campaign with Codex as writer' }
+           Description = 'Start the unattended Rizonesoft Office campaign in Google Antigravity on Orchestrator (Carbon)' }
     )
     foreach ($s in $shortcuts) {
         $icon = Join-Path $local $s.Icon
@@ -99,6 +97,11 @@ if ($InstallShortcut) {
     if (Test-Path -LiteralPath $old) {
         Remove-Item -LiteralPath $old
         Write-Host "Removed the earlier shortcut: $old"
+    }
+    $retired = Join-Path $desktop 'Office Codex campaign.lnk'
+    if (Test-Path -LiteralPath $retired) {
+        Remove-Item -LiteralPath $retired
+        Write-Host "Removed the retired writer shortcut: $retired"
     }
     exit 0
 }
@@ -146,8 +149,8 @@ if ($Stop) {
     exit 0
 }
 
-$runnerName = @{ codex = 'Codex'; claude = 'Claude Code'; agy = 'Google Antigravity (Orchestrator (Carbon))' }[$Runner]
-$windowTitle = @{ codex = 'Office Codex campaign'; claude = 'Office Claude campaign'; agy = 'Office Carbon campaign' }[$Runner]
+$runnerName = @{ claude = 'Claude Code'; agy = 'Google Antigravity (Orchestrator (Carbon))' }[$Runner]
+$windowTitle = @{ claude = 'Office Claude campaign'; agy = 'Office Carbon campaign' }[$Runner]
 $Host.UI.RawUI.WindowTitle = $windowTitle
 
 # The lock is taken as the first statement inside one try that runs to the end of the file, so nothing can
@@ -405,9 +408,7 @@ if (Test-Path -LiteralPath $modeFile) {
 $effort = 'medium'
 $carbon = 'gemini-pro-orchestrator'
 if ($Runner -eq 'claude') { Write-Host "Lead model: $model at $effort effort, from $modeSource" }
-elseif ($Runner -eq 'codex') { Write-Host 'Lead model: Codex configured model, medium effort' }
 else { Write-Host "Lead model: $carbon in $runnerName" }
-$codexGoal = $goal.TrimStart().Substring(6) + ' Set this as your Codex session goal. Read docs/codex-campaign.md and use the Codex process-plan skill; writer codex.'
 
 if ($DryRun) {
     if (Test-Path -LiteralPath $stopFile) { Write-Host 'A stop request is present; a real start removes it.' }
@@ -415,8 +416,6 @@ if ($DryRun) {
     Write-Host "Would run in ${root}:"
     if ($Runner -eq 'claude') {
         Write-Host ((@('claude', '--model', $model, '--effort', $effort, '--dangerously-skip-permissions') + $sessionArgs + "`"$goal`"") -join ' ')
-    } elseif ($Runner -eq 'codex') {
-        Write-Host ('codex --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=medium ' + $codexGoal)
     } else {
         Write-Host ((@('agy', '--model', $carbon, '--dangerously-skip-permissions', '-i', "`"$goal`"")) -join ' ')
     }
@@ -431,8 +430,6 @@ while ($true) {
     $started.Add((Get-Date))
     if ($Runner -eq 'claude') {
         claude --model $model --effort $effort --dangerously-skip-permissions @sessionArgs $goal
-    } elseif ($Runner -eq 'codex') {
-        codex --dangerously-bypass-approvals-and-sandbox -c model_reasoning_effort=medium $codexGoal
     } else {
         # -i runs the opening prompt and keeps the conversation open, as Claude Code does with its prompt argument.
         agy --model $carbon --dangerously-skip-permissions -i $goal
