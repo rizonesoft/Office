@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright 2026 Rizonesoft
 """Run this project's campaign guard with Codex's native Stop payload."""
 import json
 from pathlib import Path
