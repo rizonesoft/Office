@@ -172,6 +172,14 @@ class Rules(unittest.TestCase):
             one = without(two, "word.menus.comment.delete-thread-2")
             self.assertIn("must show Delete thread (button) 2 times in its menu", refusal(one))
 
+    def test_a_fixed_submenu_the_list_says_nothing_about_is_refused(self):
+        records = inventory()
+        required = copy.deepcopy(wm.REQUIRED)
+        del required["table"]["submenus"]["Insert"]  # the list opens it and does not say what it must hold
+        with unittest.mock.patch.dict(wm.REQUIRED, required):
+            self.assertIn("word.menus.table: the Table cell context must show an entry for the Insert submenu in "
+                          "REQUIRED of scripts/lib/word_menus.py", refusal(records))
+
     def test_what_a_context_must_show_is_held_whatever_the_counts_say(self):
         records = inventory()
         for rid, said in (
