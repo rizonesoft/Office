@@ -1,0 +1,88 @@
+{
+  "ref": "D02 T01 \u00a736",
+  "title": "Word Backstage Document States",
+  "implementation_sha": "e75f3f76ac733b433a33260e17e5f515288d49cc",
+  "date": "2026-11-15",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/D02-T01-s36.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -W error::ResourceWarning -m unittest discover -s scripts/tests -p \"test_capture_ui.py\" -> Ran 154 tests, OK",
+    "python -m unittest discover -s scripts/tests -p \"test_word_states.py\" -> Ran 22 tests, OK",
+    "python scripts/check-inventory.py design/inventory/word -> exit 0, with no document-state reason left in ABSENT (signed-state \u00a747, server-state \u00a748 and host-state \u00a749 remain, each with its owner)",
+    "all seven states captured twice from an empty file with python scripts/capture-ui.py --app word --backstage --state <name> --merge -> 1075 records, byte for byte the same after both passes, no Word left running"
+  ],
+  "completion": {
+    "report": "docs/reviews/02-interface/D02-T01-s36.md",
+    "verdict": "filed",
+    "candidate": "e75f3f76ac733b433a33260e17e5f515288d49cc",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": [
+      "D02 T01 \u00a749"
+    ]
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/02-interface/D02-T01-s36.md",
+    "candidate": "b6d2e851c04b26bcc2941381667f4736f646b75d",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "b6d2e851c04b26bcc2941381667f4736f646b75d",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "low",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "low",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}
