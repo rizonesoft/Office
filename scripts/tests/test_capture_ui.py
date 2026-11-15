@@ -7055,6 +7055,14 @@ class FakeWordMenus:
                         kid.group = groups[-1].kids  # where a split button's submenu opens: beside it
             if self.stranger == slug:
                 groups.append(MenuEl("Group", " ", kids=[MenuEl("Slider", "Zoom")]))
+            y = 427  # where things stand: the search box, then each group with a strip above its first item
+            for edit in first:
+                edit.rect, y = (307, y, 495, y + 18), y + 27
+            for group in groups:
+                for n, kid in enumerate(group.kids):
+                    kid.rect = (302, y + 3 + 28 * n, 522, y + 31 + 28 * n)
+                group.rect = (302, y, 522, y + 3 + 28 * len(group.kids))
+                y = group.rect[3]
             box = MenuEl("Menu", cls=wm.MENU_CLASS, kids=first + groups)
             frame = MenuEl("Menu", "Context Menu", cls=wm.FRAME_CLASS, kids=[MenuEl("Pane", kids=[box])])
         self.menu_top = MenuEl("Menu", cls="Net UI Tool Window", rect=(300, 420, 524, 900), kids=[frame])
@@ -7166,7 +7174,11 @@ class WordMenus(unittest.TestCase):
                  if r["kind"] == "menuItem" and r["parent"] in ("word.menus.table", "word.menus.table.insert")]
         self.assertEqual(table[:4], [("type-to-search-and-use-the-up-and-down-arrow-keys-to-navigate", "editBox"),
                                      ("cut", "button"), ("copy", "button"), ("paste-options", "gallery")])
-        self.assertIn(("separator", "separator"), table)  # the line between two groups is recorded
+        self.assertIn(("separator", "separator"), table)  # the line between two groups is recorded,
+        line = by_id["word.menus.table.separator"]  # with the strip its group keeps free above its first item
+        self.assertEqual((line["bounds"]["x"], line["bounds"]["width"], line["bounds"]["height"]), (2, 220, 3))
+        above = next(r for r in records if r.get("parent") == "word.menus.table" and r["order"] == line["order"] - 1)
+        self.assertEqual(line["bounds"]["y"], above["bounds"]["y"] + above["bounds"]["height"])
         self.assertEqual([t[0] for t in table if t[0].startswith("insert.")], [
             "insert.insert-columns-to-the-left", "insert.insert-columns-to-the-right", "insert.insert-rows-above",
             "insert.insert-rows-below", "insert.insert-cells"])
@@ -7188,12 +7200,13 @@ class WordMenus(unittest.TestCase):
         bar = [r["label"] for r in records if r.get("parent") == "word.menus.shape.mini-toolbar"]
         self.assertEqual(bar, ["Style", "Fill", "Outline"])
         self.assertEqual(by_id["word.menus.text-selected.cut"]["keytip"], "C")
-        # places: an item from its menu's corner, the toolbar from the menu's, a control from its toolbar's
+        # places: everything of a context from one corner, the menu's, so a child's place in its parent is the
+        # difference of the two (the toolbar stands 80 above the menu here, and Bold 4 below the toolbar's top)
         self.assertEqual(by_id["word.menus.text-selected"]["bounds"], {"x": 0, "y": 0, "width": 224, "height": 480})
         self.assertEqual(by_id["word.menus.text-selected.mini-toolbar"]["bounds"],
                          {"x": 0, "y": -80, "width": 400, "height": 67})
         self.assertEqual(by_id["word.menus.text-selected.mini-toolbar.bold"]["bounds"],
-                         {"x": 150, "y": 4, "width": 22, "height": 24})
+                         {"x": 150, "y": -76, "width": 22, "height": 24})
         # how the menus were asked for and closed
         self.assertEqual(word.actions[0], ("menus_document", None))
         self.assertEqual(word.actions[-1], ("close_fixture", None))
@@ -7283,6 +7296,31 @@ class WordMenus(unittest.TestCase):
                       "is and nothing is published", str(ctx.exception))
         self.assertEqual(word.asked, {"text-selected": 1})
         self.assertEqual(word.actions[-1], ("close_fixture", None))
+
+    def test_the_layout_comparison_reads_a_menus_places_as_it_reads_any_parents(self):
+        # scripts/check-layout.py takes a child's place in its parent as the difference of their bounds. A product
+        # built to the inventory, captured in its own window's coordinates, must compare clean for a menu's items,
+        # for the mini toolbar under its menu and for the toolbar's controls: one origin for a whole context.
+        spec = importlib.util.spec_from_file_location("check_layout_for_menus", SCRIPTS / "check-layout.py")
+        cl = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cl)
+        records, _ = self.run_capture(FakeWordMenus())
+        by_id, children = cl.inventory_layout.index({"word/menus.json": records})
+        built = copy.deepcopy(records)
+        for rec in built:  # the same menus, shown somewhere else on the screen
+            if "bounds" in rec:
+                rec["bounds"]["x"] += 640
+                rec["bounds"]["y"] += 360
+        for parent in ("word.menus.text-selected", "word.menus.text-selected.mini-toolbar",
+                       "word.menus.shape.mini-toolbar", "word.menus.table.insert"):
+            findings, paired = cl.compare(parent, by_id, children, built)
+            self.assertEqual(findings, [], parent)
+            self.assertEqual(paired, len(children[parent]), parent)
+        moved = copy.deepcopy(built)
+        next(r for r in moved if r["id"] == "word.menus.text-selected.mini-toolbar.bold")["bounds"]["y"] += 9
+        findings, _ = cl.compare("word.menus.text-selected.mini-toolbar", by_id, children, moved)
+        self.assertEqual([(kind, rid) for kind, rid, _ in findings],
+                         [("moved", "word.menus.text-selected.mini-toolbar.bold")])
 
     def test_no_bounds_without_the_capture_profile(self):
         records, _ = self.run_capture(FakeWordMenus(), origin=None)

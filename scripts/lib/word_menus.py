@@ -315,6 +315,16 @@ def named(node) -> str:
     return clean(node.get("name"))
 
 
+def _band(group):
+    """Where the line between two groups of items is drawn: the strip a group keeps free above its first item.
+    A node that holds that place alone, or None when the group and its first item were not measured so."""
+    kids = group.get("children") or []
+    box, first = group.get("rect"), kids[0].get("rect") if kids else None
+    if not box or not first or not (box[1] < first[1] <= box[3]):
+        return None
+    return {"rect": (box[0], box[1], box[2], first[1])}
+
+
 def menu_items(nodes: list, spec, what="menu") -> list:
     """The items of a menu, from the children of its container (plain nodes: `role`, `class_name`, `enabled`,
     `expandable`, a lazy `read` for the name, `children` for a group). A group of items ends in a separator when
@@ -345,7 +355,7 @@ def menu_items(nodes: list, spec, what="menu") -> list:
     for node in nodes:
         if node.get("role") == "Group":
             if groups and items and items[-1]["type"] != "separator":
-                items.append({"label": SEPARATOR, "type": "separator", "node": None})
+                items.append({"label": SEPARATOR, "type": "separator", "node": _band(node)})
             groups += 1
             items += [one(k) for k in node.get("children", [])]
         else:
@@ -537,9 +547,17 @@ def validate(records_: list) -> None:
             problems.append(f"{rid}: a toggle is recorded with whether it is on (`checked`)")
 
     def below(rid):
-        for kid in children.get(rid, []):
-            yield kid
-            yield from below(kid["id"])
+        """Everything under `rid`, parents before their children, without recursion: a file is not trusted to be
+        shallow, and a chain of a thousand parents is refused by the rules below, not by Python's stack."""
+        found, stack = [], [iter(children.get(rid, []))]
+        while stack:
+            kid = next(stack[-1], None)
+            if kid is None:
+                stack.pop()
+                continue
+            found.append(kid)
+            stack.append(iter(children.get(kid["id"], [])))
+        return found
 
     def held(rec, count):
         if not isinstance(rec.get("itemCount"), int) or isinstance(rec.get("itemCount"), bool):

@@ -4793,9 +4793,11 @@ def capture_word_menus(launched, uia, win, ctx, ready=PANE_READY_SECONDS):
             saved_origin = ctx.origin
 
             def base(rid, kind, label, at, node, parent, **extra):
-                # A menu's places are its own: measured from the menu's corner, the mini toolbar among them (it
-                # stands above or below its menu), and a control of the toolbar from the toolbar's corner.
-                corner = bar_rect if kind == "control" else menu_rect
+                # A context's places are its own, all measured from one corner, the menu's: the items, the choices
+                # of a submenu, the mini toolbar (it stands above or below its menu) and the toolbar's controls.
+                # One origin for a parent and its children is what scripts/check-layout.py and the layout blocks
+                # read: a child's place in its parent is the difference of the two.
+                corner = menu_rect
                 rect = {"contextMenu": menu_rect, "miniToolbar": bar_rect}.get(kind, node["rect"] if node else None)
                 ctx.origin = (corner[0], corner[1]) if saved_origin is not None and corner and rect else None
                 try:

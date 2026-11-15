@@ -235,6 +235,24 @@ class Rules(unittest.TestCase):
         self.assertIn("app must be 'word'", refusal(out))
         with self.assertRaises(wm.Invalid):
             wm.validate([{"kind": "contextMenu"}])
+
+    def test_a_file_whose_items_hang_a_thousand_deep_is_refused_not_a_crash(self):
+        # a file is not trusted to be shallow: each record under the one before it, far past Python's stack
+        out = copy.deepcopy(inventory())
+        parent = "word.menus.comment"
+        for n in range(1100):
+            rid = f"word.menus.comment.deep-{n}"
+            out.append(base(rid, "menuItem", f"Deep {n}", 0, None, parent, controlType="button", itemCount=1))
+            parent = rid
+        out[-1].pop("itemCount")
+        next(r for r in out if r["id"] == "word.menus.comment")["itemCount"] += 1100
+        said = refusal(out)
+        self.assertIn("word.menus.comment.deep-0: a submenu is recorded open only where the list names it as fixed, "
+                      "one level deep", said)
+        self.assertIn("word.menus.comment.deep-1098: a submenu is recorded open only", said)
+        problems = ci.check_word_menus("menus.json", out)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("one level deep", problems[0])
         self.assertEqual(ci.check_word_menus("menus.json", [])[0].count("is not recorded"), 11)
 
 
@@ -278,6 +296,21 @@ class Reading(unittest.TestCase):
         self.assertNotIn("checked", by["Copy"])
         # what stands under a gallery or a split button is this PC's: its name is never fetched
         self.assertEqual([n["reads"] for n in clipboard + inner], [0, 0, 0])
+
+    def test_a_separator_stands_in_the_strip_its_group_keeps_above_its_first_item(self):
+        def group(box, first):
+            kids = [node("MenuItem", "Cut"), node("MenuItem", "Copy")]
+            kids[0]["rect"] = first
+            return node("Group", children=kids, rect=box)
+        lead = node("Group", children=[node("MenuItem", "Paste")])
+        items = wm.menu_items([lead, group((2, 100, 222, 159), (2, 103, 222, 131))], self.SPEC)
+        self.assertEqual([i["type"] for i in items], ["button", "separator", "button", "button"])
+        self.assertEqual(items[1]["node"], {"rect": (2, 100, 222, 103)})
+        # a group that was not measured, or whose first item starts at its top or outside it, gives no place
+        for box, first in ((None, (2, 103, 222, 131)), ((2, 100, 222, 159), None), ((2, 100, 222, 159), (2, 100, 222, 128)),
+                           ((2, 100, 222, 159), (2, 300, 222, 328))):
+            items = wm.menu_items([lead, group(box, first)], self.SPEC)
+            self.assertIsNone(items[1]["node"], (box, first))
 
     def test_what_the_rules_do_not_know_is_refused_not_passed_over(self):
         with self.assertRaises(wm.Invalid) as ctx:
