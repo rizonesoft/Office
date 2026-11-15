@@ -7322,10 +7322,17 @@ class WordMenus(unittest.TestCase):
         self.assertEqual([(kind, rid) for kind, rid, _ in findings],
                          [("moved", "word.menus.text-selected.mini-toolbar.bold")])
 
-    def test_no_bounds_without_the_capture_profile(self):
-        records, _ = self.run_capture(FakeWordMenus(), origin=None)
+    def test_a_capture_outside_the_capture_profile_records_no_place_and_is_not_published(self):
+        records, captured = self.run_capture(FakeWordMenus(), origin=None)
         self.assertFalse(any(key in r for r in records for key in ("bounds", "captureProfile", "size")))
-        cu.word_menus_check(records)
+        with self.assertRaises(cu.Refused) as ctx:
+            cu.word_menus_check(records)
+        self.assertIn("word.menus.text-selected: no bounds, so where it stands is not recorded", str(ctx.exception))
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "menus.json"
+            code, _, err = self.run_main(out, lambda *a: (records, ["the window moved"], captured), merge=False)
+            self.assertEqual((code, out.exists()), (1, False))
+            self.assertIn("no bounds", err)
 
     def run_main(self, out, capture, merge=True):
         launched = type("L", (), {"hwnd": 5, "close": lambda self: None})()

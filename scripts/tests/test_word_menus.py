@@ -34,7 +34,8 @@ def item(entry, choices=None):
 
 
 def base(rid, kind, label, order, node, parent, **extra):
-    record = {"id": rid, "app": "word", "kind": kind, "label": label, "order": order, **SOURCE, **extra}
+    record = {"id": rid, "app": "word", "kind": kind, "label": label, "order": order, **SOURCE, **extra,
+              "bounds": {"x": 2, "y": 28 * order, "width": 220, "height": 28}, "captureProfile": "fhd-100"}
     if parent:
         record["parent"] = parent
     return record
@@ -236,6 +237,45 @@ class Rules(unittest.TestCase):
         with self.assertRaises(wm.Invalid):
             wm.validate([{"kind": "contextMenu"}])
 
+    def test_a_record_without_its_place_is_refused(self):
+        # a place is part of what a builder builds from: a capture outside the capture profile, and a separator
+        # whose strip could not be measured, publish nothing (completion review, gap 1)
+        records = inventory()
+        for rid in ("word.menus.picture.wrap-text.edit-wrap-points", "word.menus.shape.mini-toolbar.fill",
+                    "word.menus.comment", "word.menus.table.mini-toolbar"):
+            out = copy.deepcopy(records)
+            next(r for r in out if r["id"] == rid).pop("bounds")
+            said = refusal(out)
+            self.assertIn(f"{rid}: no bounds, so where it stands is not recorded", said)
+            self.assertEqual(said.count("no bounds"), 1)
+        stripped = [{k: v for k, v in r.items() if k not in ("bounds", "captureProfile")} for r in records]
+        self.assertEqual(refusal(stripped).count("no bounds"), len(records))
+
+    def test_the_committed_file_is_whole_measured_and_reads_clean_in_the_layout_comparison(self):
+        # the file the repository ships, not a fake: every record has its place, and scripts/check-layout.py,
+        # comparing the file with itself, finds nothing under any parent (the two Wrap Text submenus among them)
+        import json
+        path = SCRIPTS.parent / "design" / "inventory" / "word" / "menus.json"
+        records = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(refusal(records), "")
+        self.assertEqual([r["id"] for r in records if not isinstance(r.get("bounds"), dict)], [])
+        layout = importlib.util.spec_from_file_location("check_layout_for_menus_file", SCRIPTS / "check-layout.py")
+        cl = importlib.util.module_from_spec(layout)
+        layout.loader.exec_module(cl)
+        by_id, children = cl.inventory_layout.index({"word/menus.json": records})
+        self.assertIn("word.menus.picture.wrap-text", children)
+        self.assertIn("word.menus.shape.wrap-text", children)
+        for parent in children:
+            findings, paired = cl.compare(parent, by_id, children, copy.deepcopy(records))
+            self.assertEqual(findings, [], parent)
+            self.assertEqual(paired, len(children[parent]), parent)
+        for rid in ("word.menus.picture.wrap-text.separator-4", "word.menus.shape.wrap-text.separator-4"):
+            lacking = copy.deepcopy(records)
+            next(r for r in lacking if r["id"] == rid).pop("bounds")
+            findings, _ = cl.compare(rid.rsplit(".", 1)[0], by_id, children, lacking)
+            self.assertEqual([(kind, where) for kind, where, _ in findings], [("unmeasured", rid)])
+            self.assertIn(f"{rid}: no bounds", refusal(lacking))
+
     def test_a_file_whose_items_hang_a_thousand_deep_is_refused_not_a_crash(self):
         # a file is not trusted to be shallow: each record under the one before it, far past Python's stack
         out = copy.deepcopy(inventory())
@@ -302,15 +342,24 @@ class Reading(unittest.TestCase):
             kids = [node("MenuItem", "Cut"), node("MenuItem", "Copy")]
             kids[0]["rect"] = first
             return node("Group", children=kids, rect=box)
-        lead = node("Group", children=[node("MenuItem", "Paste")])
+        lead = node("Group", children=[node("MenuItem", "Paste")], rect=(2, 69, 222, 100))
+        # a menu: the groups touch, and the line stands inside the second, above its first item
         items = wm.menu_items([lead, group((2, 100, 222, 159), (2, 103, 222, 131))], self.SPEC)
         self.assertEqual([i["type"] for i in items], ["button", "separator", "button", "button"])
         self.assertEqual(items[1]["node"], {"rect": (2, 100, 222, 103)})
-        # a group that was not measured, or whose first item starts at its top or outside it, gives no place
-        for box, first in ((None, (2, 103, 222, 131)), ((2, 100, 222, 159), None), ((2, 100, 222, 159), (2, 100, 222, 128)),
-                           ((2, 100, 222, 159), (2, 300, 222, 328))):
-            items = wm.menu_items([lead, group(box, first)], self.SPEC)
-            self.assertIsNone(items[1]["node"], (box, first))
+        # a gallery submenu (Wrap Text): the line stands between the two groups, the second starting at its item
+        items = wm.menu_items([lead, group((2, 103, 222, 159), (2, 103, 222, 131))], self.SPEC)
+        self.assertEqual(items[1]["node"], {"rect": (2, 100, 222, 103)})
+        # groups that were not measured, that overlap, or that leave no strip give no place: none is made up
+        for over, box, first in (((2, 69, 222, 100), None, (2, 103, 222, 131)),
+                                 ((2, 69, 222, 100), (2, 100, 222, 159), None),
+                                 (None, (2, 100, 222, 159), (2, 103, 222, 131)),
+                                 ((2, 69, 222, 100), (2, 100, 222, 159), (2, 100, 222, 128)),
+                                 ((2, 69, 222, 110), (2, 100, 222, 159), (2, 103, 222, 131)),
+                                 ((2, 69, 222, 100), (2, 100, 222, 159), (2, 90, 222, 118))):
+            above = node("Group", children=[node("MenuItem", "Paste")], rect=over)
+            items = wm.menu_items([above, group(box, first)], self.SPEC)
+            self.assertIsNone(items[1]["node"], (over, box, first))
 
     def test_what_the_rules_do_not_know_is_refused_not_passed_over(self):
         with self.assertRaises(wm.Invalid) as ctx:

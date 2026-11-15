@@ -315,14 +315,16 @@ def named(node) -> str:
     return clean(node.get("name"))
 
 
-def _band(group):
-    """Where the line between two groups of items is drawn: the strip a group keeps free above its first item.
-    A node that holds that place alone, or None when the group and its first item were not measured so."""
+def _band(above, group):
+    """Where the line between two groups of items is drawn: the strip between the end of the group above and the
+    first item of this one. Word leaves it inside the group, above its first item (a menu), or between the two
+    groups (a gallery submenu such as Wrap Text): either way it ends where the first item begins. A node that
+    holds that place alone, or None when the two groups were not measured so."""
     kids = group.get("children") or []
-    box, first = group.get("rect"), kids[0].get("rect") if kids else None
-    if not box or not first or not (box[1] < first[1] <= box[3]):
+    box, first, over = group.get("rect"), kids[0].get("rect") if kids else None, above.get("rect")
+    if not box or not first or not over or not (over[3] <= box[1] <= first[1] and over[3] < first[1]):
         return None
-    return {"rect": (box[0], box[1], box[2], first[1])}
+    return {"rect": (box[0], over[3], box[2], first[1])}
 
 
 def menu_items(nodes: list, spec, what="menu") -> list:
@@ -330,7 +332,7 @@ def menu_items(nodes: list, spec, what="menu") -> list:
     `expandable`, a lazy `read` for the name, `children` for a group). A group of items ends in a separator when
     another follows. An item's own children are never looked at: the inner button of a split button, the entries
     of a gallery and the choices of a submenu are not this function's to read."""
-    items, groups = [], 0
+    items, above = [], None
 
     def one(node):
         role = node.get("role")
@@ -354,9 +356,9 @@ def menu_items(nodes: list, spec, what="menu") -> list:
                       f"scripts/lib/word_menus.py do not know; it is not passed over")
     for node in nodes:
         if node.get("role") == "Group":
-            if groups and items and items[-1]["type"] != "separator":
-                items.append({"label": SEPARATOR, "type": "separator", "node": _band(node)})
-            groups += 1
+            if above is not None and items and items[-1]["type"] != "separator":
+                items.append({"label": SEPARATOR, "type": "separator", "node": _band(above, node)})
+            above = node
             items += [one(k) for k in node.get("children", [])]
         else:
             items.append(one(node))
@@ -536,6 +538,9 @@ def validate(records_: list) -> None:
             problems.append(f"{rid}: a {kind} does not stand under a {by_id[parent].get('kind')}")
         else:
             children.setdefault(parent, []).append(rec)
+        if not isinstance(rec.get("bounds"), dict):
+            problems.append(f"{rid}: no bounds, so where it stands is not recorded (a capture outside the capture "
+                            f"profile, or a place that could not be measured, is not published)")
         if "condition" in rec and kind != "contextMenu":
             problems.append(f"{rid}: `condition` belongs to the context menu")
         if "checked" in rec and not (
