@@ -2,6 +2,8 @@
 
 D02 T01 §27. Each rule of `scripts/check-inventory.py` and `design/inventory/schema.json` removed on its own and `scripts/tests/test_check_inventory.py` run against it, by `python -B scripts/mutation-sweep-inventory.py` on commit `4aa7102` (2026-11-13, run through `bosun`). Rules: every checker guard, every schema keyword the validator reads, every `properties` entry and every top-level pattern alternative. The 4,207 alternation bars nested inside noHost's top-level alternatives are not removed one by one (about ten hours of runs); they define each family's exemptions.
 
+Since D02 T01 §38 the sweep is a standing gate: the four `sweep` jobs of `.github/workflows/ci.yml` run it in shares on every push that changes the checker, its schema, its tests or the sweep itself (`--if-changed <base>..<head>`), and print `sweep skipped` on any other push. A red share is reproduced here with `python -B scripts/mutation-sweep-inventory.py --shard N/4`. A killed removal's run now ends at its first failing test, so the lines of the later runs below show fewer tests run than discovered for a `KILLED` rule.
+
 ## First run
 
 42 survivors and 7 removals whose tests only error, on commit `4aa7102`. The second run, below, is the same sweep after each of them was given its test.

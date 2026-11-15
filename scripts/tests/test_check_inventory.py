@@ -1961,6 +1961,19 @@ class OptionsRules(unittest.TestCase):
             self.assertTrue(problems(page, blankDigest=value), repr(value))
         self.assertTrue(problems(control, blankDigest=digest))
         self.assertTrue(problems(blank, blankDigest=digest))
+        # D02 T01 §38: the sweep found five of these rules held by no test, because another rule refused the same
+        # value. Each is now asked for by the one message it alone gives.
+        for value in (7, None):
+            self.assertEqual(problems(control, variantOf=value), ["$[0].variantOf: expected string"], repr(value))
+            self.assertEqual(problems(page, blankDigest=value), ["$[0].blankDigest: expected string"], repr(value))
+        self.assertEqual(problems(control, variantOf="a" * 200), [])
+        self.assertEqual(problems(control, variantOf="a" * 201), ["$[0].variantOf: longer than 200 characters"])
+        # a page of the blank capture is a page too, so only its id says that `unchanged` is not its to carry
+        outside = {"id": "word.backstage.print", "app": "word", "kind": "backstagePage", "label": "Print",
+                   "order": 6, **prov}
+        self.assertEqual(problems(outside), [])
+        self.assertEqual(problems(outside, unchanged=True),
+                         ["$[0].id: 'word.backstage.print' does not match ^word\\.backstage\\.states\\."])
         # none of the three on a record that is not a document state's: the blank capture's, the ribbon's
         for record in (blank, BOLD, TAB, GROUP):
             self.assertTrue(problems(record, captureState="final"), record["id"])

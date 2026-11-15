@@ -7,6 +7,8 @@ checker's tests (D02 T01 §27).
     python -B scripts/mutation-sweep-inventory.py            # the whole sweep; ends with `survivors: N`
     python -B scripts/mutation-sweep-inventory.py --list     # the rules it would remove, one per line
     python -B scripts/mutation-sweep-inventory.py --only "guard check-inventory.py:812"
+    python -B scripts/mutation-sweep-inventory.py --shard 2/4                  # the second of four shares of the rules
+    python -B scripts/mutation-sweep-inventory.py --if-changed <base>..<head>  # only when a swept file changed
 
 A rule is one guard of scripts/check-inventory.py (an `if` whose body adds a problem, raises `Unreadable` or returns
 a refusal), one keyword of design/inventory/schema.json the checker's validator reads, one entry of a `properties`
@@ -16,22 +18,33 @@ family's exemptions and are not removed one by one (noHost alone holds over 4,00
 Each removal runs in a private copy of scripts/, design/inventory/ and todo/, on disk, in a fresh process, so a test that
 reads the schema itself or starts the checker as a subprocess sees it, and nothing of one removal reaches the next.
 An unmutated run comes first and must pass in full, or the sweep exits 2 having removed nothing. A removal is killed
-only when a test fails with every test discovered; one whose tests only error, that discovers fewer tests, that runs
-out of time or whose process dies is reported as such. Each child runs in a process tree with a time limit and an
+only when a test fails with every test discovered, and its run stops at that first failure, which is all the verdict
+needs (D02 T01 §38); one whose tests only error, that discovers fewer tests, that runs out of time or whose process
+dies is reported as such. Each child runs in a process tree with a time limit and an
 output limit (scripts/lib/process_tree.py). Exit 0 when every rule is killed, 1 otherwise, 2 when it cannot start.
 
 One line per rule: the outcome, then how its tests ended and how many ran, then the rule:
 
-    KILLED       2 failing, 0 erroring, 131 passing, 0 skipped, 133 of 133 run   guard check-inventory.py:339 if ...
+    KILLED       1 failing, 0 erroring, 57 passing, 0 skipped, 58 of 133 run     guard check-inventory.py:339 if ...
 
-so the record of a sweep shows for each removal that every test was discovered and run, not only that one failed.
+so the record of a sweep shows for each removal that every test was discovered, and for one that was not killed that
+every test ran, not only that none failed.
+
+CI runs the sweep as the four `sweep` shares of .github/workflows/ci.yml (D02 T01 §38). `--shard <i>/<n>` deals the
+rules, in the order `--list` prints them, to `n` shares by position, and each share starts with its own unmutated
+run. `--if-changed <base>..<head>` is one argument: when `git diff --name-only <base> <head>` names none of the swept
+files (SWEPT) it prints `sweep skipped: ...` and exits 0 having removed nothing; when it names one, or when either
+commit cannot be read (an empty base, as a pull request or a manual run gives; the all-zero base of a first push; a
+commit that is not in the clone; git failing), it prints why and runs the sweep.
 """
 import argparse
 import ast
 from concurrent.futures import ThreadPoolExecutor
 import json
 from pathlib import Path
+import re
 import shutil
+import subprocess
 import sys
 import tempfile
 import threading
@@ -51,6 +64,11 @@ KEYWORDS = ("type", "const", "enum", "minLength", "maxLength", "pattern", "requi
 OUTPUT_LIMIT = 50 * 1024 * 1024  # a test run that writes more than this is stopped
 # Functions whose every non-None return is a refusal (what they found), not a problem list.
 REFUSERS = ("unfinished_call",)
+# The files whose change can add a rule no test holds or drop the test that held one: what --if-changed looks for.
+SWEPT = tuple(p.as_posix() for p in (CHECKER, SCHEMA, TESTS / PATTERN, Path("scripts") / "mutation-sweep-inventory.py"))
+SHARD = re.compile(r"([0-9]+)/([0-9]+)")
+GIT_SECONDS = 60  # one `git diff --name-only` may take this long
+NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 
 class Rule:
@@ -178,18 +196,55 @@ def rules_of(root):
         schema_rules(json.loads((root / SCHEMA).read_text(encoding="utf-8")))
 
 
+def changed_between(root, span):
+    """(run, line) for `--if-changed <base>..<head>`: False only when git shows that no swept file changed."""
+    base, _, head = span.partition("..")
+    if not base or not head or base.startswith("-") or head.startswith("-"):
+        return True, f"sweep runs: a commit of {span!r} cannot be read (it is empty)"
+    try:
+        done = subprocess.run(["git", "-C", str(root), "diff", "--name-only", base, head, "--"], capture_output=True,
+                              text=True, encoding="utf-8", errors="replace", timeout=GIT_SECONDS,
+                              creationflags=NO_WINDOW)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return True, f"sweep runs: git could not compare {base} and {head} ({type(exc).__name__})"
+    if done.returncode != 0:
+        return True, f"sweep runs: {base} or {head} cannot be read (git diff exit {done.returncode})"
+    named = [name for name in done.stdout.splitlines() if name in SWEPT]
+    if named:
+        return True, f"sweep runs: {', '.join(named)} changed between {base} and {head}"
+    return False, f"sweep skipped: no swept file changed between {base} and {head}"
+
+
+class StopAtFailure(unittest.TextTestResult):
+    """Ends a run at its first failing test: one failure is all a removal's verdict needs. An error does not end
+    it, because a removal whose tests only error is not killed, and a later test of the same run may still fail."""
+
+    stopped_on_failure = False
+
+    def addFailure(self, test, err):
+        super().addFailure(test, err)
+        self.stopped_on_failure = True
+        self.stop()
+
+    def addSubTest(self, test, subtest, err):
+        super().addSubTest(test, subtest, err)
+        if err is not None and issubclass(err[0], test.failureException):
+            self.stopped_on_failure = True
+            self.stop()
+
+
 def run_tests(copy_root, result_path, pattern):
     """In the child: discover and run the checker's tests in the copy, and write what happened as JSON."""
     loader = unittest.TestLoader()
     suite = loader.discover(str(copy_root / TESTS), pattern=pattern, top_level_dir=str(copy_root / TESTS))
     discovered = suite.countTestCases()
     with open(Path(result_path).with_suffix(".log"), "w", encoding="utf-8") as log:
-        result = unittest.TextTestRunner(stream=log, verbosity=1).run(suite)
+        result = unittest.TextTestRunner(stream=log, verbosity=1, resultclass=StopAtFailure).run(suite)
     failed_import = sum(1 for test, _ in result.errors if type(test).__name__ == "_FailedTest")
     Path(result_path).write_text(json.dumps({
         "discovered": discovered, "ran": result.testsRun, "failures": len(result.failures),
         "errors": len(result.errors) - failed_import, "import_errors": failed_import + len(loader.errors),
-        "skipped": len(result.skipped),
+        "skipped": len(result.skipped), "stopped": result.stopped_on_failure,
         # What neither failed, errored nor was skipped; an expected failure or an unexpected success is not a pass.
         "passed": result.testsRun - len(result.failures) - len(result.errors) - len(result.skipped)
         - len(result.expectedFailures) - len(result.unexpectedSuccesses)}), encoding="utf-8")
@@ -240,10 +295,12 @@ class Workspace:
 
 
 def verdict(counts, baseline):
-    if counts["import_errors"] or counts["discovered"] < baseline["discovered"] or counts["ran"] < counts["discovered"]:
+    if counts["import_errors"] or counts["discovered"] < baseline["discovered"]:
         return "UNDISCOVERED"
-    if counts["failures"]:
-        return "KILLED"
+    if counts["failures"] and (counts.get("stopped") or counts["ran"] == counts["discovered"]):
+        return "KILLED"  # every test was discovered; the run ended at its first failure, so fewer ran
+    if counts["ran"] < counts["discovered"]:
+        return "UNDISCOVERED"
     if counts["errors"]:
         return "ERRORED"
     return "SURVIVED"
@@ -253,6 +310,9 @@ def main(argv=None, root=ROOT):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--list", action="store_true", help="print the rules and stop")
     ap.add_argument("--only", action="append", default=[], help="remove only the rules whose name holds this text")
+    ap.add_argument("--shard", metavar="I/N", help="remove share I of N of the rules (1 to N)")
+    ap.add_argument("--if-changed", metavar="BASE..HEAD",
+                    help="run only when a swept file changed between the two commits, or when one cannot be read")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--timeout", type=float, default=None, help="seconds one run may take (default: 5x unmutated)")
     ap.add_argument("--pattern", default=PATTERN, help=argparse.SUPPRESS)
@@ -262,6 +322,19 @@ def main(argv=None, root=ROOT):
     if args.run_tests:
         return run_tests(args.run_tests, args.result, args.pattern)
     root = Path(root)
+    share = SHARD.fullmatch(args.shard or "1/1")
+    if not share or not 1 <= int(share.group(1)) <= int(share.group(2)):
+        print("mutation-sweep: --shard takes I/N with 1 <= I <= N, as in 2/4", file=sys.stderr)
+        return 2
+    if args.if_changed is not None:
+        if ".." not in args.if_changed:
+            print("mutation-sweep: --if-changed takes one argument, <base>..<head>, as in 1a2b3c..4d5e6f",
+                  file=sys.stderr)
+            return 2
+        run, line = changed_between(root, args.if_changed)
+        print(line, flush=True)
+        if not run:
+            return 0
     try:
         rules = rules_of(root)
     except (OSError, SyntaxError, ValueError) as exc:
@@ -269,6 +342,7 @@ def main(argv=None, root=ROOT):
         return 2
     if args.only:
         rules = [r for r in rules if any(o in r.name for o in args.only)]
+    rules = rules[int(share.group(1)) - 1::int(share.group(2))]  # dealt by position, in the order --list prints
     if args.list:
         for r in rules:
             print(r.name)
@@ -284,7 +358,7 @@ def main(argv=None, root=ROOT):
             return 2
         baseline, timeout = counts, args.timeout or max(120.0, 5 * seconds)
         print(f"unmutated: {baseline['discovered']} tests pass in {seconds:.0f} s ({counts_text(baseline)}); "
-              f"{len(rules)} rules", flush=True)
+              f"{len(rules)} rules" + (f", share {args.shard}" if args.shard else ""), flush=True)
         free = list(spaces)
         pool_lock = threading.Lock()
 

@@ -98,3 +98,31 @@ jobs:
         # One process per unit (a test file, or one class of a slow file), several at a time (scripts/run-tests.py);
         # -v keeps every test's name in the log. To reproduce a red share: python scripts/run-tests.py --shard N/4
         run: python scripts/run-tests.py -v --shard ${{ matrix.share }}/4
+
+  # The proof that every rule of the inventory checker is held by a test (D02 T01 §27), as a standing gate in four
+  # shares (D02 T01 §38). A share removes its rules only when the push changed the checker, its schema, its tests or
+  # the sweep itself, and otherwise prints `sweep skipped` and ends; a pull request is compared with its base, and a
+  # manual run, which has no base, always sweeps. The base and the head are one argument, so an empty base cannot
+  # leave the option short. To reproduce a red share: python -B scripts/mutation-sweep-inventory.py --shard N/4
+  sweep:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        share: [1, 2, 3, 4]
+    name: sweep (${{ matrix.share }}/4)
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # the change check compares the push's base with its head, so both commits must be in the clone.
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.15'
+          check-latest: true
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+      - name: Install the tooling requirements
+        run: python -m pip install -r scripts/requirements.txt
+      - name: Remove a share of the inventory checker's rules
+        run: python -B scripts/mutation-sweep-inventory.py --shard ${{ matrix.share }}/4 --if-changed "${{ github.event.before || github.event.pull_request.base.sha }}..${{ github.sha }}"

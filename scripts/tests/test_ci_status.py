@@ -177,6 +177,18 @@ class States(Base):
         self.assertIn("tests (2) (failure)", out)
         self.assertIn("tests (4) (failure)", out)
 
+    def test_a_failed_sweep_share_is_red_and_named(self):
+        # D02 T01 §38: the sweep of the inventory checker's rules runs as four more jobs of the same run.
+        sweep = [{"name": f"sweep ({n}/4)", "conclusion": "success", "steps": []} for n in (1, 2, 4)] + [
+            {"name": "sweep (3/4)", "conclusion": "failure",
+             "steps": [{"name": "Remove a share of the inventory checker's rules", "conclusion": "failure"}]}]
+        green = [dict(job, conclusion="success") for job in self.SHARES]
+        code, out = self.main(Fake(runs=[[run(conclusion="failure")]], jobs=green + sweep))
+        self.assertEqual(code, 1, out)
+        self.assertIn("sweep (3/4) (failure): Remove a share of the inventory checker's rules (failure)", out)
+        for passed in ("sweep (1/4)", "sweep (2/4)", "sweep (4/4)", "tests (2)"):
+            self.assertNotIn(passed, out)
+
     def test_no_run_inside_the_grace_period_is_pending_and_after_it_unknown(self):
         self.assertEqual(self.main(Fake(runs=[[]]), minutes=5)[0], 3)
         code, out = self.main(Fake(runs=[[]]), minutes=11)
