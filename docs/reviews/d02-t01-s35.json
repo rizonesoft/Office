@@ -1,0 +1,86 @@
+{
+  "ref": "D02 T01 \u00a735",
+  "title": "Word Context Menus and Mini Toolbar",
+  "implementation_sha": "8e5af823d4c838c2c46b66f058ba049dc32fcc14",
+  "date": "2026-11-15",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/D02-T01-s35.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -W error::ResourceWarning -m unittest discover -s scripts/tests -p \"test_capture_ui.py\" -> Ran 140 tests in 96.990s, OK",
+    "python -m unittest scripts/tests/test_word_menus.py -> Ran 20 tests in 0.212s, OK",
+    "python scripts/check-inventory.py design/inventory/word -> exit 0, with design/inventory/word/menus.json holding eleven contextMenu and nine miniToolbar records (361 in all)",
+    "python scripts/capture-ui.py --app word --menus --merge, twice -> 361 records each, the file byte for byte the same, no Word left running"
+  ],
+  "completion": {
+    "report": "docs/reviews/02-interface/D02-T01-s35.md",
+    "verdict": "reconciled",
+    "candidate": "8e5af823d4c838c2c46b66f058ba049dc32fcc14",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/02-interface/D02-T01-s35.md",
+    "candidate": "d0e695d840d4c32a9b95251dc4aebd1fa4abeeca",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "d0e695d840d4c32a9b95251dc4aebd1fa4abeeca",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 4,
+  "pass_cap": 33
+}
