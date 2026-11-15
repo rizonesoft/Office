@@ -1046,23 +1046,21 @@ Filed 2026-11-13T03:17:13Z from D02 T01 §6's fresh plan review (gap 3). §6 cap
 
 ## 37. Word Backstage Account States
 
-Filed 2026-11-13T03:17:13Z from D02 T01 §6's fresh plan review (gap 3). The `account-state` and `layout-variant` groups of Backstage show only when no account is signed in, when sign-in is disabled, or for an Office Insider or a selectable update channel. Producing those states means signing the owner's Word out on this PC, or changing its update channel, so the owner does it or allows it.
+Filed 2026-11-13T03:17:13Z from D02 T01 §6's fresh plan review (gap 3). The `account-state` and `layout-variant` groups of Backstage show only when no account is signed in, when sign-in is disabled, or for an Office Insider or a selectable update channel. Producing those states means signing the owner's Word out on this PC, or changing its update channel, so the owner does it or allows it. **Changed 2026-11-15 (owner, in session, decision 48 of `docs/specs/2026-10-23-campaign-scope-design.md`):** nothing is captured. What Word shows without an account, for an Office Insider or for a selectable update channel is Microsoft's own account, licence and update surface, which Rizonesoft Office replaces with its own; the owner will not sign Word out for it, and no builder would build from those records. The section now gives every `account-state` and `layout-variant` id its final reason instead, so the `operator` Need and the owner action are gone.
 
 **Phase:** 2
-**Needs:** office, windows-host, display-session, operator
-**Owner action:** In a campaign session, say whether the session may sign Word out on this PC for a capture and sign it back in afterwards (you will be asked for your account's password to sign back in), or sign out yourself and tell the session; the session records the answer here and removes `operator`.
+**Needs:** none
 **Surface:** no
 
 **Build order:**
 
-1. Capture Backstage signed out. Done when: the signed-out groups are captured.
-2. Settle the rest. Done when: no `account-state` or `layout-variant` id is left in `ABSENT` without a final reason.
+1. Give the ids their final reason. Done when: no `account-state` or `layout-variant` id waits on a capture or names an owner section.
 
-- [ ] Capture Backstage with `python scripts/capture-ui.py --app word --backstage --state signed-out --merge` after Word is signed out. Done when: the sign-in groups and the signed-out layouts of Open and Save As are recorded with `captureState` `signed-out`, and the checker exits 0.
-- [ ] Remove from `ABSENT` each `account-state` and `layout-variant` id the capture shows, and give each remaining one (Office Insider, a selectable update channel) a final reason with what showing it needs. Done when: `python scripts/check-inventory.py design/inventory/word` exits 0 and REFERENCE.md documents each remaining id's reason.
-- [ ] Commit: `inventory: capture Word Backstage signed out`
+- [ ] In `scripts/lib/word_backstage.py`, give every id of the `account-state` and `layout-variant` groups of `ABSENT` one final reason that says it is not built because the product's own account, licence and update surface replaces it (decision 48), and take both reasons out of `REASON_OWNERS`. Done when: a test in `scripts/tests/test_word_backstage.py` shows the final reason accepted with no owner section, and either old reason refused as one that no longer exists. Cheaper substitute: deleting the ids from `ABSENT`, which leaves the inventory silent about ids Word's own list of commands names; refused.
+- [ ] Document the final reason in `design/inventory/REFERENCE.md` beside the other Backstage reasons, with the decision it rests on and the count of ids it covers. Done when: the reference names the reason, decision 48 and a count that equals the ids carrying it, and `python scripts/check-inventory.py design/inventory/word` exits 0.
+- [ ] Commit: `inventory: Word's account and signed-out Backstage ids are replaced, not captured`
 
-**Test checkpoint:** `python scripts/check-inventory.py design/inventory/word` exits 0 with no `account-state` reason left in `ABSENT`.
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_word_backstage.py"` passes and `python scripts/check-inventory.py design/inventory/word` exits 0 with no `account-state` or `layout-variant` reason left in `ABSENT`.
 
 ## 38. Sweep Gate on Checker Changes
 
@@ -1093,24 +1091,22 @@ Filed 2026-11-13T10:40:00Z by the lead while D02 T01 §27 was built. §27 proved
 
 ## 39. Word Status Bar Defaults
 
-Filed 2026-11-13T19:21:43Z from D02 T01 §33's plan review (gaps 2 and 3). §33 records the status bar as this PC shows it: the items standing on the bar for a blank document, and the Customize Status Bar menu with each item ticked or not as the owner has it. Two things it cannot say without changing the owner's preferences, which Word keeps for later sessions and which nothing can put back when a capture is stopped: which items Word ticks by default, and where an item the bar hides would stand and what kind of control it is. Both need a Word profile that is at its defaults and may be changed freely.
+Filed 2026-11-13T19:21:43Z from D02 T01 §33's plan review (gaps 2 and 3). §33 records the status bar as this PC shows it: the items standing on the bar for a blank document, and the Customize Status Bar menu with each item ticked or not as the owner has it. Two things it cannot say without changing the owner's preferences, which Word keeps for later sessions and which nothing can put back when a capture is stopped: which items Word ticks by default, and where an item the bar hides would stand and what kind of control it is. Both need a Word profile that is at its defaults and may be changed freely. **Changed 2026-11-15 (owner, in session, decision 48 of `docs/specs/2026-10-23-campaign-scope-design.md`):** no second Windows account or Word profile is made for this. Which items Word ticks by default is not recorded: the product sets its own defaults, and this PC's ticks are already in `design/inventory/word/statusbar.json`. Where a hidden item would stand and what kind of control it is, is recorded in the owner's own profile, by ticking each unticked item, reading the bar and putting every tick back; the run writes the ticks down before it changes one, so a run that is stopped can still be put back. The `operator` Need and the owner action are gone.
 
 **Phase:** 2
-**Needs:** office, windows-host, display-session, operator
-**Owner action:** Make or name a Windows account on this PC whose Word has never been customised, sign Word in there once and start a campaign session in that account; or say in a campaign session that the session may tick and untick the status bar's items in your own profile and put them back. The session records the answer here and removes `operator`.
+**Needs:** office, windows-host, display-session
 **Surface:** no
 
 **Build order:**
 
-1. Record the defaults. Done when: every menu item of `design/inventory/word/statusbar.json` carries Word's default beside this PC's tick.
-2. Record the hidden items. Done when: every item that can stand on the bar for a blank document has a `statusItem` record.
+1. Record the hidden items. Done when: every item that can stand on the bar for a blank document has a `statusItem` record, and the owner's ticks are as they were.
 
-- [ ] Add `--defaults` to `scripts/capture-ui.py --statusbar`: on a profile the run is told is at Word's defaults (refused without that word), record each menu item's tick as its default in a field of its own beside `checked`, defined in `design/inventory/schema.json`, with the account and the date as provenance in `design/inventory/REFERENCE.md`. Done when: a fake-tree test in `scripts/tests/test_capture_ui.py` shows the default recorded for a ticked and an unticked item and the mode refused without the word, and `scripts/check-inventory.py` requires the field on every menu item once one carries it. Cheaper substitute: calling this PC's ticks the defaults, which they are only if nobody ever changed them.
-- [ ] Add `--all-items` to the same mode of `scripts/capture-ui.py`: tick every unticked item, read the bar, record each item that now stands on it with its zone, order, control type and bounds, then put every tick back and read the menu again to see it done, refusing the run when one is not as it was. Done when: a fake-tree test in `scripts/tests/test_capture_ui.py` shows the hidden items recorded and the ticks put back, and a tick that will not go back refusing the run with nothing published. Cheaper substitute: the menu's label alone, which gives the builder no place and no control type.
-- [ ] Capture both on the default profile into `design/inventory/word/statusbar.json` and extend the hand-written `BAR` of `scripts/lib/word_statusbar.py` with the hidden items. Done when: every menu item has its default, every item that can stand on the bar for a blank document has a `statusItem` record, and `python scripts/check-inventory.py design/inventory/word` exits 0.
-- [ ] Commit: `inventory: capture Word status bar defaults and hidden items`
+- [ ] Add `--all-items` to `scripts/capture-ui.py --statusbar`: write every menu item's tick to a file under the scratch folder before changing one, tick every unticked item, read the bar, record each item that now stands on it with its zone, order, control type and bounds, then put every tick back and read the menu again to see it done, refusing the run when one is not as it was. Done when: a fake-tree test in `scripts/tests/test_capture_ui.py` shows the hidden items recorded and the ticks put back, the file of ticks written before the first change, and a tick that will not go back refusing the run with nothing published. Cheaper substitute: the menu's label alone, which gives the builder no place and no control type.
+- [ ] Add `--restore-ticks <file>` to the same mode of `scripts/capture-ui.py`: put the ticks of that file back and read the menu to see it done. Done when: a fake-tree test in `scripts/tests/test_capture_ui.py` shows a run stopped after its ticks were changed put back from its file, and a file that names an item the menu does not hold refused with nothing changed. Cheaper substitute: trusting that no run is ever stopped, when a stopped capture has already left Word changed once in this campaign (D02 T01 §36).
+- [ ] Capture into `design/inventory/word/statusbar.json` and extend the hand-written `BAR` of `scripts/lib/word_statusbar.py` with the hidden items. Done when: every item that can stand on the bar for a blank document has a `statusItem` record, the menu read after the capture equals the menu read before it, and `python scripts/check-inventory.py design/inventory/word` exits 0.
+- [ ] Commit: `inventory: capture Word status bar hidden items`
 
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` passes and `python scripts/check-inventory.py design/inventory/word` exits 0 with a default on every menu item of `design/inventory/word/statusbar.json`.
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_capture_ui.py"` passes and `python scripts/check-inventory.py design/inventory/word` exits 0 with a `statusItem` record for every item of the Customize Status Bar menu that can stand on the bar for a blank document.
 
 ## 40. Word Command Dialogs
 

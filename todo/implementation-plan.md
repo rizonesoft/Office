@@ -123,57 +123,57 @@ Sections: 17 | Checklist items: 90
 
 Sections: 49 | Checklist items: 280
 
-| Status | Reference   | Deliverable                         | Needs                                           | Items |
-| ------ | ----------- | ----------------------------------- | ----------------------------------------------- | ----- |
-| [x]    | D02 T01 §1  | Inventory Schema Checker            | none                                            | 8     |
-| [x]    | D02 T01 §2  | Reference Build Setup               | office, windows-host                            | 5     |
-| [x]    | D02 T01 §21 | Microsoft-Free Inventory            | none                                            | 6     |
-| [x]    | D02 T01 §3  | UIA Capture Tool                    | office, windows-host, display-session           | 12    |
-| [x]    | D02 T01 §19 | Control ID Baseline                 | none                                            | 6     |
-| [x]    | D02 T01 §20 | Word Command Catalogue              | office, windows-host                            | 4     |
-| [x]    | D02 T01 §23 | Audit Schema Checker                | none                                            | 5     |
-| [x]    | D02 T01 §24 | Audit Capture Tool                  | office, windows-host, display-session           | 5     |
-| [x]    | D02 T01 §25 | Audit Control ID Baseline           | none                                            | 5     |
-| [x]    | D02 T01 §26 | Audit Microsoft-Free Rule           | none                                            | 5     |
-| [x]    | D02 T01 §4  | Shell Chrome Inventory              | office, windows-host, display-session           | 8     |
-| [x]    | D02 T01 §5  | Word Ribbon                         | office, windows-host, display-session           | 10    |
-| [x]    | D02 T01 §6  | Word Backstage Pages                | office, windows-host, display-session           | 8     |
-| [x]    | D02 T01 §17 | Keyboard Shortcuts                  | none                                            | 4     |
-| [x]    | D02 T01 §18 | Inventory Coverage Report           | none                                            | 9     |
-| [x]    | D02 T01 §22 | Inventory Ownership Check           | none                                            | 13    |
-| [x]    | D02 T01 §27 | Checker Mutation Sweep              | none                                            | 6     |
-| [x]    | D02 T01 §28 | Record Dispositions                 | none                                            | 7     |
-| [x]    | D02 T01 §29 | Inventory Layout Tables             | none                                            | 10    |
-| [x]    | D02 T01 §30 | Built-App Layout Check              | none                                            | 8     |
-| [x]    | D02 T01 §31 | Word Options Settings               | office, windows-host, display-session           | 3     |
-| [x]    | D02 T01 §32 | Word Task Panes                     | office, windows-host, display-session           | 3     |
-| [x]    | D02 T01 §33 | Word Status Bar                     | office, windows-host, display-session           | 3     |
-| [x]    | D02 T01 §34 | Word Dialogs                        | office, windows-host, display-session           | 3     |
-| [x]    | D02 T01 §35 | Word Context Menus and Mini Toolbar | office, windows-host, display-session           | 3     |
-| [x]    | D02 T01 §36 | Word Backstage Document States      | office, windows-host, display-session           | 5     |
-| [ ]    | D02 T01 §37 | Word Backstage Account States       | office, windows-host, display-session, operator | 3     |
-| [ ]    | D02 T01 §38 | Sweep Gate on Checker Changes       | none                                            | 8     |
-| [ ]    | D02 T01 §39 | Word Status Bar Defaults            | office, windows-host, display-session, operator | 4     |
-| [ ]    | D02 T01 §40 | Word Command Dialogs                | office, windows-host, display-session           | 4     |
-| [ ]    | D02 T01 §41 | Word Options Dialogs                | office, windows-host, display-session           | 4     |
-| [ ]    | D02 T01 §42 | Word Proofing Submenus              | office, windows-host, display-session           | 5     |
-| [ ]    | D02 T01 §43 | Word Menus of Further Selections    | office, windows-host, display-session           | 5     |
-| [ ]    | D02 T01 §44 | Word Context Menu Commands          | none                                            | 5     |
-| [ ]    | D02 T01 §45 | Inventory Checkers on Deep Files    | none                                            | 4     |
-| [ ]    | D02 T01 §46 | Word Status Bar in Document States  | office, windows-host, display-session           | 4     |
-| [ ]    | D02 T01 §47 | Word Signed Document                | office, owner-decision                          | 4     |
-| [ ]    | D02 T01 §48 | Word Server Document States         | office, operator                                | 4     |
-| [ ]    | D02 T01 §49 | Word Host Document States           | office, windows-host, display-session           | 5     |
-| [ ]    | D02 T01 §50 | Backstage Borrowed Keys and Labels  | office, windows-host, display-session           | 4     |
-| [ ]    | D02 T01 §51 | Backstage Reads No Left-Out Name    | office, windows-host, display-session           | 5     |
-| [ ]    | D02 T02 §1  | Design Tokens and Themes            | none                                            | 6     |
-| [ ]    | D02 T02 §2  | Command Glyph Decision              | none                                            | 5     |
-| [ ]    | D02 T02 §3  | Shell Layout Chapter                | none                                            | 6     |
-| [ ]    | D02 T02 §4  | Ribbon Component Chapter            | office, windows-host, display-session           | 8     |
-| [ ]    | D02 T02 §5  | Backstage Chapter                   | none                                            | 6     |
-| [ ]    | D02 T02 §6  | Status Bar Chapter                  | none                                            | 4     |
-| [ ]    | D02 T02 §7  | Word Surface Chapter                | none                                            | 8     |
-| [ ]    | D02 T02 §13 | Accessibility Chapter               | none                                            | 5     |
+| Status | Reference   | Deliverable                         | Needs                                 | Items |
+| ------ | ----------- | ----------------------------------- | ------------------------------------- | ----- |
+| [x]    | D02 T01 §1  | Inventory Schema Checker            | none                                  | 8     |
+| [x]    | D02 T01 §2  | Reference Build Setup               | office, windows-host                  | 5     |
+| [x]    | D02 T01 §21 | Microsoft-Free Inventory            | none                                  | 6     |
+| [x]    | D02 T01 §3  | UIA Capture Tool                    | office, windows-host, display-session | 12    |
+| [x]    | D02 T01 §19 | Control ID Baseline                 | none                                  | 6     |
+| [x]    | D02 T01 §20 | Word Command Catalogue              | office, windows-host                  | 4     |
+| [x]    | D02 T01 §23 | Audit Schema Checker                | none                                  | 5     |
+| [x]    | D02 T01 §24 | Audit Capture Tool                  | office, windows-host, display-session | 5     |
+| [x]    | D02 T01 §25 | Audit Control ID Baseline           | none                                  | 5     |
+| [x]    | D02 T01 §26 | Audit Microsoft-Free Rule           | none                                  | 5     |
+| [x]    | D02 T01 §4  | Shell Chrome Inventory              | office, windows-host, display-session | 8     |
+| [x]    | D02 T01 §5  | Word Ribbon                         | office, windows-host, display-session | 10    |
+| [x]    | D02 T01 §6  | Word Backstage Pages                | office, windows-host, display-session | 8     |
+| [x]    | D02 T01 §17 | Keyboard Shortcuts                  | none                                  | 4     |
+| [x]    | D02 T01 §18 | Inventory Coverage Report           | none                                  | 9     |
+| [x]    | D02 T01 §22 | Inventory Ownership Check           | none                                  | 13    |
+| [x]    | D02 T01 §27 | Checker Mutation Sweep              | none                                  | 6     |
+| [x]    | D02 T01 §28 | Record Dispositions                 | none                                  | 7     |
+| [x]    | D02 T01 §29 | Inventory Layout Tables             | none                                  | 10    |
+| [x]    | D02 T01 §30 | Built-App Layout Check              | none                                  | 8     |
+| [x]    | D02 T01 §31 | Word Options Settings               | office, windows-host, display-session | 3     |
+| [x]    | D02 T01 §32 | Word Task Panes                     | office, windows-host, display-session | 3     |
+| [x]    | D02 T01 §33 | Word Status Bar                     | office, windows-host, display-session | 3     |
+| [x]    | D02 T01 §34 | Word Dialogs                        | office, windows-host, display-session | 3     |
+| [x]    | D02 T01 §35 | Word Context Menus and Mini Toolbar | office, windows-host, display-session | 3     |
+| [x]    | D02 T01 §36 | Word Backstage Document States      | office, windows-host, display-session | 5     |
+| [ ]    | D02 T01 §37 | Word Backstage Account States       | none                                  | 3     |
+| [ ]    | D02 T01 §38 | Sweep Gate on Checker Changes       | none                                  | 8     |
+| [ ]    | D02 T01 §39 | Word Status Bar Defaults            | office, windows-host, display-session | 4     |
+| [ ]    | D02 T01 §40 | Word Command Dialogs                | office, windows-host, display-session | 4     |
+| [ ]    | D02 T01 §41 | Word Options Dialogs                | office, windows-host, display-session | 4     |
+| [ ]    | D02 T01 §42 | Word Proofing Submenus              | office, windows-host, display-session | 5     |
+| [ ]    | D02 T01 §43 | Word Menus of Further Selections    | office, windows-host, display-session | 5     |
+| [ ]    | D02 T01 §44 | Word Context Menu Commands          | none                                  | 5     |
+| [ ]    | D02 T01 §45 | Inventory Checkers on Deep Files    | none                                  | 4     |
+| [ ]    | D02 T01 §46 | Word Status Bar in Document States  | office, windows-host, display-session | 4     |
+| [ ]    | D02 T01 §47 | Word Signed Document                | office, owner-decision                | 4     |
+| [ ]    | D02 T01 §48 | Word Server Document States         | office, operator                      | 4     |
+| [ ]    | D02 T01 §49 | Word Host Document States           | office, windows-host, display-session | 5     |
+| [ ]    | D02 T01 §50 | Backstage Borrowed Keys and Labels  | office, windows-host, display-session | 4     |
+| [ ]    | D02 T01 §51 | Backstage Reads No Left-Out Name    | office, windows-host, display-session | 5     |
+| [ ]    | D02 T02 §1  | Design Tokens and Themes            | none                                  | 6     |
+| [ ]    | D02 T02 §2  | Command Glyph Decision              | none                                  | 5     |
+| [ ]    | D02 T02 §3  | Shell Layout Chapter                | none                                  | 6     |
+| [ ]    | D02 T02 §4  | Ribbon Component Chapter            | office, windows-host, display-session | 8     |
+| [ ]    | D02 T02 §5  | Backstage Chapter                   | none                                  | 6     |
+| [ ]    | D02 T02 §6  | Status Bar Chapter                  | none                                  | 4     |
+| [ ]    | D02 T02 §7  | Word Surface Chapter                | none                                  | 8     |
+| [ ]    | D02 T02 §13 | Accessibility Chapter               | none                                  | 5     |
 
 ### Phase 3: Architecture and tech stack
 
@@ -314,6 +314,6 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 | [ ]    | D03 T01 §25 | Interoperability Domain Authoring  | 3              |
 | [ ]    | D03 T01 §26 | VBA Domain Authoring               | 4              |
 
-Progress: 110/189 verified sections, 24 ready to run now, 1 parked, 84 TODO files still to author (not counted here).
+Progress: 110/189 verified sections, 26 ready to run now, 1 parked, 84 TODO files still to author (not counted here).
 
 Checklist: 772/1293 items completed (includes Commit items).
