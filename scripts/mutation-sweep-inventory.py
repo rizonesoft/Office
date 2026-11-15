@@ -217,7 +217,9 @@ def changed_between(root, span):
 
 class StopAtFailure(unittest.TextTestResult):
     """Ends a run at its first failing test: one failure is all a removal's verdict needs. An error does not end
-    it, because a removal whose tests only error is not killed, and a later test of the same run may still fail."""
+    it, because a removal whose tests only error is not killed, and a later test of the same run may still fail.
+    unittest finishes the test method it is in, so a test whose subtests fail runs its other subtests first; the
+    counts are of tests, never of subtests (run_tests), so such a test is one failing test."""
 
     stopped_on_failure = False
 
@@ -241,12 +243,20 @@ def run_tests(copy_root, result_path, pattern):
     with open(Path(result_path).with_suffix(".log"), "w", encoding="utf-8") as log:
         result = unittest.TextTestRunner(stream=log, verbosity=1, resultclass=StopAtFailure).run(suite)
     failed_import = sum(1 for test, _ in result.errors if type(test).__name__ == "_FailedTest")
+
+    def tests(entries):
+        # The tests behind a result's entries: a subtest stands for the test it is part of, so a test with three
+        # failing subtests is one failing test, as `ran` and `discovered` count it (round 1, finding 1).
+        return {getattr(test, "test_case", test).id() for test, _ in entries}
+    failing = tests(result.failures)
+    erroring = tests(result.errors) - failing  # a test that both fails and errors is a failing test
+    skipped = tests(result.skipped) - failing - erroring
     Path(result_path).write_text(json.dumps({
-        "discovered": discovered, "ran": result.testsRun, "failures": len(result.failures),
-        "errors": len(result.errors) - failed_import, "import_errors": failed_import + len(loader.errors),
-        "skipped": len(result.skipped), "stopped": result.stopped_on_failure,
+        "discovered": discovered, "ran": result.testsRun, "failures": len(failing),
+        "errors": len(erroring) - failed_import, "import_errors": failed_import + len(loader.errors),
+        "skipped": len(skipped), "stopped": result.stopped_on_failure,
         # What neither failed, errored nor was skipped; an expected failure or an unexpected success is not a pass.
-        "passed": result.testsRun - len(result.failures) - len(result.errors) - len(result.skipped)
+        "passed": result.testsRun - len(failing) - len(erroring) - len(skipped)
         - len(result.expectedFailures) - len(result.unexpectedSuccesses)}), encoding="utf-8")
     return 0
 

@@ -229,15 +229,31 @@ class Outcomes(Fixture):
         self.assertEqual(ms.verdict(dict(full, errors=2), full), "ERRORED")
         self.assertEqual(ms.verdict(full, full), "SURVIVED")
 
-    def test_a_failing_subtest_ends_the_run_too(self):
+    def test_a_test_whose_subtests_fail_ends_the_run_as_one_failing_test(self):
+        # Round 1, finding 1: unittest runs the other subtests of the method it is in, and each failed one was
+        # counted as a failing test, which made the count of passing tests negative.
         path = self.root / "scripts" / "tests" / "test_check_inventory.py"
         path.write_text(TESTS.replace(
             '        self.assertEqual(ci.check("a"), ["a"])',
-            '        for want in ("a",):\n            with self.subTest(want=want):\n'
-            '                self.assertEqual(ci.check(want), [want])'), encoding="utf-8")
+            '        for n in range(3):\n            with self.subTest(n=n):\n'
+            '                self.assertEqual(ci.check("a"), ["a"])'), encoding="utf-8")
         code, out, err = self.sweep("--only", "if value == 'a'")
         self.assertEqual(code, 0, err)
-        self.assertIn("KILLED       1 failing, 0 erroring, 0 passing, 0 skipped, 1 of ", self.line(out, "if value == 'a'"))
+        total = out.splitlines()[0].split(" tests pass")[0].split()[-1]
+        self.assertTrue(self.line(out, "if value == 'a'").startswith(
+            f"KILLED       1 failing, 0 erroring, 0 passing, 0 skipped, 1 of {total} run"),
+            self.line(out, "if value == 'a'"))
+
+    def test_a_test_whose_subtests_error_and_fail_is_one_failing_test(self):
+        path = self.root / "scripts" / "tests" / "test_check_inventory.py"
+        path.write_text(TESTS.replace(
+            '        self.assertEqual(ci.check("a"), ["a"])',
+            '        with self.subTest(n=0):\n            self.assertEqual(ci.check("a")[0], "a")\n'
+            '        with self.subTest(n=1):\n            self.assertEqual(ci.check("a"), ["a"])'), encoding="utf-8")
+        code, out, err = self.sweep("--only", "if value == 'a'")
+        self.assertEqual(code, 0, err)
+        self.assertIn("KILLED       1 failing, 0 erroring, 0 passing, 0 skipped, 1 of ",
+                      self.line(out, "if value == 'a'"))
 
 
 class Shares(Fixture):
