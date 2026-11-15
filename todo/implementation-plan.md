@@ -8,11 +8,11 @@ Format and rules: `todo/README.md`. Run sections with the `process-plan`, `proce
 
 ### Phase 0: Repository and tooling
 
-Sections: 69 | Checklist items: 516
+Sections: 70 | Checklist items: 520
 
 #### Workspace and tooling
 
-Sections: 68 | Checklist items: 508 | Verified: 66
+Sections: 69 | Checklist items: 512 | Verified: 66
 
 | Status | Reference   | Deliverable                                           | Needs                  | Items |
 | ------ | ----------- | ----------------------------------------------------- | ---------------------- | ----- |
@@ -69,6 +69,7 @@ Sections: 68 | Checklist items: 508 | Verified: 66
 | [x]    | D00 T03 §61 | A Reconciliation Honours an Owner Decision            | none                   | 3     |
 | [x]    | D00 T03 §62 | Graph Reads Batch Their Git Calls                     | none                   | 6     |
 | [x]    | D00 T03 §63 | A Plan Review May Follow Plan-Only Commits            | none                   | 5     |
+| [ ]    | D00 T03 §64 | A Refused Commit Stops the Chain                      | none                   | 4     |
 | [x]    | D00 T04 §1  | Tool Lock File and Bootstrap Script                   | none                   | 19    |
 | [x]    | D00 T04 §2  | Tool Folder Resolver                                  | none                   | 10    |
 | [x]    | D00 T04 §3  | Tool Bootstrap in CI                                  | none                   | 6     |
@@ -306,6 +307,6 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 | [ ]    | D03 T01 §25 | Interoperability Domain Authoring  | 3              |
 | [ ]    | D03 T01 §26 | VBA Domain Authoring               | 4              |
 
-Progress: 109/181 verified sections, 19 ready to run now, 1 parked, 84 TODO files still to author (not counted here).
+Progress: 109/182 verified sections, 20 ready to run now, 1 parked, 84 TODO files still to author (not counted here).
 
-Checklist: 762/1258 items completed (includes Commit items).
+Checklist: 762/1262 items completed (includes Commit items).

@@ -85,6 +85,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 47 | §61 | A reconciliation honours an owner decision | -- | [x] |
 | 48 | §62 | Graph reads batch their git calls | -- | [x] |
 | 49 | §63 | A plan review may follow plan-only commits | -- | [x] |
+| 50 | §64 | A refused commit stops the chain | -- | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -1457,6 +1458,26 @@ Filed 2026-11-13T13:17:53Z by the lead, from the stamp of D00 T03 §62. `stamp` 
 
 > **Verified:** 2026-11-13 | §63 | 5faa18819ac85318e3b28cf5a51cec1cc2caf051
 > **Review:** `docs/reviews/d00-t03-s63.json`
+
+## 64. A Refused Commit Stops the Chain
+
+Filed 2026-11-15 by the lead, from a failure of the run's own that has now happened twice (D02 T01 §33 on 2026-11-13 and D02 T01 §35 on 2026-11-15, both recorded in their findings files and run files). After a review pass the dispatcher has appended the pass to the section's findings file, and `scripts/hooks/pre-commit` rightly refuses a commit while `docs/reviews/` holds unstaged changes. The lead wrote the fix commit without staging that file, the hook refused it, the files stayed staged, and the next commit in the same command took them under a message that names only the record: `633b1d3` carries a code fix and a recapture under `reviews: name the commit...`, and the line that names the fixing commit was first written with the wrong commit. Nothing was lost, and nothing can be amended once pushed; the history misnames a fix.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Give the lead one command that commits a section's work whole or not at all. Done when: its tests pass.
+2. Say in the skills that it is the way a section's commits are made. Done when: both skills name it.
+
+- [ ] Add `scripts/section-commit.py`: given a section reference (`--ref`), a message file (`-F`) and the paths to commit, it stages those paths and the section's own findings file and triage file when either has changes, refuses (exit 2, naming them) when anything else is already staged or when `todo/`, `docs/reviews/` or `design/inventory/` would be left with unstaged changes the hook refuses, runs `git commit` without filtering the hook's output, and on a refused commit unstages what it staged, so nothing waits to ride in the next commit; it prints the new commit's short SHA on success. Done when: tests in `scripts/tests/test_section_commit.py` over scratch repositories with the real hook installed show a commit made with the findings file in it, a refusal that leaves the index as it was (`git diff --cached --name-only` empty), a refusal when a stranger is staged, and the hook's own message passed through with its exit. Cheaper substitute: a line in a skill saying to remember the findings file, which is what failed twice.
+- [ ] State in `.claude/skills/review-todo-section/SKILL.md` (steps 3 and 4) and `.claude/skills/process-todo-section/SKILL.md` (step 7) that a section's commits are made with `python scripts/section-commit.py`, one commit to a command, and that the line naming a fixing commit (`- Implemented:`, `- Planned:`) is written from the SHA that command printed, never from `HEAD` read afterwards. Done when: both skills say so and neither still shows a bare `git commit` for a fix round.
+- [ ] Add to the refusal of `scripts/hooks/pre-commit` for unstaged changes the words that nothing was committed and what is still staged stays staged. Done when: `scripts/tests/test_pre_commit_hook.py` asserts the sentence in each of its three refusals of that kind and the existing assertions still pass.
+- [ ] Commit: `tools: a section's commit is whole or not made, and a refused one leaves nothing staged`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_section_commit.py"` and `python -m unittest discover -s scripts/tests -p "test_pre_commit_hook.py"` pass, and `python scripts/todo-graph.py validate` prints `valid:`.
 
 ## Verification
 - `python -m unittest discover -s scripts/tests` passes on a fresh clone.
