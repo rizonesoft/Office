@@ -86,6 +86,7 @@ title: "TODO-03 -- Automations and Campaign Keep-Alive"
 | 48 | §62 | Graph reads batch their git calls | -- | [x] |
 | 49 | §63 | A plan review may follow plan-only commits | -- | [x] |
 | 50 | §64 | A refused commit stops the chain | -- | [ ] |
+| 51 | §65 | A new tool file runs the whole-tree checks | -- | [ ] |
 
 ## 1. Automation Runner, Alert and Installer
 
@@ -1478,6 +1479,26 @@ Filed 2026-11-15 by the lead, from a failure of the run's own that has now happe
 - [ ] Commit: `tools: a section's commit is whole or not made, and a refused one leaves nothing staged`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_section_commit.py"` and `python -m unittest discover -s scripts/tests -p "test_pre_commit_hook.py"` pass, and `python scripts/todo-graph.py validate` prints `valid:`.
+
+## 65. A New Tool File Runs the Whole-Tree Checks
+
+Filed 2026-11-15 by the lead, from a red CI run of the campaign's own (d1cd725, D02 T01 §36, repaired in 0377858). A section's gates are the tests of the files it changed (owner decision 45), which is right for a change inside a file. A section that adds a file under `scripts/` also falls under the checks that read every tool there: `scripts/tests/test_one_containment.py` (one place may end a process tree), the licence gate, and any other test whose subject is the whole folder. None of them is a test of the new file, so none ran before the push, and CI found in ten minutes what a tenth of a second would have found here.
+
+**Phase:** 0
+**Needs:** none
+**Surface:** no
+
+**Build order:**
+
+1. Name the checks that read the whole tree. Done when: one command lists and runs them.
+2. Make them part of a section's gates. Done when: the skill says when they run.
+
+- [ ] Add `--tree-checks` to `scripts/run-tests.py`: it runs the test files a list in `scripts/tests/tree_checks.json` names (the tests whose subject is every file under `scripts/`, `.conclave/automations/` or the repository as a whole, each with one line saying what it reads), and a test in `scripts/tests/test_run_tests.py` refuses a test file that globs or walks one of those folders and is not on the list. Done when: `python scripts/run-tests.py --tree-checks` runs them and exits non-zero when one fails, the new test fails for a scanning test left off the list, and the whole run takes under a minute on this PC. Cheaper substitute: a sentence in a skill naming two test files, which the third such test would not be in.
+- [ ] State in `.claude/skills/process-todo-section/SKILL.md` (step 6) and `.claude/skills/process-plan/SKILL.md` (Test in proportion) that a section which adds, renames or deletes a file under `scripts/`, `.conclave/` or `.claude/` runs `python scripts/run-tests.py --tree-checks` before its commit, beside the tests of what it changed. Done when: both skills say so in those places.
+- [ ] Run the licence gate the same way: add the command CI's `gates` job runs for it to the list the option runs, or name in `scripts/tests/tree_checks.json` the test that holds it. Done when: a new file without its licence line fails `--tree-checks`.
+- [ ] Commit: `tools: a new tool file runs the checks that read every tool`
+
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_run_tests.py"` passes and `python scripts/run-tests.py --tree-checks` exits 0 on the tree as committed.
 
 ## Verification
 - `python -m unittest discover -s scripts/tests` passes on a fresh clone.

@@ -7916,6 +7916,28 @@ class WordStates(unittest.TestCase):
             self.assertEqual(by_id["word.backstage.states.saved.close"]["behaviour"],
                              "Closes the document. Always available.")
             self.assertEqual([r for r in written if r["captureState"] == "final"], final)
+            # round 1, finding 2: an unchanged page is bound to the blank page it equalled. After the blank capture
+            # was made again every state is stale; each is captured again in turn, and the file takes the fresh
+            # one while another is still stale, which the checker goes on refusing.
+            stale = [dict(r, blankDigest="0" * 64) if r.get("unchanged") and r["captureState"] == "final"
+                     else r for r in written]
+            out.write_text(cu.render(stale), encoding="utf-8")
+            code, _, err = self.run_main(out, lambda *a: (copy.deepcopy(saved), [], ctx))
+            self.assertEqual((code, err), (0, ""))
+            merged = json.loads(out.read_text(encoding="utf-8"))
+            with self.assertRaises(cu.Refused) as refused:
+                cu.word_states_check(merged)
+            self.assertIn("word.backstage.states.final.home: the blank-document page it was captured as equal to "
+                          "(word.backstage.home) is not what it was then", str(refused.exception))
+            self.assertIn("is captured again (--backstage --state <name> --merge)", str(refused.exception))
+            self.assertNotIn("word.backstage.states.saved.", str(refused.exception))
+            # the state being captured is itself held to it: a capture that names another digest is not published
+            out.write_text(cu.render(written), encoding="utf-8")
+            wrong = [dict(r, blankDigest="1" * 64) if r.get("unchanged") else r for r in saved]
+            code, _, err = self.run_main(out, lambda *a: (wrong, [], ctx))
+            self.assertEqual(code, 1)
+            self.assertIn("is not what it was then", err)
+            self.assertEqual(out.read_text(encoding="utf-8"), cu.render(written))
             before = out.read_bytes()
             # a state capture that is not lawful, and a merge that is not, publish nothing
             broken = [dict(r, variantOf="word.backstage.gone") if r["id"].endswith(".close") else r for r in final]

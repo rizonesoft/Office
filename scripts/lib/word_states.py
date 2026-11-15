@@ -10,6 +10,7 @@ before anything is captured over it. The script, the capture (`scripts/capture-u
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import tempfile
@@ -164,13 +165,23 @@ def facts(record, drop=()) -> dict:
     return {k: v for k, v in record.items() if k not in PROVENANCE and k not in HAND and k not in drop}
 
 
+def page_digest(page, under) -> str:
+    """What binds an unchanged page of a state to the blank-document page it was compared with: the digest of that
+    page's facts and of every record under it, in order. The blank capture can be made again later; a state whose
+    unchanged page then names another digest is no longer known to equal it, and is refused until it is captured
+    again."""
+    body = json.dumps([facts(page)] + [facts(r) for r in under], sort_keys=True, ensure_ascii=False,
+                      separators=(",", ":"))
+    return hashlib.sha256(body.encode("utf-8")).hexdigest()  # SHA-256, as 64 hexadecimal digits
+
+
 def state_records(state, captured: list, blank: list) -> list:
     """The records of one state, from a whole Backstage capture made over its fixture (`captured`, ids as the
     blank-document capture names them) and the committed blank-document capture (`blank`).
 
     A root record names the state. Under it stands every navigation entry as the state shows it. A page whose
-    records are the blank capture's, fact for fact, carries `unchanged` and no children; a page that differs in
-    anything carries every record of it. A record whose counterpart the blank capture holds (the same idMso where
+    records are the blank capture's, fact for fact, carries `unchanged`, the digest of the blank page it equals
+    (`blankDigest`) and no children; a page that differs in anything carries every record of it. A record whose counterpart the blank capture holds (the same idMso where
     that names one record of the blank capture, else the same id) carries `variantOf`. Raises Invalid when the
     capture is not one this can hold: an id outside Backstage, a parent that is not in it, or two records of the
     state that would name the same blank record."""
@@ -227,7 +238,7 @@ def state_records(state, captured: list, blank: list) -> list:
         if same:
             page = {k: entry[k] for k in ("id", "app", "kind", "label", "order") if k in entry}
             out.append(made(dict(page, **{k: entry[k] for k in PROVENANCE if k in entry}), unchanged=True,
-                            **variant(entry)))
+                            blankDigest=page_digest(twin, theirs), **variant(entry)))
             continue
         out.append(made(entry, **variant(entry)))
         out += [made(rec, **variant(rec)) for rec in mine]
@@ -251,12 +262,19 @@ def merge_state(existing: list, fresh: list, state) -> list:
     return [rec for name in order for rec in groups[name]]
 
 
-def validate_states(records: list, blank_ids, whole=False) -> None:
-    """Refuse a file of state records that is not lawful: every record inside its state's prefix and naming its
-    state, each state with its one root as the list names it, every parent the state's own, every `variantOf` a
-    record of the blank-document capture and given once in a state, `unchanged` on a page with no children and a
-    counterpart only. With `whole`, every state of `STATES` is there, but those of `UNPRODUCIBLE`, which are not.
-    Raises Invalid naming every problem."""
+def validate_states(records: list, blank: list, whole=False, fresh=None) -> None:
+    """Refuse a file of state records that is not lawful, against the blank-document capture's records (`blank`):
+    every record inside its state's prefix and naming its state, each state with its one root as the list names
+    it, every parent the state's own, every `variantOf` a record of the blank capture and given once in a state,
+    `unchanged` on a page with no children and a counterpart only, and that counterpart still what it was when
+    the state was captured (its `blankDigest`). With `whole`, every state of `STATES` is there, but those of
+    `UNPRODUCIBLE`, which are not. With `fresh`, the name of the one state a capture has just replaced in the
+    file, only that state is held to its `blankDigest`: after the blank capture was made again every state is
+    stale until it is captured again, one at a time, and the file must take each fresh one while the others still
+    are. The checker asks with no `fresh`, and refuses every stale state. Raises Invalid naming every problem."""
+    blank = [r for r in blank if isinstance(r, dict) and isinstance(r.get("id"), str)]
+    blank_by_id = {r["id"]: r for r in blank}
+    blank_ids = set(blank_by_id)
     problems, by_id = [], {}
     for rec in records:
         if not isinstance(rec, dict) or not isinstance(rec.get("id"), str) or not rec["id"]:
@@ -308,6 +326,17 @@ def validate_states(records: list, blank_ids, whole=False) -> None:
                 problems.append(f"{rid}: `unchanged` is true, on a page of a state only")
             elif "variantOf" not in rec:
                 problems.append(f"{rid}: a page that is unchanged names the blank-document page it equals")
+            elif rec["variantOf"] in blank_by_id and fresh in (None, name):
+                twin = blank_by_id[rec["variantOf"]]
+                now = page_digest(twin, [r for r in blank if r["id"].startswith(twin["id"] + ".")])
+                if rec.get("blankDigest") != now:
+                    problems.append(f"{rid}: the blank-document page it was captured as equal to "
+                                    f"({twin['id']}) is not what it was then"
+                                    if "blankDigest" in rec else
+                                    f"{rid}: a page that is unchanged carries the digest of the blank-document page "
+                                    f"it equals (`blankDigest`)")
+        elif "blankDigest" in rec:
+            problems.append(f"{rid}: `blankDigest` belongs to a page that is unchanged")
     for rid, rec in by_id.items():
         if rec.get("unchanged") is True and kids.get(rid):
             problems.append(f"{rid}: a page that is unchanged carries no records of its own, and {len(kids[rid])} "

@@ -257,7 +257,9 @@ def check_word_backstage_states(f, data):
     import word_states
     try:
         blank = json.loads((INVENTORY / "word" / "backstage.json").read_text(encoding="utf-8"))
-        word_states.validate_states(data, {r.get("id") for r in blank if isinstance(r, dict)}, whole=True)
+        if not isinstance(blank, list):
+            raise ValueError("it does not hold a list of records")
+        word_states.validate_states(data, blank, whole=True)
     except (OSError, ValueError) as exc:
         return [f"{f}: the blank-document Backstage inventory cannot be read: {exc}"]
     except word_states.Invalid as exc:

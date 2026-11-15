@@ -1954,6 +1954,13 @@ class OptionsRules(unittest.TestCase):
         for value in (False, "true", 1, None):
             self.assertTrue(problems(page, unchanged=value), repr(value))
         self.assertTrue(problems(control, unchanged=True))  # a page's alone
+        # an unchanged page says which blank page it equalled, by its digest; nothing else carries one
+        digest = "ab" * 32
+        self.assertEqual(problems(page, blankDigest=digest), [])
+        for value in ("abc", "sha256:" + "ab" * 32, "AB" * 32, digest + "0", "", 7, None):
+            self.assertTrue(problems(page, blankDigest=value), repr(value))
+        self.assertTrue(problems(control, blankDigest=digest))
+        self.assertTrue(problems(blank, blankDigest=digest))
         # none of the three on a record that is not a document state's: the blank capture's, the ribbon's
         for record in (blank, BOLD, TAB, GROUP):
             self.assertTrue(problems(record, captureState="final"), record["id"])

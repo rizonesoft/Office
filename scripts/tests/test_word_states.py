@@ -361,6 +361,32 @@ class Fixtures(unittest.TestCase):
         failed, _, _, _ = self.make(FakeApp())
         self.assertEqual((failed, ended), ([], []))
 
+    def test_the_time_limit_holds_through_the_cleanup_and_the_quit(self):
+        # round 1, finding 1: closing what was left open, counting what the instance holds and quitting it are calls
+        # to Word like any other; one that blocks is ended by the same limit
+        for blocked in ("Quit", "Count"):
+            with self.subTest(blocked):
+                released, app, ended, proc = threading.Event(), FakeApp(), [], Proc()
+
+                def block(*args, **kwargs):
+                    released.wait(10)
+                    raise OSError("the RPC server is unavailable")
+                if blocked == "Quit":
+                    app.Quit = block
+                else:
+                    app.ProtectedViewWindows = type("W", (), {"Count": property(lambda self: block())})()
+
+                def end(pid):
+                    ended.append(pid)
+                    released.set()
+                with self.assertRaises(Refused) as ctx:
+                    mk.run([], self.tmp, dispatch=lambda progid: app, owner=lambda a: proc,
+                           mark=lambda path, zone: None, say=lambda text, file=None: None, limit=0.2, end=end)
+                self.assertIn("Word did not answer within 0 s; the instance the script started (pid 4242) was ended",
+                              str(ctx.exception))
+                self.assertNotIn("the fixture it was making", str(ctx.exception))  # none was being made
+                self.assertEqual((ended, proc.closed), ([4242], True))
+
     def run_main(self, argv, runner, installed="16.0.1.1", build="16.0.1.1"):
         out, err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
@@ -506,8 +532,8 @@ class StateRecords(unittest.TestCase):
         self.assertEqual(list(root), ["id", "app", "kind", "label", "order", "condition", "captureState", "source",
                                       "capturedFrom", "itemCount"])
         self.assertEqual(list(by[f"{self.S}.print"]), ["id", "app", "kind", "label", "order", "source",
-                                                        "capturedFrom", "captureState", "unchanged", "variantOf",
-                                                        "parent"])
+                                                        "capturedFrom", "captureState", "unchanged", "blankDigest",
+                                                        "variantOf", "parent"])
         self.assertTrue(all(r["captureState"] == "saved" and r["id"].startswith(self.S) for r in out))
         # Save: a page that shows Save As over the blank document, a plain button over a saved one (gap 1)
         save = by[f"{self.S}.save"]
@@ -530,7 +556,7 @@ class StateRecords(unittest.TestCase):
         self.assertNotIn("idMso", page)
         self.assertEqual(by[f"{self.S}.save-as"]["unchanged"], True)
         self.assertEqual(by[f"{self.S}.close"]["variantOf"], f"{self.B}.close")
-        ws.validate_states(out, {r["id"] for r in blank()})
+        ws.validate_states(out, blank())
 
     def test_what_a_state_disables_hides_or_renames_is_seen(self):
         final = ws.by_name("final")
@@ -559,7 +585,7 @@ class StateRecords(unittest.TestCase):
                          f"{self.B}.info.protect-document.protect-document")
         self.assertEqual(by[f"{s}.info.alert-protect-document.protect-document.mark-as-final"]["variantOf"],
                          f"{self.B}.info.protect-document.protect-document.mark-as-final")
-        ws.validate_states(out, {r["id"] for r in blank()})
+        ws.validate_states(out, blank())
 
     def test_a_page_the_state_does_not_offer_is_recorded_disabled_and_unopened(self):
         got = captured((f"{self.B}.save-as", {"enabled": False}), drop=(f"{self.B}.save-as.browse",))
@@ -589,7 +615,7 @@ class StateRecords(unittest.TestCase):
 
     def test_two_states_that_add_the_same_control_each_keep_their_own_record(self):
         # gap 2: the same addition in two states, a recapture of either, and a blank-document merge
-        ids = {r["id"] for r in blank()}
+        ids = blank()
         saved = ws.state_records(self.SAVED, self.saved(), blank())
         read_only = ws.state_records(ws.by_name("read-only"), self.saved(), blank())
         both = ws.merge_state(saved, read_only, ws.by_name("read-only"))
@@ -620,6 +646,60 @@ class StateRecords(unittest.TestCase):
                          {r["id"] for r in shrunk})
         ws.validate_states(shrunk, ids)
 
+    def test_an_unchanged_page_is_bound_to_the_blank_page_it_was_compared_with(self):
+        # round 1, finding 2: a page that is unchanged carries none of its records, only a reference to the blank
+        # capture, and the blank capture can be made again. The page carries the digest of the blank page it
+        # equalled; when the blank page is no longer that, the state is refused until it is captured again.
+        good = ws.state_records(self.SAVED, self.saved(), blank())
+        page = next(r for r in good if r["id"] == f"{self.S}.print")
+        base = blank()
+        twin = next(r for r in base if r["id"] == f"{self.B}.print")
+        self.assertEqual(page["blankDigest"], ws.page_digest(twin, [r for r in base if r["id"].startswith(
+            f"{self.B}.print.")]))
+        self.assertRegex(page["blankDigest"], r"^[0-9a-f]{64}$")
+        ws.validate_states(good, base)
+        for change in ({"enabled": False}, {"label": "Print now"}, {"order": 3}, {"keytip": "R"}):
+            later = [dict(r, **change) if r["id"] == f"{self.B}.print.print" else r for r in blank()]
+            with self.assertRaises(ws.Invalid, msg=str(change)) as ctx:
+                ws.validate_states(good, later)
+            self.assertIn(f"{self.S}.print: the blank-document page it was captured as equal to "
+                          f"(word.backstage.print) is not what it was then", str(ctx.exception))
+            self.assertEqual(str(ctx.exception).count("is not what it was then"), 1)  # the other pages still hold
+        # a record more or fewer under the blank page, and a change of the page's own facts, are changes too
+        for later in ([r for r in blank() if r["id"] != f"{self.B}.print.print"],
+                      blank() + [rec(f"{self.B}.print.copies", "control", "Copies", f"{self.B}.print", 1)],
+                      [dict(r, label="Printing") if r["id"] == f"{self.B}.print" else r for r in blank()]):
+            with self.assertRaises(ws.Invalid) as ctx:
+                ws.validate_states(good, later)
+            self.assertIn("is not what it was then", str(ctx.exception))
+        # what was written by hand on the blank record, and where it was captured from, are not facts: no change
+        later = [dict(r, behaviour="Prints the document. Always available.", capturedFrom="16.0.9.9")
+                 if r["id"] == f"{self.B}.print.print" else r for r in blank()]
+        ws.validate_states(good, later)
+        # a page that differs carries its own records and needs no binding: the blank page may change under it
+        later = [dict(r, enabled=False) if r["id"] == f"{self.B}.info.properties.title" else r for r in blank()]
+        ws.validate_states(good, later)
+        without = [{k: v for k, v in r.items() if k != "blankDigest"} for r in good]
+        self.assertIn(f"{self.S}.print: a page that is unchanged carries the digest of the blank-document page it "
+                      f"equals (`blankDigest`)", self.refusal(without))
+        # once the blank capture was made again every state is stale, and each is captured again in turn: the
+        # file takes the fresh one while the others still are, and the checker goes on refusing those
+        later = [dict(r, enabled=False) if r["id"] == f"{self.B}.print.print" else r for r in blank()]
+        stale = ws.state_records(ws.by_name("final"), self.saved(), blank())
+        fresh = ws.state_records(self.SAVED, [dict(r, enabled=False) if r["id"] == f"{self.B}.print.print" else r
+                                              for r in self.saved()], later)
+        both = ws.merge_state(stale, fresh, self.SAVED)
+        ws.validate_states(both, later, fresh="saved")
+        with self.assertRaises(ws.Invalid) as ctx:
+            ws.validate_states(both, later)
+        self.assertIn("word.backstage.states.final.print: the blank-document page it was captured as equal to",
+                      str(ctx.exception))
+        self.assertNotIn("word.backstage.states.saved.print:", str(ctx.exception))
+        with self.assertRaises(ws.Invalid):  # the state just captured is itself held to it
+            ws.validate_states(both, later, fresh="final")
+        strayed = [dict(r, blankDigest=page["blankDigest"]) if r["id"] == f"{self.S}.close" else r for r in good]
+        self.assertIn(f"{self.S}.close: `blankDigest` belongs to a page that is unchanged", self.refusal(strayed))
+
     def test_only_what_a_state_adds_counts_as_captured_beside_the_blank_capture(self):
         with tempfile.TemporaryDirectory() as tmp:
             self.assertEqual(ws.captured_ids(tmp), frozenset())  # no states file yet: nothing more is captured
@@ -639,7 +719,7 @@ class StateRecords(unittest.TestCase):
 
     def refusal(self, records, whole=False):
         try:
-            ws.validate_states(records, {r["id"] for r in blank()}, whole=whole)
+            ws.validate_states(records, blank(), whole=whole)
         except ws.Invalid as exc:
             return str(exc)
         return ""
@@ -687,10 +767,10 @@ class StateRecords(unittest.TestCase):
         self.assertIn(f"duplicate record id {self.S}.close", self.refusal(good + [copy.deepcopy(good[-1])]))
         self.assertIn("the saved state has records and no root", self.refusal(good[1:]))
         with self.assertRaises(ws.Invalid):
-            ws.validate_states([{"captureState": "saved"}], set())
+            ws.validate_states([{"captureState": "saved"}], [])
 
     def test_the_whole_file_holds_every_state_the_list_names(self):
-        ids = {r["id"] for r in blank()}
+        ids = blank()
         every = []
         for state in ws.STATES:
             every = ws.merge_state(every, ws.state_records(state, self.saved(), blank()), state)

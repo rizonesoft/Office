@@ -120,7 +120,9 @@ def run(states, root=None, dispatch=None, owner=own_process, wait=60.0, mark=mar
     """Make and confirm each state's fixture, under the scratch folder `root`, in a hidden Word of our own. Returns
     the names of the states that were not made or not confirmed. Raises Refused when the instance cannot be left
     as it must be, and when Word does not answer within `limit` seconds: a hidden Word that waits on a dialog
-    would hold the run for good, so its process, which is the script's own, is ended and the run fails."""
+    would hold the run for good, so its process, which is the script's own, is ended and the run fails. The limit
+    runs from the start to the moment the instance has been quit and seen to exit: closing what a failure left
+    open, counting what the instance holds and quitting it are calls to Word like any other."""
     if dispatch is None:
         import win32com.client
         dispatch = win32com.client.DispatchEx
@@ -136,73 +138,74 @@ def run(states, root=None, dispatch=None, owner=own_process, wait=60.0, mark=mar
     timer = threading.Timer(limit, expire)
     timer.daemon = True
     timer.start()
-    try:  # from here on the instance is ours to quit, whatever fails
-        app.Visible = False
-        app.DisplayAlerts = NO_ALERTS
-        first = app.Documents.Add()  # the instance's first window, whose process is the one to watch
+    try:
+        try:  # from here on the instance is ours to quit, whatever fails
+            app.Visible = False
+            app.DisplayAlerts = NO_ALERTS
+            first = app.Documents.Add()  # the instance's first window, whose process is the one to watch
 
-        def close_first():
-            first.Close(SaveChanges=DISCARD)
-        made.append(close_first)
-        proc = owner(app)
-        close_first()
-        made.remove(close_first)
-        for state in states:
-            path = word_states.inside(word_states.fixture(state, root), root)
-            current[:] = [path]
-            remove(path)
-            try:
-                make(app, state, path, made, mark)
-                wrong = confirm(app, state, path, made)
-            except Refused:
-                raise
-            except Exception as exc:  # COM raises its own error types: the state was not made
-                wrong = [f"Word could not make it ({type(exc).__name__}: {exc})"]
-            if expired:
-                break  # Word was ended: what it answered after that is no answer
-            if wrong:
+            def close_first():
+                first.Close(SaveChanges=DISCARD)
+            made.append(close_first)
+            proc = owner(app)
+            close_first()
+            made.remove(close_first)
+            for state in states:
+                path = word_states.inside(word_states.fixture(state, root), root)
+                current[:] = [path]
                 remove(path)
-                failed.append(state["name"])
-                say(f"{NAME}: {state['name']} is not a fixture of its state and was deleted: " + "; ".join(wrong),
-                    file=sys.stderr)
-            else:
-                say(f"{state['name']}: {path}")
-    except Exception as exc:  # kept until the instance is seen to: what is left running is said first
-        failure = exc
-    finally:
-        timer.cancel()
-        if expired:
-            for path in current:
-                remove(path)  # the fixture that was being made when Word stopped answering is not kept
-            if proc is not None:
-                ended = proc.exited(wait)
-                pid = proc.pid
-                proc.close()
-                raise Refused(f"Word did not answer within {limit:.0f} s; the instance the script started (pid {pid}) "
-                              + ("was ended" if ended else "was told to end and is still running")
-                              + ", and the fixture it was making is deleted")
-            raise Refused(f"Word did not answer within {limit:.0f} s, before its process was identified; nothing "
-                          f"was ended, and an instance of Word may be left running")
-        try:
-            for close in list(made):  # what a failure left open: the script's own, and nothing else
                 try:
-                    close()
-                except Exception:
-                    pass  # counted just below: an instance that still holds anything is not quit
+                    make(app, state, path, made, mark)
+                    wrong = confirm(app, state, path, made)
+                except Refused:
+                    raise
+                except Exception as exc:  # COM raises its own error types: the state was not made
+                    wrong = [f"Word could not make it ({type(exc).__name__}: {exc})"]
+                if expired:
+                    break  # Word was ended: what it answered after that is no answer
+                if wrong:
+                    remove(path)
+                    failed.append(state["name"])
+                    say(f"{NAME}: {state['name']} is not a fixture of its state and was deleted: "
+                        + "; ".join(wrong), file=sys.stderr)
+                else:
+                    say(f"{state['name']}: {path}")
+                    current[:] = []  # made and confirmed: it is kept whatever happens later
+        except Exception as exc:  # kept until the instance is seen to: what is left running is said first
+            failure = exc
+        if not expired:
             try:
+                for close in list(made):  # what a failure left open: the script's own, and nothing else
+                    try:
+                        close()
+                    except Exception:
+                        pass  # counted just below: an instance that still holds anything is not quit
                 foreign = int(app.Documents.Count) + int(app.ProtectedViewWindows.Count)
             except Exception:
                 foreign = None  # unknown is not none: an instance whose contents are unknown is not quit
-        finally:
             try:
-                if foreign == 0:
+                if foreign == 0 and not expired:
                     app.Quit(SaveChanges=DISCARD)
-            finally:
-                try:
-                    gone = foreign == 0 and proc is not None and proc.exited(wait)
-                finally:
-                    if proc is not None:
-                        proc.close()
+            except Exception as exc:
+                failure = failure or exc
+            gone = foreign == 0 and not expired and proc is not None and proc.exited(wait)
+    finally:
+        timer.cancel()
+        ended = pid = None
+        if proc is not None:
+            pid = proc.pid
+            if expired:
+                ended = proc.exited(wait)
+            proc.close()
+    if expired:
+        for path in current:
+            remove(path)  # the fixture that was being made when Word stopped answering is not kept
+        if pid is None:
+            raise Refused(f"Word did not answer within {limit:.0f} s, before its process was identified; nothing "
+                          f"was ended, and an instance of Word may be left running")
+        raise Refused(f"Word did not answer within {limit:.0f} s; the instance the script started (pid {pid}) "
+                      + ("was ended" if ended else "was told to end and is still running")
+                      + (", and the fixture it was making is deleted" if current else ""))
     after = f" (after {type(failure).__name__}: {failure})" if failure is not None else ""
     if foreign != 0:
         raise Refused((f"the Word instance the script started still holds {foreign} document(s) or Protected View "
@@ -211,10 +214,10 @@ def run(states, root=None, dispatch=None, owner=own_process, wait=60.0, mark=mar
                       + f"; it is left running and is not quit{after}")
     if failure is not None:
         raise failure
-    if proc is None:
+    if pid is None:
         raise Refused("the Word instance's process was never identified, so its exit cannot be confirmed")
     if not gone:
-        raise Refused(f"the Word instance the script started (pid {proc.pid}) did not exit")
+        raise Refused(f"the Word instance the script started (pid {pid}) did not exit")
     return failed
 
 

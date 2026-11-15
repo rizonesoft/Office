@@ -5039,16 +5039,21 @@ def _document_page(root):
     return None
 
 
-def word_states_check(records, what="the state capture"):
+def word_states_check(records, what="the state capture", fresh=None):
     """Refuse records of Backstage in document states that are not lawful (scripts/lib/word_states.py's rules, each
-    counterpart a record of the committed blank-document capture) or that the inventory's schema would refuse."""
+    counterpart a record of the committed blank-document capture) or that the inventory's schema would refuse.
+    `fresh` names the one state a capture has just replaced in a merged file: the others may still be stale
+    against a blank capture made again since, and are captured again one at a time."""
     try:
         blank = json.loads((INVENTORY / "word" / "backstage.json").read_bytes().decode("utf-8"))
-        word_states.validate_states(records, {r.get("id") for r in blank if isinstance(r, dict)})
+        if not isinstance(blank, list):
+            raise ValueError("it does not hold a list of records")
+        word_states.validate_states(records, blank, fresh=fresh)
     except (OSError, ValueError) as exc:
         raise Refused(f"the blank-document Backstage inventory cannot be read ({exc})") from None
     except word_states.Invalid as exc:
-        raise Refused(f"{what} is not whole: {exc}") from None
+        raise Refused(f"{what} is not whole: {exc}; a state whose unchanged page no longer equals the "
+                      f"blank-document capture is captured again (--backstage --state <name> --merge)") from None
     schema_check(records, what)
 
 
@@ -9816,7 +9821,7 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
                 if args.backstage and args.state:
                     # Only this state's records are replaced: every other state's stay byte for byte.
                     records = word_states.merge_state(existing_records, records, word_states.by_name(args.state))
-                    word_states_check(records, f"{out} merged with the capture")
+                    word_states_check(records, f"{out} merged with the capture", fresh=args.state)
                 elif (args.backstage or args.options or args.panes or args.statusbar or args.dialogs
                         or args.menus):
                     try:
