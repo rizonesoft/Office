@@ -76,7 +76,7 @@ title: "TODO-01 -- Microsoft 365 Parity Inventory"
 | 35 | §35 | Word context menus and mini toolbar | §5 | [x] |
 | 36 | §36 | Word Backstage document states | §6 | [x] |
 | 37 | §37 | Word Backstage account states | §6 | [ ] |
-| 38 | §38 | Sweep gate on checker changes | §27 | [ ] |
+| 38 | §38 | Sweep gate on checker changes | §27 | [x] |
 | 39 | §39 | Word status bar defaults | §33 | [ ] |
 | 40 | §40 | Word command dialogs | §34 | [ ] |
 | 41 | §41 | Word Options dialogs | §34 | [ ] |
@@ -1088,6 +1088,9 @@ Filed 2026-11-13T10:40:00Z by the lead while D02 T01 §27 was built. §27 proved
 - [x] Commit: `ci: sweep the inventory checker's rules on every change to it`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_mutation_sweep_inventory.py"` passes, and `python scripts/ci-status.py HEAD` exits 0 for a head whose run holds four `sweep` jobs.
+
+> **Verified:** 2026-11-15 | §38 | e5de2c8dc7cf883c118eb132ce0983419f2c2419
+> **Review:** `docs/reviews/d02-t01-s38.json`
 
 ## 39. Word Status Bar Defaults
 

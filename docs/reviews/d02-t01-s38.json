@@ -1,0 +1,86 @@
+{
+  "ref": "D02 T01 \u00a738",
+  "title": "Sweep Gate on Checker Changes",
+  "implementation_sha": "e5de2c8dc7cf883c118eb132ce0983419f2c2419",
+  "date": "2026-11-15",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/02-interface/D02-T01-s38.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python -m unittest discover -s scripts/tests -p \"test_mutation_sweep_inventory.py\" -> Ran 21 tests, OK",
+    "python scripts/ci-status.py 9a94602 -> green, run 43695968793, with four sweep jobs, each rules: 99, killed: 99, survivors: 0",
+    "python scripts/ci-status.py 3e99c4d -> green, run 43699821734, with four sweep jobs, each sweep skipped",
+    "bosun run -- python -B scripts/mutation-sweep-inventory.py on f607a9e -> rules: 396, killed: 396, other outcomes: 0, survivors: 0"
+  ],
+  "completion": {
+    "report": "docs/reviews/02-interface/D02-T01-s38.md",
+    "verdict": "complete",
+    "candidate": "e5de2c8dc7cf883c118eb132ce0983419f2c2419",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/02-interface/D02-T01-s38.md",
+    "candidate": "d6fab65d07063eb5ca4eb5157ea2148b81c7e1f7",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "d6fab65d07063eb5ca4eb5157ea2148b81c7e1f7",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "integration",
+          "source-defect",
+          "consistency",
+          "quality",
+          "optimization",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "low",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "low",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 3,
+  "pass_cap": 33
+}

@@ -152,7 +152,7 @@ Sections: 49 | Checklist items: 280
 | [x]    | D02 T01 §35 | Word Context Menus and Mini Toolbar | office, windows-host, display-session | 3     |
 | [x]    | D02 T01 §36 | Word Backstage Document States      | office, windows-host, display-session | 5     |
 | [ ]    | D02 T01 §37 | Word Backstage Account States       | none                                  | 3     |
-| [ ]    | D02 T01 §38 | Sweep Gate on Checker Changes       | none                                  | 8     |
+| [x]    | D02 T01 §38 | Sweep Gate on Checker Changes       | none                                  | 8     |
 | [ ]    | D02 T01 §39 | Word Status Bar Defaults            | office, windows-host, display-session | 4     |
 | [ ]    | D02 T01 §40 | Word Command Dialogs                | office, windows-host, display-session | 4     |
 | [ ]    | D02 T01 §41 | Word Options Dialogs                | office, windows-host, display-session | 4     |
@@ -314,6 +314,6 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 | [ ]    | D03 T01 §25 | Interoperability Domain Authoring  | 3              |
 | [ ]    | D03 T01 §26 | VBA Domain Authoring               | 4              |
 
-Progress: 110/189 verified sections, 26 ready to run now, 1 parked, 84 TODO files still to author (not counted here).
+Progress: 111/189 verified sections, 25 ready to run now, 1 parked, 84 TODO files still to author (not counted here).
 
 Checklist: 775/1293 items completed (includes Commit items).
