@@ -104,6 +104,52 @@ class TreeTest(unittest.TestCase):
                 tree.start([sys.executable, "-c", "pass"])
 
 
+class EndById(unittest.TestCase):
+    """A process the tool did not start through `Tree` (an Office app started through COM) is ended with what it
+    started, by its id (D02 T01 §36)."""
+
+    def test_a_process_started_elsewhere_ends_with_its_child(self):
+        import signal
+        import subprocess
+        with tempfile.TemporaryDirectory() as tmp:
+            script, pidfile = Path(tmp) / "parent.py", Path(tmp) / "grandchild.pid"
+            script.write_text(PARENT, encoding="utf-8")
+            parent = subprocess.Popen([sys.executable, str(script), str(pidfile), "sleep"],
+                                      creationflags=process_tree.NO_WINDOW)
+            grandchild = None
+            try:
+                grandchild = wait_for(pidfile)
+                self.assertTrue(alive(parent.pid) and alive(grandchild))
+                self.assertTrue(process_tree.end_by_id(parent.pid))
+                parent.wait(timeout=30)
+                deadline = time.monotonic() + 30
+                while alive(grandchild) and time.monotonic() < deadline:
+                    time.sleep(0.05)
+                self.assertFalse(alive(grandchild))
+                # a process that is already gone is not ended again, and the answer says so
+                self.assertFalse(process_tree.end_by_id(parent.pid))
+            finally:
+                if parent.poll() is None:
+                    parent.kill()
+                    parent.wait(timeout=30)
+                if grandchild is not None and alive(grandchild):
+                    os.kill(grandchild, signal.SIGTERM)
+
+    def test_a_call_that_cannot_run_or_does_not_answer_says_it_did_not_end_it(self):
+        import subprocess
+        if os.name != "nt":
+            self.skipTest("the Windows tool is not used elsewhere")
+        with mock.patch.object(process_tree.subprocess, "run", side_effect=OSError("not found")):
+            self.assertFalse(process_tree.end_by_id(4242))
+        with mock.patch.object(process_tree.subprocess, "run",
+                               side_effect=subprocess.TimeoutExpired("taskkill", 1)) as ran:
+            self.assertFalse(process_tree.end_by_id(4242, seconds=1))
+        argv = ran.call_args.args[0]
+        self.assertTrue(Path(argv[0]).is_absolute() and argv[0].lower().endswith("taskkill.exe"))  # never a bare name
+        self.assertEqual(argv[1:], ["/PID", "4242", "/T", "/F"])
+        self.assertEqual(ran.call_args.kwargs["creationflags"], process_tree.NO_WINDOW)  # no console window
+
+
 class RunTest(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())

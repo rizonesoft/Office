@@ -422,6 +422,28 @@ class Tree:
         return strays
 
 
+def end_by_id(pid, seconds=KILL_SECONDS):
+    """End a process a tool could not start through `Tree`, with everything that process started, by its id: an
+    Office app started for the tool through COM, whose launcher is Windows and not the tool, so no job of the
+    tool's holds it. The caller must hold an open handle to the process while it calls this, so that the id cannot
+    have passed to another process; whose process it is, is the caller's to know. Returns whether Windows ended
+    it: False when it refused, when the process was already gone, or when it did not answer within `seconds`. The
+    caller then waits on its own handle to see the process gone."""
+    if os.name != "nt":
+        try:
+            os.kill(int(pid), signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            return False
+        return True
+    tool = Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32" / "taskkill.exe"  # never a bare name
+    try:
+        done = subprocess.run([str(tool), "/PID", str(int(pid)), "/T", "/F"], capture_output=True,
+                              creationflags=NO_WINDOW, timeout=seconds)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return done.returncode == 0
+
+
 @dataclass
 class Outcome:
     exit: int | None  # the child's exit code; None when it was stopped

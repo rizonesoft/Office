@@ -18,7 +18,6 @@ from __future__ import annotations
 import argparse
 import os
 import stat
-import subprocess
 import sys
 import threading
 from pathlib import Path
@@ -26,6 +25,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import word_states  # noqa: E402  (scripts/lib, on the path above)
 from office_com import Refused, installed_build, own_process, reference_build  # noqa: E402
+from process_tree import end_by_id  # noqa: E402  (the one place a tool may end a process tree, D00 T03 §54)
 
 NAME = "make-word-state-fixtures"
 NO_ALERTS, DISCARD = 0, 0  # wdAlertsNone; wdDoNotSaveChanges
@@ -35,8 +35,7 @@ LIMIT = 180.0  # seconds the whole run may take: a hidden Word that waits on som
 def end_own_word(pid):
     """End the Word this script started, with what that Word started itself (a Protected View process). Called
     only while the script holds a handle to that process, so the id cannot have passed to another."""
-    subprocess.run(["taskkill", "/PID", str(int(pid)), "/T", "/F"], capture_output=True, timeout=30,
-                   creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    end_by_id(pid)
 
 
 def remove(path):
