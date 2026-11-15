@@ -18,7 +18,9 @@ from __future__ import annotations
 import argparse
 import os
 import stat
+import subprocess
 import sys
+import threading
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
@@ -27,6 +29,14 @@ from office_com import Refused, installed_build, own_process, reference_build  #
 
 NAME = "make-word-state-fixtures"
 NO_ALERTS, DISCARD = 0, 0  # wdAlertsNone; wdDoNotSaveChanges
+LIMIT = 180.0  # seconds the whole run may take: a hidden Word that waits on something never says so
+
+
+def end_own_word(pid):
+    """End the Word this script started, with what that Word started itself (a Protected View process). Called
+    only while the script holds a handle to that process, so the id cannot have passed to another."""
+    subprocess.run(["taskkill", "/PID", str(int(pid)), "/T", "/F"], capture_output=True, timeout=30,
+                   creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
 
 
 def remove(path):
@@ -106,16 +116,27 @@ def confirm(app, state, path, made):
         made.remove(close)
 
 
-def run(states, root=None, dispatch=None, owner=own_process, wait=60.0, mark=mark_from_internet, say=print):
+def run(states, root=None, dispatch=None, owner=own_process, wait=60.0, mark=mark_from_internet, say=print,
+        limit=LIMIT, end=end_own_word):
     """Make and confirm each state's fixture, under the scratch folder `root`, in a hidden Word of our own. Returns
     the names of the states that were not made or not confirmed. Raises Refused when the instance cannot be left
-    as it must be."""
+    as it must be, and when Word does not answer within `limit` seconds: a hidden Word that waits on a dialog
+    would hold the run for good, so its process, which is the script's own, is ended and the run fails."""
     if dispatch is None:
         import win32com.client
         dispatch = win32com.client.DispatchEx
     word_states.folder(root).mkdir(parents=True, exist_ok=True)
     app = dispatch("Word.Application")
     proc, failed, made, foreign, failure, gone = None, [], [], None, None, False
+    expired, current = [], []
+
+    def expire():
+        expired.append(True)
+        if proc is not None:  # its handle is held, so the id is still this process's
+            end(proc.pid)
+    timer = threading.Timer(limit, expire)
+    timer.daemon = True
+    timer.start()
     try:  # from here on the instance is ours to quit, whatever fails
         app.Visible = False
         app.DisplayAlerts = NO_ALERTS
@@ -129,6 +150,7 @@ def run(states, root=None, dispatch=None, owner=own_process, wait=60.0, mark=mar
         made.remove(close_first)
         for state in states:
             path = word_states.inside(word_states.fixture(state, root), root)
+            current[:] = [path]
             remove(path)
             try:
                 make(app, state, path, made, mark)
@@ -137,6 +159,8 @@ def run(states, root=None, dispatch=None, owner=own_process, wait=60.0, mark=mar
                 raise
             except Exception as exc:  # COM raises its own error types: the state was not made
                 wrong = [f"Word could not make it ({type(exc).__name__}: {exc})"]
+            if expired:
+                break  # Word was ended: what it answered after that is no answer
             if wrong:
                 remove(path)
                 failed.append(state["name"])
@@ -147,6 +171,19 @@ def run(states, root=None, dispatch=None, owner=own_process, wait=60.0, mark=mar
     except Exception as exc:  # kept until the instance is seen to: what is left running is said first
         failure = exc
     finally:
+        timer.cancel()
+        if expired:
+            for path in current:
+                remove(path)  # the fixture that was being made when Word stopped answering is not kept
+            if proc is not None:
+                ended = proc.exited(wait)
+                pid = proc.pid
+                proc.close()
+                raise Refused(f"Word did not answer within {limit:.0f} s; the instance the script started (pid {pid}) "
+                              + ("was ended" if ended else "was told to end and is still running")
+                              + ", and the fixture it was making is deleted")
+            raise Refused(f"Word did not answer within {limit:.0f} s, before its process was identified; nothing "
+                          f"was ended, and an instance of Word may be left running")
         try:
             for close in list(made):  # what a failure left open: the script's own, and nothing else
                 try:

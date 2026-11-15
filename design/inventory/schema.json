@@ -396,13 +396,43 @@
           ],
           "maxLength": 200
         },
+        "captureState": {
+          "enum": [
+            "saved",
+            "read-only",
+            "read-only-recommended",
+            "final",
+            "compatibility",
+            "personal-information-removed",
+            "protected-view"
+          ],
+          "description": "on a record of Backstage captured over a fixture document in a state (design/inventory/word/backstage-states.json): the state, one of those scripts/lib/word_states.py lists. A record of the blank-document capture carries none"
+        },
+        "variantOf": {
+          "type": "string",
+          "minLength": 1,
+          "description": "on a record of a document state: the id of the record of the blank-document capture it stands for in that state. A record with none is what the state adds",
+          "allOf": [
+            {
+              "$ref": "#/$defs/noLink"
+            },
+            {
+              "$ref": "#/$defs/noColon"
+            }
+          ],
+          "maxLength": 200
+        },
+        "unchanged": {
+          "const": true,
+          "description": "on a page of a document state: the page is, record for record, the blank-document capture's, so none of its records is written again. Never written for a page that differs"
+        },
         "checked": {
           "type": "boolean",
           "description": "on an item of a menu that carries a tick (Customize Status Bar, Track Changes in a context menu): whether it was ticked when it was captured, on the PC it was captured on. It is the app's default only where nobody changed it. On a toggle or a split button of a mini toolbar: whether it was on over the selection the capture made"
         },
         "enabled": {
           "const": false,
-          "description": "on a setting of a dialog or a choice of one, on an item of a context menu or a choice of its submenu, and on a control of a mini toolbar: false when the control was disabled when it was captured (it depends on another setting or on a selection). Never written for a control that was enabled"
+          "description": "on a setting of a dialog or a choice of one, on an item of a context menu or a choice of its submenu, on a control of a mini toolbar, and on an entry, a page, a group or a control of Backstage: false when the control was disabled when it was captured (it depends on another setting or on a selection). Never written for a control that was enabled"
         },
         "disposition": {
           "enum": [
@@ -544,11 +574,13 @@
                 "enum": [
                   "setting",
                   "menuItem",
-                  "control"
+                  "control",
+                  "group",
+                  "backstagePage"
                 ]
               }
             },
-            "description": "enabled is recorded on a setting, a choice or an item of a menu, or a control of a mini toolbar only"
+            "description": "enabled is recorded on a setting, a choice or an item of a menu, a control of a mini toolbar, or a record of Backstage only"
           }
         },
         {
@@ -565,10 +597,33 @@
           "then": {
             "properties": {
               "id": {
-                "pattern": "\\.mini-toolbar\\.[^.]+$"
+                "pattern": "\\.mini-toolbar\\.[^.]+$|^word\\.backstage\\."
               }
             },
-            "description": "enabled is recorded on a control only when it stands on a mini toolbar; a control of the ribbon carries none"
+            "description": "enabled is recorded on a control only when it stands on a mini toolbar or in Backstage; a control of the ribbon carries none"
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "enabled"
+            ],
+            "properties": {
+              "kind": {
+                "enum": [
+                  "group",
+                  "backstagePage"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "id": {
+                "pattern": "^word\\.backstage\\."
+              }
+            },
+            "description": "enabled is recorded on a group or a page only when it is Backstage's"
           }
         },
         {
@@ -640,6 +695,54 @@
               }
             },
             "description": "checked is recorded on a control only when it stands on a mini toolbar; a control of the ribbon carries none"
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "captureState"
+            ]
+          },
+          "then": {
+            "properties": {
+              "id": {
+                "pattern": "^word\\.backstage\\.states\\."
+              }
+            },
+            "description": "captureState is recorded on a record of a document state only"
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "variantOf"
+            ]
+          },
+          "then": {
+            "properties": {
+              "id": {
+                "pattern": "^word\\.backstage\\.states\\."
+              }
+            },
+            "description": "variantOf is recorded on a record of a document state only"
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "unchanged"
+            ]
+          },
+          "then": {
+            "properties": {
+              "id": {
+                "pattern": "^word\\.backstage\\.states\\."
+              },
+              "kind": {
+                "const": "backstagePage"
+              }
+            },
+            "description": "unchanged is recorded on a page of a document state only"
           }
         }
       ],

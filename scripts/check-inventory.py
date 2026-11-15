@@ -229,12 +229,38 @@ def check_word_backstage(f, data, require_behaviour):
     sys.path.insert(0, str(ROOT / "scripts" / "lib"))
     import word_backstage
     try:
+        import word_states
         baseline = json.loads((INVENTORY / "word" / "baseline.json").read_text(encoding="utf-8"))
         reference = (INVENTORY / REFERENCE).read_text(encoding="utf-8")
-        word_backstage.validate(data, baseline, word_backstage.ABSENT, reference, require_behaviour=require_behaviour)
+        # D02 T01 §36: what was captured over a document in another state counts as captured here.
+        word_backstage.validate(data, baseline, word_backstage.ABSENT, reference, require_behaviour=require_behaviour,
+                                also_captured=word_states.captured_ids(INVENTORY / "word"))
     except (OSError, ValueError) as exc:
-        return [f"{f}: the baseline or {REFERENCE} cannot be read: {exc}"]
+        return [f"{f}: the baseline, {REFERENCE} or the document states file cannot be read: {exc}"]
     except word_backstage.Invalid as exc:
+        return [f"{f}: {exc}"]
+    return []
+
+
+def is_word_backstage_states(path, inventory=INVENTORY):
+    """Whether `path` is the repository's Word Backstage document states inventory
+    (`design/inventory/word/backstage-states.json`)."""
+    return (Path(inventory).resolve() == INVENTORY.resolve()
+            and Path(path).resolve() == (INVENTORY / "word" / "backstage-states.json").resolve())
+
+
+def check_word_backstage_states(f, data):
+    """Problems in word/backstage-states.json beyond the record schema (D02 T01 §36): every document state the
+    hand-written list names is there, whole, each record inside its state and each counterpart a record of the
+    blank-document capture. The rules are scripts/lib/word_states.py's."""
+    sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+    import word_states
+    try:
+        blank = json.loads((INVENTORY / "word" / "backstage.json").read_text(encoding="utf-8"))
+        word_states.validate_states(data, {r.get("id") for r in blank if isinstance(r, dict)}, whole=True)
+    except (OSError, ValueError) as exc:
+        return [f"{f}: the blank-document Backstage inventory cannot be read: {exc}"]
+    except word_states.Invalid as exc:
         return [f"{f}: {exc}"]
     return []
 
@@ -862,6 +888,8 @@ def check(paths, require_behaviour=False, inventory=INVENTORY):
             problems += check_word_backstage(f, data, True)
         if is_word_dialogs(f, inventory):  # D02 T01 §34: the hand-written list of dialogs holds
             problems += check_word_dialogs(f, data)
+        if is_word_backstage_states(f, inventory):  # D02 T01 §36: every document state, whole
+            problems += check_word_backstage_states(f, data)
         if is_word_menus(f, inventory):  # D02 T01 §35: the hand-written list of contexts holds
             problems += check_word_menus(f, data)
         if is_word_statusbar(f, inventory):  # D02 T01 §33: the hand-written lists of the bar and its menu hold

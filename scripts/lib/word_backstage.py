@@ -59,6 +59,12 @@ SERVICE = re.compile(r"^(OneDrive|SharePoint|Sites)\s+-\s+.+$")
 # The baseline's `taskFormGroup` groups: their list entries are Word's own tasks (Export's Create PDF/XPS, Share's
 # e-mail), recorded as buttons, while every other list's entries are the owner's files, templates or places.
 TASK_GROUPS = {"GroupOpenPlaces", "SaveGroup", "GroupShare", "PublishGroup"}
+# Where a saved document's own folder is shown as a button named by its path (D02 T01 §36): straight in the
+# Location Information group of Info and straight in Share's task group. The path is this PC's, never Word's: the
+# button is recorded as LOCATION, whatever it is named, and it is no task of the group it stands in.
+LOCATION, LOCATION_CLASS = "Location", "NetUISimpleButton"
+LOCATION_GROUPS = {"GroupShare"}  # by automation id
+LOCATION_LABELS = {"Location Information"}  # by label, for the group that has no automation id
 # The task groups whose entries only show a detail panel when selected (Share's and Export's tasks): the capture
 # selects each and records the panel under it. Open's and Save As's entries open folders (the owner's) or dialogs
 # (Browse, Add a Place) and are never selected.
@@ -75,7 +81,8 @@ CONDITION = AVAILABILITY  # the name the capture scripts used
 
 # Who captures what an absence reason leaves out, or None when the reason is final (D02 T01 §6, fresh plan review
 # gap 3). REFERENCE.md names the same owner, or says "Final:", on the reason's own line.
-REASON_OWNERS = {"document-state": "D02 T01 §36", "account-state": "D02 T01 §37", "layout-variant": "D02 T01 §37",
+REASON_OWNERS = {"signed-state": "D02 T01 §47", "server-state": "D02 T01 §48", "host-state": "D02 T01 §49",
+                 "account-state": "D02 T01 §37", "layout-variant": "D02 T01 §37",
                  "not-offered": None, "not-exposed": None}
 # Baseline Backstage ids that UI Automation shows without an automation id, matched by their page and label instead.
 LABELS = {
@@ -86,6 +93,10 @@ LABELS = {
     ("TabInfo", "Encrypt with Password"): "FileDocumentEncrypt", ("TabInfo", "Restrict Access"): "UsagePermissions",
     ("TabInfo", "Add a Digital Signature"): "FileAddDigitalSignature", ("TabInfo", "Mark as Final"): "FileMarkAsFinal",
     ("TabInfo", "Properties"): "GroupDocumentProperties",
+    # D02 T01 §36, shown only for a document in a state: the button of the Compatibility Mode alert, and the one
+    # Inspect Document shows for a document set to remove personal information when it is saved.
+    ("TabInfo", "Convert"): "UpgradeDocument",
+    ("TabInfo", "Allow this information to be saved in your file"): "AllowPersonallyIdentifiableInformation",
     ("TabShare", "Share with People"): "ShareWithPeopleFromSharePane", ("TabShare", "Email"): "SendUsingEmail",
     ("TabShare", "Present Online"): "BroadcastSlideShowBackstage",
     ("TabPublish", "Create PDF/XPS Document"): "FileSaveAsPdfOrXps", ("TabPublish", "Change File Type"): "FileTypeChange",
@@ -114,22 +125,25 @@ def apply_labels(records):
 # Baseline Backstage ids the reference capture does not show, each with the reason, documented under
 # "Word Backstage absences" in design/inventory/REFERENCE.md. Filled from the capture's own reconciliation.
 ABSENT: dict = {
-    # document-state
-    "AddinDisabledGroup": "document-state", "AllowPersonallyIdentifiableInformation": "document-state",
-    "AppGuardTrustPromotion": "document-state", "FileCheckOutDiscard": "document-state",
-    "GroupARMPreview": "document-state", "GroupAllAuthors": "document-state",
-    "GroupBroadcastResumeWarning": "document-state", "GroupCachedOfflineMergeable": "document-state",
-    "GroupCheckIn": "document-state", "GroupFileConvert": "document-state",
-    "GroupPrintProtectedView": "document-state", "GroupProtectedView": "document-state",
-    "GroupReadOnly": "document-state", "GroupReadOnlyCached": "document-state",
-    "GroupReadOnlyCachedMergeable": "document-state", "GroupReadOnlyCheckOutRequired": "document-state",
-    "GroupReadOnlyOffline": "document-state", "GroupReadOnlyServer": "document-state",
-    "GroupSecurityInformation": "document-state", "GroupSecurityWarning": "document-state",
-    "GroupSignatures": "document-state", "GroupThumbnail": "document-state",
-    "GroupUpdatesAvailable": "document-state", "GroupUploadErrors": "document-state",
-    "GroupWorkflows": "document-state", "GroupWorkflowsUnavailable": "document-state",
-    "GrupPolicyWarning": "document-state", "OfficePolicyTips": "document-state", "UpgradeDocument": "document-state",
-    "WorkflowsUnavailable": "document-state",
+    # D02 T01 §36 captured six of the thirty ids a document's state shows (GroupReadOnly, GroupFileConvert and its
+    # UpgradeDocument, GroupProtectedView, GroupPrintProtectedView, AllowPersonallyIdentifiableInformation) over
+    # fixture documents: they stand in design/inventory/word/backstage-states.json. The rest, each under the reason
+    # that names who captures it:
+    # signed-state: only a digitally signed document shows it
+    "GroupSignatures": "signed-state",
+    # server-state: only a document in a document library, or one being broadcast, shows it
+    "FileCheckOutDiscard": "server-state", "GroupBroadcastResumeWarning": "server-state",
+    "GroupCachedOfflineMergeable": "server-state", "GroupCheckIn": "server-state",
+    "GroupReadOnlyCached": "server-state", "GroupReadOnlyCachedMergeable": "server-state",
+    "GroupReadOnlyCheckOutRequired": "server-state", "GroupReadOnlyOffline": "server-state",
+    "GroupReadOnlyServer": "server-state", "GroupUpdatesAvailable": "server-state",
+    "GroupUploadErrors": "server-state", "GroupWorkflows": "server-state",
+    "GroupWorkflowsUnavailable": "server-state", "GrupPolicyWarning": "server-state",
+    "OfficePolicyTips": "server-state", "WorkflowsUnavailable": "server-state",
+    # host-state: no fixture this PC could be given without changing its Office setup showed it
+    "AddinDisabledGroup": "host-state", "AppGuardTrustPromotion": "host-state", "GroupARMPreview": "host-state",
+    "GroupAllAuthors": "host-state", "GroupSecurityInformation": "host-state",
+    "GroupSecurityWarning": "host-state", "GroupThumbnail": "host-state",
     # account-state
     "GroupBackstageSignIn": "account-state", "GroupBackstageSignInDisabled": "account-state",
     "GroupOfficeInsider": "account-state", "GroupOfficeInsiderAbout": "account-state",
@@ -231,10 +245,16 @@ def record_tree(page_id: str, node: dict, base, expand=None) -> list:
         orders[parent] = orders.get(parent, -1) + 1
         return orders[parent]
 
-    def walk(children, parent, depth, environment=False, tasks=False):
+    def walk(children, parent, depth, environment=False, tasks=False, location=False):
         previous_text = ""
         for child in children:
             role, cls = child.get("role"), child.get("class_name", "")
+            if location and role == "Button" and cls == LOCATION_CLASS:
+                # The document's own folder, named by its path: recorded by what it is, its name never used.
+                records.append(base(rid(parent, LOCATION), "control", LOCATION, next_order(parent), child, parent,
+                                    controlType="button"))
+                previous_text = ""
+                continue
             task = bool(tasks) and role in ("ListItem", "TabItem")
             if task and any((k.get("name") or "").startswith(PIN) for k in child.get("children", [])):
                 continue
@@ -264,7 +284,9 @@ def record_tree(page_id: str, node: dict, base, expand=None) -> list:
                 extra = {"idMso": child["idMso"]} if child.get("idMso") else {}
                 records.append(base(me, "group", label, next_order(parent), child, parent, **extra))
                 walk(child.get("children", []), me, depth + 1, environment or label in ENVIRONMENT_LISTS,
-                     tasks or child.get("automation_id") in TASK_GROUPS | FORMAT_GALLERIES)
+                     tasks or child.get("automation_id") in TASK_GROUPS | FORMAT_GALLERIES,
+                     location=child.get("automation_id") in LOCATION_GROUPS
+                     or (not child.get("automation_id") and label in LOCATION_LABELS))
                 continue
             if role == "List" and tasks:  # a task list is its entries, each a command
                 walk(child.get("children", []), parent, depth, environment, tasks)
@@ -343,11 +365,14 @@ class Invalid(Exception):
     """The Backstage inventory breaks one of the rules above."""
 
 
-def validate(records: list, baseline: dict, absent: dict, reference_text: str, require_behaviour: bool = True):
+def validate(records: list, baseline: dict, absent: dict, reference_text: str, require_behaviour: bool = True,
+             also_captured=frozenset()):
     """Refuse a Backstage inventory that is not complete: every baseline page captured as a page or absent for a
     documented reason; every baseline group or control idMso under a captured page captured or absent for a
     documented reason; every navigation action recorded; no third-party or private record; and, with
-    `require_behaviour`, a behaviour sentence on every actionable record. Returns None; raises Invalid."""
+    `require_behaviour`, a behaviour sentence on every actionable record. `also_captured` holds the idMso values
+    captured over a document in another state (D02 T01 §36): such an id is captured, though not in `records`, and
+    is refused when it is still listed absent. Returns None; raises Invalid."""
     by_id, problems = {}, []
     for rec in records:
         if not isinstance(rec, dict) or not rec.get("id"):
@@ -376,7 +401,7 @@ def validate(records: list, baseline: dict, absent: dict, reference_text: str, r
             and rec.get("target") in by_id and by_id[rec["target"]].get("kind") == "backstagePage"
         if rec is None or not (rec.get("kind") == "control" or page):
             problems.append(f"the navigation action {label} is not recorded as {rid}")
-    seen = {r.get("idMso") for r in records if r.get("idMso")}
+    seen = {r.get("idMso") for r in records if r.get("idMso")} | set(also_captured)
     for reason in sorted(set(absent.values())):
         line = next((x for x in reference_text.splitlines() if x.startswith(f"- `{reason}`:")), None)
         if line is None:

@@ -1666,7 +1666,8 @@ class Inventory(unittest.TestCase):
         checks = {"ribbon": "check_word_ribbon", "backstage": "check_word_backstage",
                   "shortcuts": "check_word_shortcuts", "options": "check_word_options",
                   "panes": "check_word_panes", "statusbar": "check_word_statusbar",
-                  "dialogs": "check_word_dialogs", "menus": "check_word_menus"}
+                  "dialogs": "check_word_dialogs", "menus": "check_word_menus",
+                  "backstage-states": "check_word_backstage_states"}
         for name in checks:
             self.write(f"word/{name}.json", [])
         with contextlib.ExitStack() as stack:
@@ -1923,6 +1924,51 @@ class OptionsRules(unittest.TestCase):
         self.assertEqual(problems(dialog), [])
         self.assertTrue(problems(dialog, dock="left"))
         self.assertTrue(problems(dict(dialog, kind="dialogTab")))
+
+    def test_a_document_state_names_itself_and_its_counterpart_and_only_backstage_says_what_is_unavailable(self):
+        # D02 T01 §36: a record captured over a fixture document in a state says which state (`captureState`), which
+        # record of the blank-document capture it stands for (`variantOf`), and, on a page that is the blank
+        # capture's record for record, that it is `unchanged`. Each belongs to a record of a document state only.
+        # An entry, a page, a group or a control of Backstage that was disabled says so; the ribbon's never do.
+        schema = json.loads((Path(__file__).resolve().parents[2] / ci.SCHEMA).read_text(encoding="utf-8"))
+        prov = {"source": BOLD["source"], "capturedFrom": BOLD["capturedFrom"]}
+        root = {"id": "word.backstage.states.final", "app": "word", "kind": "region", "label": "Marked as final",
+                "order": 3, "condition": "a document marked as final", "captureState": "final", "itemCount": 2, **prov}
+        page = {"id": root["id"] + ".print", "app": "word", "kind": "backstagePage", "label": "Print",
+                "parent": root["id"], "order": 6, "captureState": "final", "variantOf": "word.backstage.print",
+                "unchanged": True, **prov}
+        control = {"id": root["id"] + ".save", "app": "word", "kind": "control", "label": "Save",
+                   "parent": root["id"], "order": 4, "controlType": "button", "captureState": "final",
+                   "variantOf": "word.backstage.save", "enabled": False, **prov}
+        blank = {"id": "word.backstage.print.print.print", "app": "word", "kind": "control", "label": "Print",
+                 "parent": "word.backstage.print.print", "order": 0, "controlType": "button", **prov}
+
+        def problems(record, **fields):
+            return ci.validate([dict(record, **fields)], schema, schema)
+        for record in (root, page, control, blank):
+            self.assertEqual(problems(record), [], record["id"])
+        for value in ("signed", "Final", "", 3, None):
+            self.assertTrue(problems(control, captureState=value), repr(value))
+        for value in ("", 7, None, "see http://x.example", "word.backstage:save"):
+            self.assertTrue(problems(control, variantOf=value), repr(value))
+        for value in (False, "true", 1, None):
+            self.assertTrue(problems(page, unchanged=value), repr(value))
+        self.assertTrue(problems(control, unchanged=True))  # a page's alone
+        # none of the three on a record that is not a document state's: the blank capture's, the ribbon's
+        for record in (blank, BOLD, TAB, GROUP):
+            self.assertTrue(problems(record, captureState="final"), record["id"])
+            self.assertTrue(problems(record, variantOf="word.backstage.print"), record["id"])
+            self.assertTrue(problems(record, unchanged=True), record["id"])
+        # availability: Backstage's records say it, in a state and over the blank document; the ribbon's do not
+        self.assertEqual(problems(blank, enabled=False), [])
+        self.assertEqual(problems(page, enabled=False), [])
+        group = {"id": "word.backstage.print.print", "app": "word", "kind": "group", "label": "Print",
+                 "parent": "word.backstage.print", "order": 0, "enabled": False, **prov}
+        self.assertEqual(problems(group), [])
+        self.assertTrue(problems(blank, enabled=True))
+        for record in (BOLD, TAB, GROUP):
+            self.assertTrue(problems(record, enabled=False), record["id"])
+        self.assertTrue(problems(group, id="word.options.general.print", parent="word.options.general"))
 
     def test_a_menu_and_its_mini_toolbar_carry_their_states_and_a_ribbon_control_carries_none(self):
         # D02 T01 §35: a context menu says the selection it was opened over; an item of it and a control of its

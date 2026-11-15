@@ -50,6 +50,7 @@ import word_dialogs  # noqa: E402
 import word_menus  # noqa: E402
 import word_options  # noqa: E402
 import word_panes  # noqa: E402
+import word_states  # noqa: E402
 import word_statusbar  # noqa: E402
 from word_absences import WORD_RECONCILED_ABSENT_TABS  # noqa: E402
 from office_com import (INVENTORY, OwnProcess, Refused, installed_build, publish, reference_build,  # noqa: E402
@@ -712,7 +713,7 @@ def profile_problems(state, monitor, language, ribbon_height):
         problems.append("the window is not maximised")
     if language != UI_LANGUAGE:
         problems.append(f"the Office display language is {language}, not en-US ({UI_LANGUAGE})")
-    if ribbon_height < 60:
+    if ribbon_height is not None and ribbon_height < 60:  # None: a state Word collapses the ribbon over
         problems.append("the ribbon is not always shown")
     return problems
 
@@ -1489,10 +1490,46 @@ class Launched:
                 raise Refused(f"the {self.exe} instance now holds a document this tool did not create; stopping before "
                               "the ribbon acts on someone else's")
         for attr in ("ActiveDocument", "ActiveWorkbook", "ActivePresentation", "ActiveProject"):
+            if count == 0:
+                break  # no document is open (D02 T01 §36: only a Protected View window): none can be active,
+                # and Word answers the question with an error
             active = getattr(app, attr, None)
             if active is not None and not any(self._same_doc(active, c) for c in expected_docs):
                 raise Refused(f"the active {self.exe} document is not the one this tool created; stopping before the "
                               "ribbon acts on someone else's")
+        # D02 T01 §36: a document in Protected View is not among the documents counted above. The one window the
+        # capture opened is its own; any other is someone else's.
+        shown, own = self._protected_windows(), 1 if getattr(self, "_state_window", None) is not None else 0
+        if shown != own:
+            raise Refused(f"the {self.exe} instance shows {shown} Protected View window(s) and the capture opened "
+                          f"{own}; stopping before it acts on someone else's")
+
+    def _forget_documents_word_closed(self):
+        """Word closes its own untouched blank document when a file is opened beside it (D02 T01 §36): that
+        document is gone, and no longer the capture's to check or to close. A created document that still answers
+        to its name is kept; one that does not is forgotten. What the instance really holds is still counted
+        before it is quit, so forgetting one that is in fact open leaves the instance running, never closed over
+        it."""
+        metas = list(getattr(self, "_created_meta", None) or ())
+        docs, kept = [], []
+        for at, doc in enumerate(self.created):
+            try:
+                alive = not getattr(doc, "closed", False) and doc.Name is not None
+            except Exception:
+                alive = False  # Word answers for a closed document with an error
+            if alive:
+                docs.append(doc)
+                kept += metas[at:at + 1]
+        self.created = docs
+        if metas:
+            self._created_meta = kept
+
+    def _protected_windows(self):
+        """How many Protected View windows the Word instance shows; 0 for an app that has none."""
+        if getattr(self, "key", None) != "word":
+            return 0
+        windows = getattr(getattr(self, "app", None), "ProtectedViewWindows", None)
+        return 0 if windows is None else int(windows.Count)
 
     def _free_clipboard_snapshot(self, snapshot):
         if not snapshot or callable(getattr(self, "_clipboard_restorer", None)):
@@ -2293,6 +2330,8 @@ class Launched:
         self._check_alone_impl()
         app = self.app
         if action == "document_state":  # D02 T01 §6: whether pressing Save could save anything
+            if getattr(self, "_state_window", None) is not None:  # D02 T01 §36
+                raise Refused("the document is shown in Protected View, where Word gives no document to ask")
             doc = app.ActiveDocument
             # empty: a blank document ends where its one paragraph mark does (D02 T01 §34 asks after every
             # dialog). Where the document ends is asked, never what it holds: its text is not fetched.
@@ -2356,6 +2395,54 @@ class Launched:
             else:  # the header or the footer the view has gone to
                 target = selection.Range
             return {"hwnd": int(self.hwnd or 0), "rect": list(self._word_point(app.ActiveWindow, target))}
+        if action == "open_state":  # D02 T01 §36: a fixture document in one of the listed document states
+            if getattr(self, "_fixture_doc", None) is not None or getattr(self, "_state_window", None) is not None:
+                raise Refused("another document of the capture's is still open; a state is not opened over it")
+            try:
+                state = word_states.by_name(kwargs.get("state"))
+                path = word_states.inside(kwargs.get("path") or word_states.fixture(state))
+            except word_states.Invalid as exc:
+                raise Refused(str(exc)) from None
+            if path.name != state["file"]:
+                raise Refused(f"{path.name} is not the fixture of the {state['name']} state")
+            if not path.is_file():
+                raise Refused(f"the fixture {path} does not exist; make it with python "
+                              f"scripts/make-word-state-fixtures.py")
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            if state["view"] == "protected":
+                known = set(self._get_win().windows_of(int(self.proc.pid)))
+                window = app.ProtectedViewWindows.Open(str(path), AddToRecentFiles=False)
+                # From here the window is the capture's: close_fixture, and close() on its own, close it.
+                self._state_window, self._fixture_path, self._fixture_sha256 = window, path, digest
+                self._forget_documents_word_closed()
+                wrong = []
+                if int(app.Documents.Count) != len(self.created):  # the capture's own blank one, if Word kept it
+                    wrong.append("it opened among the documents, not in Protected View")
+                if self._protected_windows() != 1:
+                    wrong.append(f"{self._protected_windows()} Protected View windows are open, not one")
+                new = wait_for(lambda: [h for h in self._get_win().windows_of(int(self.proc.pid), "OpusApp")
+                                        if h not in known], seconds=10.0) if not wrong else []
+                if not wrong and len(new or []) != 1:
+                    wrong.append(f"{len(new or [])} new Word windows show it, not one")
+                if not wrong:
+                    self.hwnd = self._get_win().top(new[0])
+            else:
+                doc = app.Documents.Open(str(path), AddToRecentFiles=False, ConfirmConversions=False)
+                # From here the document is the capture's: close_fixture, and close() on its own, close it unsaved.
+                self._fixture_doc, self._fixture_meta = doc, self._doc_meta(doc)
+                self._fixture_path, self._fixture_sha256 = path, digest
+                self._forget_documents_word_closed()
+                wrong = word_states.unconfirmed(state, lambda name: getattr(doc, name))
+                if not wrong:
+                    wh = self.window_handle()
+                    if wh is not None:
+                        self.hwnd = self._get_win().top(wh)
+            if wrong:
+                self._word_action_impl("close_fixture")
+                raise Refused(f"the fixture {path.name} did not open in the {state['name']} state ("
+                              + "; ".join(wrong) + "); make the fixtures again with python "
+                              "scripts/make-word-state-fixtures.py")
+            return {"hwnd": int(self.hwnd or 0), "state": state["name"]}
         if action == "open_fixture":
             self._restore_saved_clipboard()
             path = Path(kwargs.get("path") or WORD_DEFAULT_FIXTURE)
@@ -2375,6 +2462,10 @@ class Launched:
             return {"hwnd": int(self.hwnd or 0)}
         if action == "close_fixture":
             self._restore_saved_clipboard()
+            window = getattr(self, "_state_window", None)
+            if window is not None:  # D02 T01 §36: the capture's own Protected View window
+                self._state_window = None
+                window.Close()
             fdoc = getattr(self, "_fixture_doc", None)
             if fdoc is not None and not getattr(fdoc, "closed", False):
                 try:
@@ -2925,7 +3016,8 @@ class Launched:
             except Exception as exc:
                 clipboard_failure = f"{type(exc).__name__}: {exc}"
             fdoc = getattr(self, "_fixture_doc", None)
-            if fdoc is not None and not getattr(fdoc, "closed", False):
+            if (fdoc is not None and not getattr(fdoc, "closed", False)) or \
+                    getattr(self, "_state_window", None) is not None:
                 self._word_action_impl("close_fixture")
             if self.key == "powerpoint":
                 others = self._check_powerpoint_only_owned_blank(metas)
@@ -2941,7 +3033,7 @@ class Launched:
                         raise Refused(f"the {self.exe} document has unsaved changes or a file path")
                     self._close_owned_doc(doc, app=self.app)
                 doc = None
-                others = self.open_documents()
+                others = self.open_documents() + self._protected_windows()
         except Exception as exc:  # reported below: the instance is left running and the run refuses
             failure = f"{type(exc).__name__}: {exc}"
         finally:
@@ -2952,7 +3044,7 @@ class Launched:
                     if self.key == "powerpoint":
                         others = self._check_powerpoint_only_owned_blank(metas)
                     else:
-                        others = self.open_documents()
+                        others = self.open_documents() + self._protected_windows()
                 except Exception as exc:
                     others = None
                     failure = f"{type(exc).__name__}: {exc}"
@@ -3164,6 +3256,34 @@ def popup_items(root, popup_roots=(), label="popup", target=None, exclude_rids=f
 
 
 def capture(args, launched, uia, win):
+    """The records of one capture, its profile problems and its context. With --state (D02 T01 §36) a fixture
+    document in that state is opened first, in place of the blank document, and closed unsaved on every path; what
+    was read is then turned into the state's own records, held against the blank-document capture."""
+    state = getattr(args, "state", None)
+    if state is None:
+        return _capture(args, launched, uia, win)
+    if not getattr(args, "backstage", False) or args.app != "word":
+        raise Refused("--state is given with --app word --backstage (D02 T01 §36)")
+    try:
+        spec = word_states.by_name(state)
+    except word_states.Invalid as exc:
+        raise Refused(str(exc)) from None
+    launched.word_action("open_state", state=state)
+    try:
+        records, problems, ctx = _capture(args, launched, uia, win)
+    finally:
+        launched.word_action("close_fixture")  # closed unsaved; a fixture whose bytes changed refuses the run
+    try:
+        blank = json.loads((INVENTORY / "word" / "backstage.json").read_bytes().decode("utf-8"))
+        return word_states.state_records(spec, records, blank), problems, ctx
+    except (OSError, ValueError) as exc:
+        raise Refused(f"the blank-document Backstage inventory cannot be read ({exc}); a state is recorded "
+                      f"against it") from None
+    except word_states.Invalid as exc:
+        raise Refused(f"{exc}; nothing is published") from None
+
+
+def _capture(args, launched, uia, win):
     if getattr(args, "backstage", False) and args.app != "word":
         raise Refused("--backstage captures Word's Backstage view only (D02 T01 §6)")
     if getattr(args, "options", False) and args.app != "word":
@@ -3200,13 +3320,21 @@ def capture(args, launched, uia, win):
     tabs_bar = wait_for(lambda: find(root, lambda e: e.control_type == "Tab" and e.name == "Ribbon Tabs"))
     lower = wait_for(lambda: find(root, lambda e: e.name == "Lower Ribbon"))
     check_licensing()
-    if not tabs_bar or not lower:
+    # D02 T01 §36: over a document marked as final, and one in Protected View, Word itself shows the ribbon
+    # collapsed. The list says so for those states; Backstage, which is all a state capture reads, covers the
+    # window either way, so the rule that the ribbon is always shown is not asked of them.
+    collapsed = (getattr(args, "state", None) in word_states.NAMES
+                 and word_states.by_name(args.state).get("ribbon") == "collapsed")
+    if collapsed and lower:
+        raise Refused(f"the ribbon is shown over the {args.state} fixture, and scripts/lib/word_states.py says Word "
+                      f"collapses it over a document in that state; the fixture is not shown as its state is")
+    if not tabs_bar or (not lower and not collapsed):
         raise Refused("the ribbon was not found in the app's window")
     problem = layout_problem(root, args.layout)
     if problem:
         raise Unsafe(problem)
     state = win.state(launched.hwnd)
-    ribbon_h = lower.rect[3] - lower.rect[1] if lower.rect else 0
+    ribbon_h = None if collapsed else (lower.rect[3] - lower.rect[1] if lower.rect else 0)
     problems = profile_problems(state, monitor, launched.language(), ribbon_h)
     identifiers = baseline_ids(args.app)
     ctx = Context(args.app, expected, identifiers, origin=None if problems else state["origin"])
@@ -3461,7 +3589,10 @@ def capture_word_backstage(launched, uia, win, ctx, identifiers, ready=BACKSTAGE
             if kind in ("back", "third-party"):
                 ctx.notes.append(f"Backstage entry {label!r} is not recorded ({kind})")
                 continue
-            if kind == "action" and label == "Save" and _never_saved(launched, ctx.notes):
+            # D02 T01 §36: what a document's state makes unavailable is recorded so (`enabled` false), on an
+            # entry of the navigation as on a control of a page, and an entry that is disabled is never opened.
+            off = {} if getattr(entry, "is_enabled", True) else {"enabled": False}
+            if kind == "action" and label == "Save" and not off and _never_saved(launched, ctx.notes):
                 # For a document never saved, Save only shows the Save As page: nothing can be written, so it is
                 # pressed and recorded as the page it shows (its content is Save As's, recorded under that page).
                 entry.activate()
@@ -3473,7 +3604,13 @@ def capture_word_backstage(launched, uia, win, ctx, identifiers, ready=BACKSTAGE
                 continue
             if kind == "action":
                 records.append(ctx.base(word_backstage.ACTIONS[label], "control", label, order, entry,
-                                        parent=None, controlType="button"))
+                                        parent=None, controlType="button", **off))
+                order += 1
+                continue
+            if off:  # a page this document does not offer: recorded as it stands in the navigation, unopened
+                extra = {"idMso": word_backstage.PAGES[label]} if label in word_backstage.PAGES else {}
+                records.append(ctx.base(f"word.backstage.{word_backstage.slug(label)}", "backstagePage", label,
+                                        order, entry, parent=None, **extra, **off))
                 order += 1
                 continue
             launched.check_alone()
@@ -3481,6 +3618,7 @@ def capture_word_backstage(launched, uia, win, ctx, identifiers, ready=BACKSTAGE
             content = _loaded_page(uia, hwnd, label, ready)
             if content is None:
                 raise Refused(f"the Backstage page {label!r} did not load and settle within {ready:.0f} s")
+            content = _shown_twice(uia, hwnd, label, entry, content, entries, ready)
             pid = f"word.backstage.{word_backstage.slug(label)}"
             extra = {"idMso": word_backstage.PAGES[label]} if label in word_backstage.PAGES else {}
             records.append(ctx.base(pid, "backstagePage", label, order, entry, parent=None, **extra))
@@ -3510,6 +3648,8 @@ def capture_word_backstage(launched, uia, win, ctx, identifiers, ready=BACKSTAGE
                                   f"({type(exc).__name__}: {exc})") from None
 
             def base(rid, kind, lab, o, node, parent, **extra):
+                if not getattr(node["_el"], "is_enabled", True):
+                    extra.setdefault("enabled", False)
                 return ctx.base(rid, kind, lab, o, node["_el"], parent=parent, **extra)
 
             page_records = word_backstage.record_tree(pid, backstage_tree(content, identifiers), base, expand)
@@ -3520,11 +3660,73 @@ def capture_word_backstage(launched, uia, win, ctx, identifiers, ready=BACKSTAGE
     return word_backstage.apply_labels(records)
 
 
+BACKSTAGE_SHOWINGS = 4  # how often a page is shown at most until two showings in a row give the same facts
+BACKSTAGE_QUIET_SECONDS = 1.5  # how far apart two looks at a shown page are before they are taken to agree
+
+
+def _page_facts(content):
+    """What two looks at a page, and two showings of it, must agree on: each element's kind, id, access key, name,
+    place and whether it is available, in order. It is everything a record is made from."""
+    return tuple((el.control_type, el.automation_id or "", el.access_key or "", el.name or "",
+                  tuple(el.rect or ()), bool(getattr(el, "is_enabled", True))) for el in descendants(content, 24))
+
+
+def _page_at_rest(uia, hwnd, label, ready):
+    """The page's content and its facts once two looks BACKSTAGE_QUIET_SECONDS apart agree on every fact, or None
+    when they do not within `ready` seconds. Info fills in part after it is shown (what Inspect Document found
+    arrives a moment later and moves everything below it), so a page that only stopped loading is not yet at rest."""
+    deadline, previous = time.monotonic() + ready, None
+    while True:
+        content = _page_content(_backstage_view(uia, hwnd), label)
+        facts = _page_facts(content) if content is not None and not _loading(list(content.children())) else None
+        if facts is not None and facts == previous:
+            return content, facts
+        previous = facts
+        if time.monotonic() >= deadline:
+            return None
+        time.sleep(BACKSTAGE_QUIET_SECONDS)
+
+
+def _shown_twice(uia, hwnd, label, entry, content, entries, ready):
+    """The page's content from a showing at rest whose facts the showing before it gave too (D02 T01 §36). The
+    first time Word shows a page in a session some of its controls answer with the page's own access key in place
+    of theirs (Printer Properties with `Alt, F, P`, then `Alt, F, P, R` ever after), the answer does not change
+    while the page stays shown, and part of a page arrives after it is shown. So the page is read at rest, left
+    for another and shown again, at most BACKSTAGE_SHOWINGS times, until two showings in a row agree on every
+    fact; a page that never comes to rest, or whose showings never agree, refuses the capture."""
+    def rested():
+        got = _page_at_rest(uia, hwnd, label, ready)
+        if got is None:
+            raise Refused(f"the Backstage page {label!r} did not come to rest within {ready:.0f} s; nothing is "
+                          f"published")
+        return got
+    content, facts = rested()
+    aside = next((e for name, e in entries if name != label and getattr(e, "is_enabled", True)
+                  and word_backstage.classify(name) == "page"), None)
+    if aside is None:
+        return content  # no other page to go to: this document's Backstage has one page, read at rest as it stands
+    for _ in range(BACKSTAGE_SHOWINGS - 1):
+        aside.activate()
+        if not wait_for(lambda: _page_content(_backstage_view(uia, hwnd), label) is None, seconds=min(ready, 5.0)):
+            raise Refused(f"the Backstage page {label!r} could not be left for another and shown again")
+        entry.activate()
+        if _loaded_page(uia, hwnd, label, ready) is None:
+            raise Refused(f"the Backstage page {label!r} did not load and settle within {ready:.0f} s when it was "
+                          f"shown again")
+        content, again = rested()
+        if again == facts:
+            return content
+        facts = again
+    raise Refused(f"the Backstage page {label!r} was not the same at two showings in a row in "
+                  f"{BACKSTAGE_SHOWINGS}; nothing is published")
+
+
 def backstage_task_details(uia, hwnd, label, page_records, ctx, identifiers, base, expand, ready):
     """Select each task of a page's detail task groups (Share, Export) and record the panel it shows under it. The
     task already selected when the page opened shows its panel as the page's own content, recorded with the page;
     any other task whose panel does not appear and settle fails the capture, which would otherwise lose it."""
     tasks = [r for r in page_records if r.get("kind") == "control" and r.get("parent") and
+             r.get("label") != word_backstage.LOCATION and  # the document's folder is no task (D02 T01 §36)
              any(p.get("id") == r["parent"] and p.get("idMso") in word_backstage.DETAIL_TASK_GROUPS
                  for p in page_records)]
     out = []
@@ -4835,6 +5037,19 @@ def _document_page(root):
                     below.append(kid)
         level = below
     return None
+
+
+def word_states_check(records, what="the state capture"):
+    """Refuse records of Backstage in document states that are not lawful (scripts/lib/word_states.py's rules, each
+    counterpart a record of the committed blank-document capture) or that the inventory's schema would refuse."""
+    try:
+        blank = json.loads((INVENTORY / "word" / "backstage.json").read_bytes().decode("utf-8"))
+        word_states.validate_states(records, {r.get("id") for r in blank if isinstance(r, dict)})
+    except (OSError, ValueError) as exc:
+        raise Refused(f"the blank-document Backstage inventory cannot be read ({exc})") from None
+    except word_states.Invalid as exc:
+        raise Refused(f"{what} is not whole: {exc}") from None
+    schema_check(records, what)
 
 
 def word_menus_check(records, what="the menus capture"):
@@ -9048,7 +9263,11 @@ def word_backstage_check(records, require_behaviour=True):
     baseline = json.loads((INVENTORY / "word" / "baseline.json").read_text(encoding="utf-8"))
     ref = (INVENTORY / "REFERENCE.md").read_text(encoding="utf-8")
     try:
-        word_backstage.validate(records, baseline, word_backstage.ABSENT, ref, require_behaviour=require_behaviour)
+        # D02 T01 §36: what was captured over a document in another state counts as captured here.
+        word_backstage.validate(records, baseline, word_backstage.ABSENT, ref, require_behaviour=require_behaviour,
+                                also_captured=word_states.captured_ids(INVENTORY / "word"))
+    except (OSError, ValueError) as exc:
+        raise Refused(f"Word Backstage inventory: the document states file cannot be read ({exc})") from None
     except word_backstage.Invalid as exc:
         raise Refused(f"Word Backstage inventory: {exc}") from None
 
@@ -9442,6 +9661,8 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     which.add_argument("--statusbar", action="store_true", help="Word's status bar and its menu (D02 T01 §33)")
     which.add_argument("--dialogs", action="store_true", help="Word's dialogs (D02 T01 §34)")
     which.add_argument("--menus", action="store_true", help="Word's context menus and mini toolbars (D02 T01 §35)")
+    parser.add_argument("--state", choices=word_states.NAMES,
+                        help="with --backstage: capture over the fixture document in this state (D02 T01 §36)")
     parser.add_argument("--expand", action="store_true", help="open each menu and gallery and record its items")
     parser.add_argument("--layout", choices=("classic", "simplified"), default="classic")
     parser.add_argument("--merge", action="store_true", help="update an existing file, keeping hand-written fields")
@@ -9515,7 +9736,10 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
         return 0
     if not args.app:
         parser.error("the following arguments are required: --app")
+    if args.state and not (args.backstage and args.app == "word"):
+        parser.error("--state is given with --app word --backstage")
     out = Path(args.out) if args.out else INVENTORY / args.app / (
+        "backstage-states.json" if args.backstage and args.state else
         "backstage.json" if args.backstage else "options.json" if args.options else
         "panes.json" if args.panes else "statusbar.json" if args.statusbar else
         "dialogs.json" if args.dialogs else "menus.json" if args.menus else
@@ -9556,7 +9780,9 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
     try:
         unverified_records = list(ctx.unverified)
         is_canonical_word_ribbon = False
-        if args.backstage:
+        if args.backstage and args.state:
+            word_states_check(records)  # D02 T01 §36: a state's records, held against the blank-document capture
+        elif args.backstage:
             word_backstage_check(records, require_behaviour=False)  # the fresh capture alone must be complete
         elif args.options:
             word_options_check(records)
@@ -9587,7 +9813,11 @@ def main(argv=None, launcher=Launched, uia_factory=None, win_factory=None):
                 raise Refused(f"{out} changed during the capture; re-run to merge cleanly")
             if current_bytes is not None:
                 existing_records = _load_existing_records(out, current_bytes)
-                if (args.backstage or args.options or args.panes or args.statusbar or args.dialogs
+                if args.backstage and args.state:
+                    # Only this state's records are replaced: every other state's stay byte for byte.
+                    records = word_states.merge_state(existing_records, records, word_states.by_name(args.state))
+                    word_states_check(records, f"{out} merged with the capture")
+                elif (args.backstage or args.options or args.panes or args.statusbar or args.dialogs
                         or args.menus):
                     try:
                         records = word_backstage.carry_behaviours(existing_records, records)

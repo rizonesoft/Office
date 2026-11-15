@@ -3,14 +3,18 @@
 """scripts/lib/word_states.py and scripts/make-word-state-fixtures.py: the document states the inventory is
 captured in, and the fixtures made for them, against a fake Word (D02 T01 §36). No test starts Word."""
 import contextlib
+import copy
 import importlib.util
+import json
 import io
 import os
 from pathlib import Path
 import stat
 import sys
 import tempfile
+import threading
 import unittest
+import unittest.mock
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS / "lib"))
@@ -219,7 +223,8 @@ class Fixtures(unittest.TestCase):
         said, marks = [], []
         failed = mk.run(list(states), root or self.tmp, dispatch=lambda progid: app, owner=lambda a: proc,
                         mark=lambda path, zone: marks.append((str(path), zone)),
-                        say=lambda text, file=None: said.append(text))
+                        say=lambda text, file=None: said.append(text),
+                        end=lambda pid: self.fail("the script ended a Word that was answering"))
         return failed, said, marks, proc
 
     def setUp(self):
@@ -324,6 +329,38 @@ class Fixtures(unittest.TestCase):
         self.assertIn("(pid 4242) did not exit", str(ctx.exception))
         self.assertEqual((app.quit, proc.closed), (1, True))
 
+    def test_a_word_that_stops_answering_is_ended_and_fails_the_run(self):
+        # A hidden Word that waits on something never says so (on 2026-11-15 it blocked for good on adding an
+        # ActiveX control). The run has a time limit: the script's own process is ended, the fixture it was making
+        # is deleted, and the run fails saying so.
+        released, app, ended, proc = threading.Event(), FakeApp(), [], Proc()
+        real_add, calls = app.Documents.Add, {"n": 0}
+
+        def add():
+            calls["n"] += 1
+            if calls["n"] == 3:  # the instance's first window, the saved fixture, then the one that hangs
+                (ws.folder(self.tmp) / "read-only.docx").write_bytes(b"half made")
+                released.wait(10)
+                raise OSError("the RPC server is unavailable")
+            return real_add()
+        app.Documents.Add = add
+
+        def end(pid):
+            ended.append(pid)
+            released.set()
+        with self.assertRaises(Refused) as ctx:
+            mk.run(list(ws.STATES), self.tmp, dispatch=lambda progid: app, owner=lambda a: proc,
+                   mark=lambda path, zone: None, say=lambda text, file=None: None, limit=0.2, end=end)
+        self.assertIn("Word did not answer within 0 s; the instance the script started (pid 4242) was ended, and "
+                      "the fixture it was making is deleted", str(ctx.exception))
+        self.assertEqual((ended, app.quit, proc.closed), ([4242], 0, True))
+        self.assertTrue((ws.folder(self.tmp) / "saved.docx").exists())  # made and confirmed before the hang: kept
+        self.assertFalse((ws.folder(self.tmp) / "read-only.docx").exists())
+        # a run that ends in time ends nothing
+        ended.clear()
+        failed, _, _, _ = self.make(FakeApp())
+        self.assertEqual((failed, ended), ([], []))
+
     def run_main(self, argv, runner, installed="16.0.1.1", build="16.0.1.1"):
         out, err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
@@ -396,6 +433,277 @@ class Fixtures(unittest.TestCase):
         mk.remove(path)
         self.assertFalse(path.exists())
         mk.remove(path)  # one that is not there is no fault
+
+
+SOURCE = {"source": "uia:16.0.20527.20150", "capturedFrom": "16.0.20527.20150"}
+
+
+def rec(rid, kind, label, parent=None, order=0, **extra):
+    record = {"id": rid, "app": "word", "kind": kind, "label": label, "order": order, **SOURCE, **extra}
+    if parent:
+        record["parent"] = parent
+    return record
+
+
+def blank():
+    """A small blank-document capture: Save shows Save As, Info holds a menu and a properties group, Print a page."""
+    b = "word.backstage"
+    return [
+        rec(f"{b}.info", "backstagePage", "Info", order=0, idMso="TabInfo"),
+        rec(f"{b}.info.protect-document", "group", "Protect Document", f"{b}.info", 0, idMso="GroupPermissions"),
+        rec(f"{b}.info.protect-document.protect-document", "control", "Protect Document",
+            f"{b}.info.protect-document", 0, controlType="menu", itemCount=1,
+            behaviour="Opens the ways to protect the document. Always available."),
+        rec(f"{b}.info.protect-document.protect-document.mark-as-final", "menuItem", "Mark as Final",
+            f"{b}.info.protect-document.protect-document", 0, idMso="FileMarkAsFinal"),
+        rec(f"{b}.info.properties", "group", "Properties", f"{b}.info", 1),
+        rec(f"{b}.info.properties.title", "control", "Title", f"{b}.info.properties", 0, controlType="editBox"),
+        rec(f"{b}.save", "backstagePage", "Save", order=1, target=f"{b}.save-as"),
+        rec(f"{b}.save-as", "backstagePage", "Save As", order=2, idMso="TabSave"),
+        rec(f"{b}.save-as.browse", "control", "Browse", f"{b}.save-as", 0, controlType="button"),
+        rec(f"{b}.print", "backstagePage", "Print", order=3, idMso="TabPrint"),
+        rec(f"{b}.print.print", "control", "Print", f"{b}.print", 0, controlType="button"),
+        rec(f"{b}.close", "control", "Close", order=4, controlType="button"),
+    ]
+
+
+def captured(*changes, drop=(), add=()):
+    """A whole capture over a fixture: the blank one's facts (nothing written by hand), with some records changed
+    (`(id, fields)`), dropped or added."""
+    out = [{k: v for k, v in r.items() if k not in ws.HAND} for r in blank() if r["id"] not in drop]
+    for rid, fields in changes:
+        target = next(r for r in out if r["id"] == rid)
+        for key, value in fields.items():
+            if value is None:
+                target.pop(key, None)
+            else:
+                target[key] = value
+    return out + list(add)
+
+
+class StateRecords(unittest.TestCase):
+    SAVED = ws.by_name("saved")
+    B = "word.backstage"
+    S = "word.backstage.states.saved"
+
+    def saved(self):
+        """Over a saved document: Save is a plain button, Info gains a location group, Print is as it was."""
+        return captured(
+            (f"{self.B}.save", {"kind": "control", "controlType": "button", "target": None}),
+            add=[rec(f"{self.B}.info.location-information", "group", "Location Information", f"{self.B}.info", 2),
+                 rec(f"{self.B}.info.location-information.location", "control", "Location",
+                     f"{self.B}.info.location-information", 0, controlType="button")])
+
+    def test_a_state_is_recorded_whole_against_the_blank_capture(self):
+        out = ws.state_records(self.SAVED, self.saved(), blank())
+        by = {r["id"]: r for r in out}
+        root = out[0]
+        self.assertEqual({k: root[k] for k in ("id", "kind", "label", "order", "condition", "captureState")}, {
+            "id": self.S, "kind": "region", "label": "Saved document", "order": 0,
+            "condition": "an ordinary document saved to a file", "captureState": "saved"})
+        self.assertEqual(root["itemCount"], len(out) - 1)
+        # the keys stand in one order whatever process made the record: two captures are the same bytes
+        self.assertEqual(list(root), ["id", "app", "kind", "label", "order", "condition", "captureState", "source",
+                                      "capturedFrom", "itemCount"])
+        self.assertEqual(list(by[f"{self.S}.print"]), ["id", "app", "kind", "label", "order", "source",
+                                                        "capturedFrom", "captureState", "unchanged", "variantOf",
+                                                        "parent"])
+        self.assertTrue(all(r["captureState"] == "saved" and r["id"].startswith(self.S) for r in out))
+        # Save: a page that shows Save As over the blank document, a plain button over a saved one (gap 1)
+        save = by[f"{self.S}.save"]
+        self.assertEqual((save["kind"], save["controlType"], save["variantOf"], "target" in save),
+                         ("control", "button", f"{self.B}.save", False))
+        # a page that differs carries every record of it, each joined to its counterpart; what the state adds has none
+        info = [r for r in out if r["id"].startswith(f"{self.S}.info")]
+        self.assertEqual(len(info), 8)
+        self.assertEqual(by[f"{self.S}.info.properties.title"]["variantOf"], f"{self.B}.info.properties.title")
+        self.assertEqual(by[f"{self.S}.info.properties.title"]["parent"], f"{self.S}.info.properties")
+        self.assertNotIn("variantOf", by[f"{self.S}.info.location-information"])
+        self.assertNotIn("variantOf", by[f"{self.S}.info.location-information.location"])
+        self.assertNotIn("unchanged", by[f"{self.S}.info"])
+        # what was written by hand on the blank record is not a fact, and is not copied into the state
+        self.assertNotIn("behaviour", by[f"{self.S}.info.protect-document.protect-document"])
+        # a page that is the blank capture's, record for record, says so and carries none of them
+        page = by[f"{self.S}.print"]
+        self.assertEqual((page["unchanged"], page["variantOf"], page["parent"]), (True, f"{self.B}.print", self.S))
+        self.assertNotIn(f"{self.S}.print.print", by)
+        self.assertNotIn("idMso", page)
+        self.assertEqual(by[f"{self.S}.save-as"]["unchanged"], True)
+        self.assertEqual(by[f"{self.S}.close"]["variantOf"], f"{self.B}.close")
+        ws.validate_states(out, {r["id"] for r in blank()})
+
+    def test_what_a_state_disables_hides_or_renames_is_seen(self):
+        final = ws.by_name("final")
+        s = "word.backstage.states.final"
+        got = captured(
+            (f"{self.B}.print.print", {"enabled": False}),  # disabled by the state
+            (f"{self.B}.info.protect-document", {"label": "Alert - Protect Document"}),  # renamed, its id with it
+            drop=(f"{self.B}.info.properties.title",))  # hidden by the state
+        for r in got:  # a renamed group: the capture gives it, and what stands under it, another id
+            for key in ("id", "parent"):
+                if key in r:
+                    r[key] = r[key].replace("info.protect-document", "info.alert-protect-document", 1)
+        out = ws.state_records(final, got, blank())
+        by = {r["id"]: r for r in out}
+        self.assertIs(by[f"{s}.print.print"]["enabled"], False)
+        self.assertNotIn("unchanged", by[f"{s}.print"])
+        # the hidden control has no record, on a page that is not unchanged: the blank record nobody points at
+        self.assertNotIn(f"{s}.info.properties.title", by)
+        claimed = {r["variantOf"] for r in out if "variantOf" in r}
+        self.assertNotIn(f"{self.B}.info.properties.title", claimed)
+        # the renamed group keeps its counterpart by its idMso, and its controls keep theirs through it
+        group = by[f"{s}.info.alert-protect-document"]
+        self.assertEqual((group["label"], group["variantOf"]), ("Alert - Protect Document",
+                                                                 f"{self.B}.info.protect-document"))
+        self.assertEqual(by[f"{s}.info.alert-protect-document.protect-document"]["variantOf"],
+                         f"{self.B}.info.protect-document.protect-document")
+        self.assertEqual(by[f"{s}.info.alert-protect-document.protect-document.mark-as-final"]["variantOf"],
+                         f"{self.B}.info.protect-document.protect-document.mark-as-final")
+        ws.validate_states(out, {r["id"] for r in blank()})
+
+    def test_a_page_the_state_does_not_offer_is_recorded_disabled_and_unopened(self):
+        got = captured((f"{self.B}.save-as", {"enabled": False}), drop=(f"{self.B}.save-as.browse",))
+        out = ws.state_records(ws.by_name("protected-view"), got, blank())
+        page = next(r for r in out if r["id"].endswith(".save-as"))
+        self.assertEqual((page["enabled"], page["variantOf"], "unchanged" in page), (False, f"{self.B}.save-as", False))
+
+    def test_a_capture_that_cannot_be_held_is_refused(self):
+        with self.assertRaises(ws.Invalid) as ctx:
+            ws.state_records(self.SAVED, captured(add=[rec("word.options.general", "group", "General")]), blank())
+        self.assertIn("'word.options.general', which is not a Backstage record", str(ctx.exception))
+        with self.assertRaises(ws.Invalid) as ctx:
+            ws.state_records(self.SAVED, captured(add=[rec(f"{self.B}.info.x", "control", "X", f"{self.B}.gone")]),
+                             blank())
+        self.assertIn("stands under word.backstage.gone, which the capture does not hold", str(ctx.exception))
+        # two records of the state that would stand for one blank record
+        twice = captured(add=[rec(f"{self.B}.info.again", "group", "Again", f"{self.B}.info", 5,
+                                  idMso="GroupPermissions")])
+        with self.assertRaises(ws.Invalid) as ctx:
+            ws.state_records(self.SAVED, twice, blank())
+        self.assertIn("both stand for word.backstage.info.protect-document of the blank-document capture",
+                      str(ctx.exception))
+        with self.assertRaises(ws.Invalid):
+            ws.state_id(self.SAVED, "word.backstage.states.saved.info")
+        with self.assertRaises(ws.Invalid):
+            ws.state_id(self.SAVED, "word.ribbon.home")
+
+    def test_two_states_that_add_the_same_control_each_keep_their_own_record(self):
+        # gap 2: the same addition in two states, a recapture of either, and a blank-document merge
+        ids = {r["id"] for r in blank()}
+        saved = ws.state_records(self.SAVED, self.saved(), blank())
+        read_only = ws.state_records(ws.by_name("read-only"), self.saved(), blank())
+        both = ws.merge_state(saved, read_only, ws.by_name("read-only"))
+        self.assertEqual(len(both), len(saved) + len(read_only))
+        self.assertEqual(len({r["id"] for r in both}), len(both))
+        self.assertIn("word.backstage.states.saved.info.location-information.location", {r["id"] for r in both})
+        self.assertIn("word.backstage.states.read-only.info.location-information.location", {r["id"] for r in both})
+        ws.validate_states(both, ids)
+        # a hand-written field on one state's record is carried by that state's recapture, and the other state's
+        # records stay byte for byte
+        mine = "word.backstage.states.saved.info.location-information.location"
+        told = [dict(r, behaviour="Shows the folder. Always available.") if r["id"] == mine else r for r in both]
+        fresh = ws.state_records(self.SAVED, self.saved(), blank())
+        again = ws.merge_state(told, fresh, self.SAVED)
+        self.assertEqual(next(r for r in again if r["id"] == mine)["behaviour"],
+                         "Shows the folder. Always available.")
+        self.assertEqual([r for r in again if r["captureState"] == "read-only"], read_only)
+        self.assertEqual([r["captureState"] for r in again], ["saved"] * len(saved) + ["read-only"] * len(read_only))
+        # recapturing the later state leaves the earlier one as it is, and the order is the list's
+        once_more = ws.merge_state(again, read_only, ws.by_name("read-only"))
+        self.assertEqual(once_more, again)
+        # a state whose capture shrank loses the records it no longer shows, and only its own
+        smaller = ws.state_records(ws.by_name("read-only"), captured(), blank())
+        shrunk = ws.merge_state(again, smaller, ws.by_name("read-only"))
+        self.assertEqual([r for r in shrunk if r["captureState"] == "saved"],
+                         [r for r in again if r["captureState"] == "saved"])
+        self.assertNotIn("word.backstage.states.read-only.info.location-information.location",
+                         {r["id"] for r in shrunk})
+        ws.validate_states(shrunk, ids)
+
+    def test_only_what_a_state_adds_counts_as_captured_beside_the_blank_capture(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(ws.captured_ids(tmp), frozenset())  # no states file yet: nothing more is captured
+            path = Path(tmp) / ws.FILE
+            path.write_text(json.dumps([
+                {"id": "word.backstage.states.read-only.info.alert", "idMso": "GroupReadOnly"},
+                {"id": "word.backstage.states.read-only.info.protect", "idMso": "GroupPermissions",
+                 "variantOf": "word.backstage.info.protect-document"},
+                {"id": "word.backstage.states.read-only.info.x"}, {"id": "y", "idMso": ""}]), encoding="utf-8")
+            # a record that stands for a blank record adds nothing: a group lost from the blank capture must not
+            # pass as captured because a state still shows it
+            self.assertEqual(ws.captured_ids(tmp), frozenset({"GroupReadOnly"}))
+            for text in ("{}", "[1]", "not json"):
+                path.write_text(text, encoding="utf-8")
+                with self.assertRaises(ValueError, msg=text):
+                    ws.captured_ids(tmp)
+
+    def refusal(self, records, whole=False):
+        try:
+            ws.validate_states(records, {r["id"] for r in blank()}, whole=whole)
+        except ws.Invalid as exc:
+            return str(exc)
+        return ""
+
+    def test_a_file_of_states_that_is_not_lawful_is_refused(self):
+        good = ws.state_records(self.SAVED, self.saved(), blank())
+        self.assertEqual(self.refusal(good), "")
+
+        def changed(rid, **fields):
+            out = copy.deepcopy(good)
+            target = next(r for r in out if r["id"] == rid)
+            for key, value in fields.items():
+                if value is None:
+                    target.pop(key)
+                else:
+                    target[key] = value
+            return self.refusal(out)
+        self.assertIn("its captureState 'signed' is not a state", changed(f"{self.S}.close", captureState="signed"))
+        self.assertIn("its captureState None is not a state", changed(f"{self.S}.close", captureState=None))
+        self.assertIn(f"a record of the read-only state has an id under word.backstage.states.read-only",
+                      changed(f"{self.S}.close", captureState="read-only"))
+        self.assertIn("is called 'Saved', not Saved document", changed(self.S, label="Saved"))
+        self.assertIn("its condition is 'a file', not the document the list gives the state",
+                      changed(self.S, condition="a file"))
+        self.assertIn("the root of a state is a region with no parent", changed(self.S, kind="group"))
+        self.assertIn(f"holds {len(good) - 1} of the {len(good)} records the capture recorded",
+                      changed(self.S, itemCount=len(good)))
+        self.assertIn("its parent 'word.backstage.info' is not a record of the saved state",
+                      changed(f"{self.S}.info.properties", parent="word.backstage.info"))
+        self.assertIn("its variantOf 'word.backstage.gone' is not a record of the blank-document capture",
+                      changed(f"{self.S}.close", variantOf="word.backstage.gone"))
+        self.assertIn("word.backstage.print is already the counterpart of",
+                      changed(f"{self.S}.close", variantOf="word.backstage.print"))
+        self.assertIn("`unchanged` is true, on a page of a state only", changed(f"{self.S}.close", unchanged=True))
+        self.assertIn("`unchanged` is true, on a page of a state only", changed(f"{self.S}.print", unchanged=False))
+        self.assertIn("a page that is unchanged names the blank-document page it equals",
+                      changed(f"{self.S}.print", variantOf=None))
+        self.assertIn("`condition` belongs to the root of a state", changed(f"{self.S}.close", condition="x"))
+        self.assertIn("app must be 'word'", changed(f"{self.S}.close", app="excel"))
+        under = copy.deepcopy(good) + [dict(rec(f"{self.S}.print.print", "control", "Print", f"{self.S}.print"),
+                                            captureState="saved")]
+        under[0]["itemCount"] += 1
+        self.assertIn("a page that is unchanged carries no records of its own, and 1 stand under it",
+                      self.refusal(under))
+        self.assertIn(f"duplicate record id {self.S}.close", self.refusal(good + [copy.deepcopy(good[-1])]))
+        self.assertIn("the saved state has records and no root", self.refusal(good[1:]))
+        with self.assertRaises(ws.Invalid):
+            ws.validate_states([{"captureState": "saved"}], set())
+
+    def test_the_whole_file_holds_every_state_the_list_names(self):
+        ids = {r["id"] for r in blank()}
+        every = []
+        for state in ws.STATES:
+            every = ws.merge_state(every, ws.state_records(state, self.saved(), blank()), state)
+        ws.validate_states(every, ids, whole=True)
+        self.assertEqual([r["captureState"] for r in every if r["kind"] == "region"], list(ws.NAMES))
+        without = [r for r in every if r["captureState"] != "final"]
+        self.assertEqual(self.refusal(without), "")  # a file that is being built holds what was captured so far
+        self.assertIn("the final state (Marked as final) is not recorded", self.refusal(without, whole=True))
+        # a state the list says this PC cannot produce is not asked for, and is refused when it is there
+        with unittest.mock.patch.dict(ws.UNPRODUCIBLE, {"final": "no document can be marked as final here"}):
+            self.assertEqual(self.refusal(without, whole=True), "")
+            self.assertIn("the final state is recorded, and scripts/lib/word_states.py says this PC cannot produce it",
+                          self.refusal(every, whole=True))
 
 
 if __name__ == "__main__":

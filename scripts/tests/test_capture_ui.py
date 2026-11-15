@@ -3,9 +3,11 @@
 """scripts/capture-ui.py: UI Automation trees become inventory records, facts only, with safe launch and closing."""
 import contextlib
 import copy
+import hashlib
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -4620,7 +4622,7 @@ class FakeWordBackstage:
     its content group shows, or to None for a page that never loads. Records every entry pressed."""
 
     def __init__(self, pages, actions=("Save", "Close", "Options")):
-        self.pages, self.pressed, self.view = pages, [], None
+        self.pages, self.pressed, self.view, self.shown = pages, [], None, {}
         self.file = self.button("File Tab", "FileTabButton", self.open)
         self.root = E("Window", "Document1 - Word", kids=[self.file])
         names = ["Back", *pages, *actions, "Save as Adobe PDF"]
@@ -4638,7 +4640,10 @@ class FakeWordBackstage:
 
         def press():
             self.pressed.append(name)
-            if name in self.pages and self.pages[name] is not None:
+            self.shown[name] = self.shown.get(name, 0) + 1
+            if name in self.pages and callable(self.pages[name]):  # a page that differs from showing to showing
+                self.view.kids = [E("Group", name, kids=self.pages[name](self.shown[name]))]
+            elif name in self.pages and self.pages[name] is not None:
                 self.view.kids = [E("Group", name, kids=self.pages[name])]
             elif name in self.pages:
                 self.view.kids = [E("Group", name, kids=[E("Group", "Loading services...", kids=[E("Text", "Loading...")])])]
@@ -4741,7 +4746,7 @@ class SlowClose(unittest.TestCase):
 class WordBackstage(unittest.TestCase):
     """The --backstage capture against a fake Word (D02 T01 §6)."""
 
-    def run_capture(self, word, ready=0.3, never_saved=None, identifiers=()):
+    def run_capture(self, word, ready=0.3, never_saved=None, identifiers=(), sleep=None):
         uia = type("U", (), {"element": lambda self, h: word.root})()
 
         class W:
@@ -4752,7 +4757,7 @@ class WordBackstage(unittest.TestCase):
             members["word_action"] = lambda self, action: {"hwnd": 5, "new": never_saved}
         launched = type("L", (), members)()
         ctx = cu.Context("word", BUILD, set())
-        real_sleep, cu.time.sleep = cu.time.sleep, lambda s: None
+        real_sleep, cu.time.sleep = cu.time.sleep, sleep or (lambda s: None)
         try:
             return cu.capture_word_backstage(launched, uia, W(), ctx, set(identifiers), ready=ready), ctx
         finally:
@@ -4763,7 +4768,9 @@ class WordBackstage(unittest.TestCase):
             "Info": [E("Group", "Protect Document", "GroupPermissions", kids=[menu("Protect Document", "Mark as Final")])],
             "Print": [E("Group", "Print", kids=[E("Button", "Print"), E("Spinner", "Copies")])]})
         records, ctx = self.run_capture(word)
-        self.assertEqual(word.pressed, ["Info", "Print"])  # no action, no Back, no add-in entry was pressed
+        # no action, no Back, no add-in entry was pressed; each page was left for another and shown again, since
+        # the first showing of a page can give a control the page's access key in place of its own (D02 T01 §36)
+        self.assertEqual(word.pressed, ["Info", "Print", "Info", "Print", "Info", "Print"])
         by_id = {r["id"]: r for r in records}
         for rid in ("word.backstage.save", "word.backstage.close", "word.backstage.options"):
             self.assertEqual((by_id[rid]["kind"], by_id[rid]["controlType"]), ("control", "button"))
@@ -4894,8 +4901,63 @@ class WordBackstage(unittest.TestCase):
         with self.assertRaises(cu.Refused) as ctx:
             self.run_capture(word)
         self.assertIn("'Print'", str(ctx.exception))
-        self.assertEqual(word.pressed, ["Home", "Info", "Print"])
+        self.assertEqual(word.pressed, ["Home", "Info", "Home", "Info", "Home", "Info", "Print"])
         self.assertIsNone(word.view)
+
+    def test_a_page_is_read_from_a_showing_whose_access_keys_the_one_before_it_gave(self):
+        # D02 T01 §36: the first time Word shows a page in a session, a control can answer with the page's access
+        # key in place of its own. What is recorded is what two showings in a row agree on.
+        def print_page(shown):
+            key = "Alt, F, P" if shown == 1 else "Alt, F, P, R"
+            return [E("Group", "Print", kids=[E("Button", "Print", key="Alt, F, P, P"),
+                                              E("Hyperlink", "Printer Properties", key=key)])]
+        info = [E("Group", "Protect Document", kids=[E("Button", "Protect", key="Alt, F, I, P")])]
+        home = [E("Group", "New", kids=[E("Button", "Blank document", key="Alt, F, H, B")])]
+        word = FakeWordBackstage({"Home": home, "Info": info, "Print": print_page})
+        records, _ = self.run_capture(word)
+        by_label = {r["label"]: r for r in records}
+        self.assertEqual(by_label["Printer Properties"]["keytip"], "R")
+        # Print's first showing gave the page's key, its second and third agreed: it was shown three times, each
+        # time after going to another page (Home), and the other pages twice
+        self.assertEqual(word.pressed, ["Home", "Info", "Home", "Info", "Home", "Info",
+                                        "Print", "Home", "Print", "Home", "Print"])
+        # a page whose keys never come to rest is refused, naming it, and Backstage is left
+        turn = {"n": 0}
+
+        def restless(shown):
+            turn["n"] += 1
+            return [E("Group", "Print", kids=[E("Button", "Print", key=f"Alt, F, P, {turn['n']}")])]
+        word = FakeWordBackstage({"Info": info, "Print": restless})
+        with self.assertRaises(cu.Refused) as ctx:
+            self.run_capture(word)
+        self.assertIn("the Backstage page 'Print' was not the same at two showings in a row in 4; nothing is "
+                      "published", str(ctx.exception))
+        self.assertIsNone(word.view)
+        # part of a page can arrive after it is shown (what Inspect Document found, on Info): the page is read only
+        # once two looks a quiet time apart agree, so what arrived late is recorded
+        late = E("Group", "Inspect Document")
+        filling(late, [[E("Button", "Check for Issues")],
+                       [E("Button", "Check for Issues"), E("Button", "Allow this information to be saved")]])
+        word = FakeWordBackstage({"Home": home, "Info": [late]})
+        records, _ = self.run_capture(word)
+        self.assertIn("Allow this information to be saved", [r["label"] for r in records])
+        # and when that part arrives late at every showing, a second and more after the page has stopped loading,
+        # only the quiet time between two looks can see it: two showings read too early would agree without it
+        clock = {"t": 0.0}
+
+        def slow_info(shown):
+            born, group = clock["t"], E("Group", "Inspect Document")
+            first, second = E("Button", "Check for Issues"), E("Button", "Allow this information to be saved")
+            group.children = lambda: (E._wrap(k) for k in ([first] if clock["t"] - born < 1.0 else [first, second]))
+            return [group]
+        word = FakeWordBackstage({"Home": home, "Info": slow_info})
+        records, _ = self.run_capture(word, sleep=lambda s: clock.__setitem__("t", clock["t"] + s))
+        self.assertIn("Allow this information to be saved", [r["label"] for r in records])
+        self.assertGreaterEqual(cu.BACKSTAGE_QUIET_SECONDS, 1.0)
+        # a document whose Backstage has one page only has no other page to go to: it is read as it stands
+        word = FakeWordBackstage({"Info": info})
+        self.run_capture(word)
+        self.assertEqual(word.pressed, ["Info"])
 
     def test_a_menu_that_will_not_open_fails_the_capture(self):
         broken = menu("Protect Document", "Mark as Final")
@@ -7515,6 +7577,473 @@ class WordMenusOwner(unittest.TestCase):
                 list(getattr(element(Raw(), COMError("element not available")), walk)())
             with self.assertRaises(ZeroDivisionError):  # any other failure is not an element that went away
                 list(getattr(element(ZeroDivisionError("a fault of the tool's own"), None), walk)())
+
+
+class StateDoc:
+    """A fixture document as the fake Word opens it (D02 T01 §36): what Word says of it, and how it was closed."""
+
+    def __init__(self, word, path, says):
+        self.word, self.path, self.says, self.closed, self.Name, self.FullName = word, path, says, None, "f", path
+
+    def __getattr__(self, name):
+        says = self.__dict__.get("says", {})
+        if name in says:
+            return says[name]
+        raise AttributeError(name)
+
+    def Close(self, SaveChanges=None):
+        self.closed = SaveChanges
+        self.word.documents.remove(self)
+
+
+class FakeStateWord:
+    """The Word the capture owns, with its one blank document, for the owner side of --state: it closes its
+    untouched blank document when a file is opened beside it, as Word does, and logs every call."""
+
+    def __init__(self, says=None, among_documents=False, windows_before=0, new_windows=(88,), keeps_blank=False):
+        self.says, self.calls, self.among, self.keeps_blank = says, [], among_documents, keeps_blank
+        self.blank = type("Blank", (), {"Name": "Document1", "FullName": "Document1", "closed": False})()
+        self.documents, self.protected, self.new_windows, self.shown = [self.blank], windows_before, new_windows, []
+        word = self
+
+        class Documents:
+            @property
+            def Count(self):
+                return len(word.documents)
+
+            def Open(self, path, AddToRecentFiles=True, ConfirmConversions=True):
+                word.calls.append(("Open", path, AddToRecentFiles))
+                word.close_blank()
+                doc = StateDoc(word, path, word.says or {})
+                word.documents.append(doc)
+                return doc
+
+        class Windows:
+            @property
+            def Count(self):
+                return word.protected
+
+            def Open(self, path, AddToRecentFiles=True):
+                word.calls.append(("ProtectedOpen", path, AddToRecentFiles))
+                word.close_blank()
+                word.protected += 1
+                word.shown = list(word.new_windows)
+                if word.among:
+                    word.documents.append(StateDoc(word, path, {}))
+
+                class Window:
+                    def Close(self):
+                        word.calls.append(("CloseWindow", path))
+                        word.protected -= 1
+                        word.shown = []
+                return Window()
+        self.Documents, self.ProtectedViewWindows = Documents(), Windows()
+
+    def close_blank(self):
+        if not self.keeps_blank and self.blank in self.documents:
+            self.documents.remove(self.blank)
+            self.blank.closed = True
+
+    def windows_of(self, pid, class_name=None):
+        return [5] + self.shown
+
+    def top(self, hwnd):
+        return hwnd
+
+
+class WordStateOwner(unittest.TestCase):
+    """What the process that owns Word does for --state (D02 T01 §36): a fixture of the list is opened as its state
+    needs, Word confirms the state, the file's digest is kept, and everything it opened is closed unsaved."""
+
+    def setUp(self):
+        holder = tempfile.TemporaryDirectory()
+        self.addCleanup(holder.cleanup)
+        self.tmp = holder.name
+        patcher = unittest.mock.patch.dict(os.environ, {"OFFICE_SCRATCH": self.tmp})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.home = cu.word_states.folder()
+        self.home.mkdir(parents=True)
+        for state in cu.word_states.STATES:
+            (self.home / state["file"]).write_bytes(b"a fixture of " + state["name"].encode())
+
+    def owner(self, word):
+        launched = cu.Launched.__new__(cu.Launched)
+        launched.key, launched.exe, launched.hwnd, launched.created = "word", "WINWORD.EXE", 5, [word.blank]
+        launched._created_meta = [{"name": "Document1", "full_name": "Document1"}]
+        launched.app, launched.proc = word, type("P", (), {"pid": 9})()
+        launched._check_alone_impl = lambda: None
+        launched._restore_saved_clipboard = lambda: None
+        launched._get_win = lambda: word
+        launched.window_handle = lambda: 55
+        return launched
+
+    def refused(self, launched, *said, **kwargs):
+        with self.assertRaises(cu.Refused) as ctx:
+            launched._word_action_impl("open_state", **kwargs)
+        for text in said:
+            self.assertIn(text, str(ctx.exception))
+        return str(ctx.exception)
+
+    def test_a_fixture_is_opened_in_its_state_and_closed_unsaved(self):
+        word = FakeStateWord({"ReadOnly": True, "ReadOnlyRecommended": False})
+        launched = self.owner(word)
+        path = (self.home / "read-only.docx").resolve()
+        got = launched._word_action_impl("open_state", state="read-only")
+        self.assertEqual(got, {"hwnd": 55, "state": "read-only"})
+        self.assertEqual(word.calls, [("Open", str(path), False)])  # nothing is added to the recent files
+        self.assertEqual((launched._fixture_path, launched._fixture_sha256),
+                         (path, hashlib.sha256(path.read_bytes()).hexdigest()))
+        # Word closed its own blank document when the file opened: it is no longer the capture's to check or close
+        self.assertEqual((launched.created, launched._created_meta), ([], []))
+        doc = launched._fixture_doc
+        launched._word_action_impl("close_fixture")
+        self.assertEqual((doc.closed, launched._fixture_doc, word.documents), (0, None, []))
+        # a Word that keeps its blank document keeps it the capture's
+        word = FakeStateWord({"ReadOnly": True, "ReadOnlyRecommended": False}, keeps_blank=True)
+        launched = self.owner(word)
+        launched._word_action_impl("open_state", state="read-only")
+        self.assertEqual(launched.created, [word.blank])
+
+    def test_a_fixture_word_does_not_confirm_is_closed_and_refused(self):
+        word = FakeStateWord({"ReadOnly": False, "ReadOnlyRecommended": False})
+        launched = self.owner(word)
+        self.refused(launched, "the fixture read-only.docx did not open in the read-only state (ReadOnly is False, "
+                     "not True); make the fixtures again with python scripts/make-word-state-fixtures.py",
+                     state="read-only")
+        self.assertEqual((word.documents, launched._fixture_doc), ([], None))  # closed again, unsaved
+        word = FakeStateWord({"ReadOnly": True})  # Word will not say whether it is final: never taken as final
+        self.refused(self.owner(word), "Final could not be read (AttributeError)", state="final")
+
+    def test_only_a_fixture_of_the_list_in_the_fixtures_folder_is_opened(self):
+        word = FakeStateWord({"ReadOnly": False})
+        launched = self.owner(word)
+        stray = Path(self.tmp) / "saved.docx"
+        stray.write_bytes(b"not a fixture")
+        (self.home / "report.docx").write_bytes(b"someone's report")
+        for path in (stray, self.home / ".." / ".." / "saved.docx", self.home / "report.docx"):
+            self.refused(launched, "is not a fixture of scripts/lib/word_states.py", state="saved", path=str(path))
+        self.refused(launched, "final.docx is not the fixture of the saved state", state="saved",
+                     path=str(self.home / "final.docx"))
+        self.refused(launched, "'signed' is not a document state", state="signed")
+        self.refused(launched, "None is not a document state")
+        (self.home / "saved.docx").unlink()
+        self.refused(launched, "does not exist; make it with python scripts/make-word-state-fixtures.py",
+                     state="saved")
+        self.assertEqual(word.calls, [])  # nothing was opened for any of them
+        launched._fixture_doc = object()
+        self.refused(launched, "another document of the capture's is still open", state="final")
+
+    def test_protected_view_is_a_window_of_its_own_and_not_a_document(self):
+        word = FakeStateWord()
+        launched = self.owner(word)
+        path = (self.home / "protected-view.docx").resolve()
+        got = launched._word_action_impl("open_state", state="protected-view")
+        self.assertEqual(got, {"hwnd": 88, "state": "protected-view"})
+        self.assertEqual(word.calls, [("ProtectedOpen", str(path), False)])
+        self.assertEqual((launched.created, word.documents, word.protected), ([], [], 1))
+        with self.assertRaises(cu.Refused) as ctx:  # Word gives no document to ask in Protected View
+            launched._word_action_impl("document_state")
+        self.assertIn("shown in Protected View", str(ctx.exception))
+        launched._word_action_impl("close_fixture")
+        self.assertEqual((word.calls[-1], word.protected, launched._state_window), (("CloseWindow", str(path)), 0, None))
+        # it opened among the documents, or more than one window shows it: closed again and refused
+        for word, said in ((FakeStateWord(among_documents=True), "it opened among the documents, not in Protected "
+                                                                  "View"),
+                           (FakeStateWord(new_windows=(88, 89)), "2 new Word windows show it, not one"),
+                           (FakeStateWord(new_windows=()), "0 new Word windows show it, not one")):
+            launched = self.owner(word)
+            real_wait, cu.wait_for = cu.wait_for, lambda test, seconds=0, step=0: test()
+            try:
+                self.refused(launched, "did not open in the protected-view state", said, state="protected-view")
+            finally:
+                cu.wait_for = real_wait
+            self.assertEqual((word.protected, launched._state_window), (0, None))
+
+    def test_a_fixture_that_changed_while_it_was_open_refuses_the_run(self):
+        word = FakeStateWord({"ReadOnly": False, "ReadOnlyRecommended": False, "Final": False,
+                              "CompatibilityMode": 15, "RemovePersonalInformation": False})
+        launched = self.owner(word)
+        launched._word_action_impl("open_state", state="saved")
+        (self.home / "saved.docx").write_bytes(b"saved over by something")
+        with self.assertRaises(cu.Refused) as ctx:
+            launched._word_action_impl("close_fixture")
+        self.assertIn("was modified during capture", str(ctx.exception))
+        self.assertEqual(word.documents, [])  # it was still closed, unsaved
+
+    def test_a_protected_view_window_that_is_not_the_captures_stops_everything(self):
+        word = FakeStateWord()
+        word.documents = []
+        launched = self.owner(word)
+        launched.created, launched._created_meta = [], []
+        del launched._check_alone_impl  # the real check
+        launched.open_documents = lambda: len(word.documents)
+        launched._check_alone_impl()  # no document, no window: nothing of anyone's
+        word.protected = 1
+        with self.assertRaises(cu.Refused) as ctx:
+            launched._check_alone_impl()
+        self.assertIn("shows 1 Protected View window(s) and the capture opened 0", str(ctx.exception))
+        launched._state_window = object()
+        launched._check_alone_impl()  # the one window is the capture's own
+        word.protected = 2
+        with self.assertRaises(cu.Refused) as ctx:
+            launched._check_alone_impl()
+        self.assertIn("shows 2 Protected View window(s) and the capture opened 1", str(ctx.exception))
+        other = cu.Launched.__new__(cu.Launched)
+        other.key, other.app = "excel", object()
+        self.assertEqual(other._protected_windows(), 0)  # an app that has none
+
+
+class WordStates(unittest.TestCase):
+    """--backstage --state over a fake (D02 T01 §36): the fixture opened first and closed on every path, the
+    capture turned into the state's records, and what is published."""
+
+    def launched(self, log, fail_close=False):
+        def action(self, name, **kw):
+            log.append((name, kw.get("state")))
+            if name == "close_fixture" and fail_close:
+                raise cu.Refused("Word contextual fixture saved.docx was modified during capture")
+            return {"hwnd": 5}
+        return type("L", (), {"hwnd": 5, "word_action": action})()
+
+    def run_state(self, captured, state="saved", fail_close=False, raises=None, log=None, **args):
+        log = [] if log is None else log
+        args = type("A", (), dict({"app": "word", "backstage": True, "state": state}, **args))()
+
+        def inner(a, launched, uia, win):
+            log.append(("capture", None))
+            if raises is not None:
+                raise raises
+            return captured, [], cu.Context("word", BUILD, set())
+        real, cu._capture = cu._capture, inner
+        try:
+            return cu.capture(args, self.launched(log, fail_close), None, None), log
+        finally:
+            cu._capture = real
+
+    def blank(self):
+        return json.loads((cu.INVENTORY / "word" / "backstage.json").read_text(encoding="utf-8"))
+
+    def test_the_fixture_is_opened_before_the_capture_and_closed_after_it_on_every_path(self):
+        facts = [{k: v for k, v in r.items() if k not in cu.word_states.HAND} for r in self.blank()]
+        (records, problems, _), log = self.run_state(facts)
+        self.assertEqual(log, [("open_state", "saved"), ("capture", None), ("close_fixture", None)])
+        cu.word_states_check(records)
+        root = records[0]
+        self.assertEqual((root["id"], root["captureState"], root["itemCount"]),
+                         ("word.backstage.states.saved", "saved", len(records) - 1))
+        # the blank capture's own facts over a fixture: every page is unchanged, every entry has its counterpart
+        self.assertTrue(all(r.get("unchanged") or r["kind"] == "control" for r in records[1:]))
+        self.assertTrue(all("variantOf" in r for r in records[1:]))
+        # a capture that fails still closes the fixture, and a fixture that changed refuses what was captured
+        for failure in (cu.Refused("the Backstage page 'Info' did not load"), cu.Gone("an element went away"),
+                        KeyboardInterrupt()):
+            log = []
+            with self.assertRaises(type(failure)):
+                self.run_state(facts, raises=failure, log=log)
+            self.assertEqual(log, [("open_state", "saved"), ("capture", None), ("close_fixture", None)])
+        with self.assertRaises(cu.Refused) as ctx:
+            self.run_state(facts, fail_close=True)
+        self.assertIn("was modified during capture", str(ctx.exception))
+        # a fixture that cannot be opened is never captured over, and nothing is closed that was not opened
+        log = []
+
+        def refuses(self, name, **kw):
+            log.append((name, kw.get("state")))
+            raise cu.Refused("the fixture saved.docx does not exist")
+        args = type("A", (), {"app": "word", "backstage": True, "state": "saved"})()
+        with self.assertRaises(cu.Refused):
+            cu.capture(args, type("L", (), {"hwnd": 5, "word_action": refuses})(), None, None)
+        self.assertEqual(log, [("open_state", "saved")])
+
+    def test_a_state_is_asked_for_with_backstage_alone_and_from_the_list(self):
+        for args, said in (({"backstage": False}, "--state is given with --app word --backstage"),
+                           ({"app": "excel"}, "--state is given with --app word --backstage")):
+            with self.assertRaises(cu.Refused) as ctx:
+                self.run_state([], **args)
+            self.assertIn(said, str(ctx.exception))
+        with self.assertRaises(cu.Refused) as ctx:
+            self.run_state([], state="signed")
+        self.assertIn("'signed' is not a document state", str(ctx.exception))
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()) as err:
+            cu.main(["--app", "word", "--options", "--state", "saved"], launcher=_never_start)
+        self.assertIn("--state is given with --app word --backstage", err.getvalue())
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+            cu.main(["--app", "word", "--backstage", "--state", "signed"], launcher=_never_start)
+
+    def test_a_capture_the_state_cannot_hold_publishes_nothing(self):
+        stranger = [{"id": "word.options.general", "app": "word", "kind": "group", "label": "General", "order": 0}]
+        with self.assertRaises(cu.Refused) as ctx:
+            self.run_state(stranger)
+        self.assertIn("which is not a Backstage record; nothing is published", str(ctx.exception))
+
+    def run_main(self, out, capture, state="saved", merge=True):
+        launched = type("L", (), {"hwnd": 5, "close": lambda self: None})()
+        real, cu.capture = cu.capture, capture
+        try:
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                code = cu.main(["--app", "word", "--backstage", "--state", state, "--out", str(out)]
+                               + (["--merge"] if merge else []),
+                               launcher=lambda app: launched, uia_factory=lambda: None, win_factory=lambda: None)
+        finally:
+            cu.capture = real
+        return code, stdout.getvalue(), stderr.getvalue()
+
+    def state_capture(self, state, extra=()):
+        facts = [{k: v for k, v in r.items() if k not in cu.word_states.HAND} for r in self.blank()] + list(extra)
+        return cu.word_states.state_records(cu.word_states.by_name(state), facts, self.blank())
+
+    def test_a_state_is_published_into_its_own_file_and_replaces_only_itself(self):
+        ctx = cu.Context("word", BUILD, set())
+        saved, final = self.state_capture("saved"), self.state_capture("final")
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "backstage-states.json"
+            code, _, _ = self.run_main(out, lambda *a: (copy.deepcopy(saved), [], ctx), merge=False)
+            self.assertEqual(code, 0)
+            self.assertEqual(out.read_text(encoding="utf-8"), cu.render(saved))
+            code, _, _ = self.run_main(out, lambda *a: (copy.deepcopy(final), [], ctx), state="final")
+            self.assertEqual(code, 0)
+            self.assertEqual(out.read_text(encoding="utf-8"), cu.render(saved + final))
+            # a hand-written field on a record of one state is carried by that state's recapture alone
+            told = [dict(r, behaviour="Closes the document. Always available.")
+                    if r["id"] == "word.backstage.states.saved.close" else r for r in saved + final]
+            out.write_text(cu.render(told), encoding="utf-8")
+            code, _, _ = self.run_main(out, lambda *a: (copy.deepcopy(saved), [], ctx))
+            self.assertEqual(code, 0)
+            written = json.loads(out.read_text(encoding="utf-8"))
+            by_id = {r["id"]: r for r in written}
+            self.assertEqual(by_id["word.backstage.states.saved.close"]["behaviour"],
+                             "Closes the document. Always available.")
+            self.assertEqual([r for r in written if r["captureState"] == "final"], final)
+            before = out.read_bytes()
+            # a state capture that is not lawful, and a merge that is not, publish nothing
+            broken = [dict(r, variantOf="word.backstage.gone") if r["id"].endswith(".close") else r for r in final]
+            code, _, err = self.run_main(out, lambda *a: (broken, [], ctx), state="final")
+            self.assertEqual(code, 1)
+            self.assertIn("the state capture is not whole", err)
+            self.assertIn("is not a record of the blank-document capture", err)
+            code, _, err = self.run_main(out, lambda *a: (_ for _ in ()).throw(cu.Refused("the fixture saved.docx "
+                                                                                           "did not open")))
+            self.assertEqual(code, 1)
+            self.assertEqual(out.read_bytes(), before)
+
+    def window_capture(self, state, lower_shown):
+        """Run the real capture over a fake window, with the fixture's opening and Backstage itself stood in for."""
+        import argparse
+        tab, lower = home()
+        lower.rect = (0, 80, 1920, 200)
+        root = E("Window", "final.docx - Word", kids=[E("Tab", "Ribbon Tabs", kids=[tab])]
+                 + ([lower] if lower_shown else []))
+        args = argparse.Namespace(app="word", backstage=True, state=state, layout="classic", merge=False, out=None)
+        launched = type("L", (), {"hwnd": 5, "proc": type("P", (), {"pid": 7})(),
+                                  "app": type("A", (), {"Build": "16.0.20527", "Version": "16.0"})(),
+                                  "language": lambda self: 1033, "check_alone": lambda self: None,
+                                  "word_action": lambda self, name, **kw: {"hwnd": 5}})()
+        win = type("W", (), {"monitors": lambda self: [Profile.MONITOR], "place": lambda self, h, m: None,
+                             "state": lambda self, h: dict(Profile.GOOD, origin=(0, 0), monitor=1)})()
+        uia = type("U", (), {"element": lambda self, h: root})()
+        saved = cu.installed_build, cu.time.sleep, cu.capture_word_backstage
+        cu.installed_build, cu.time.sleep = lambda: BUILD, lambda s: None
+        cu.capture_word_backstage = lambda *a, **kw: []
+        try:
+            return cu.capture(args, launched, uia, win)
+        finally:
+            cu.installed_build, cu.time.sleep, cu.capture_word_backstage = saved
+
+    def test_a_document_whose_ribbon_word_collapses_is_not_held_to_the_rule_that_it_is_shown(self):
+        # over a final document Word collapses the ribbon: the capture goes on, and bounds are still recorded
+        records, problems, _ = self.window_capture("final", lower_shown=False)
+        self.assertEqual((problems, records[0]["id"]), ([], "word.backstage.states.final"))
+        # a fixture of such a state over which the ribbon is shown is not shown as its state is
+        with self.assertRaises(cu.Refused) as ctx:
+            self.window_capture("final", lower_shown=True)
+        self.assertIn("the ribbon is shown over the final fixture, and scripts/lib/word_states.py says Word collapses "
+                      "it over a document in that state", str(ctx.exception))
+        # every other state is held to the rule: a window without its ribbon is refused
+        with self.assertRaises(cu.Refused) as ctx:
+            self.window_capture("saved", lower_shown=False)
+        self.assertIn("the ribbon was not found in the app's window", str(ctx.exception))
+        self.assertEqual(self.window_capture("saved", lower_shown=True)[1], [])
+        self.assertEqual(cu.profile_problems(Profile.GOOD, Profile.MONITOR, 1033, None), [])
+        self.assertEqual(cu.profile_problems(Profile.GOOD, Profile.MONITOR, 1033, 20), ["the ribbon is not always "
+                                                                                       "shown"])
+        self.assertEqual({s["name"] for s in cu.word_states.STATES if s.get("ribbon") == "collapsed"},
+                         {"final", "protected-view"})
+
+
+class BackstageStateFacts(unittest.TestCase):
+    """What a document's state brings into Backstage, in the rules the blank-document capture also uses
+    (D02 T01 §36): the document's own folder, and what is unavailable."""
+
+    def test_the_documents_folder_is_recorded_by_what_it_is_and_never_by_its_path(self):
+        wb = cu.word_backstage
+        path = "C: » Users » someone » Documents » Reports"
+
+        def base(rid, kind, label, order, node, parent, **extra):
+            return {"id": rid, "kind": kind, "label": label, "order": order, "parent": parent, **extra}
+        info = {"children": [
+            {"role": "Group", "name": "Location Information", "class_name": "NetUISlabContainer", "children": [
+                {"role": "Text", "name": "Location"},
+                {"role": "Button", "name": path, "class_name": "NetUISimpleButton"}]},
+            {"role": "Group", "name": "Location Information", "class_name": "NetUISlabContainer", "children": [
+                {"role": "Button", "name": "Copy path", "class_name": "NetUIButton"}]},
+            {"role": "Group", "name": "Share", "automation_id": "GroupShare", "children": [
+                {"role": "Button", "name": path, "class_name": "NetUISimpleButton"},
+                {"role": "Pane", "name": "", "children": [
+                    {"role": "TabItem", "name": "Email", "class_name": "NetUISimpleButton"},
+                    {"role": "Button", "name": "Browse", "class_name": "NetUISimpleButton"}]}]},
+            {"role": "Group", "name": "Properties", "children": [
+                {"role": "Button", "name": "Open File Location", "class_name": "NetUISimpleButton"}]}]}
+        records = wb.record_tree("word.backstage.info", info, base)
+        labels = [(r["id"][len("word.backstage.info."):], r["label"]) for r in records]
+        self.assertEqual(labels, [
+            ("location-information", "Location Information"), ("location-information.location", "Location"),
+            ("location-information-2", "Location Information"), ("location-information-2.copy-path", "Copy path"),
+            ("share", "Share"), ("share.location", "Location"), ("share.email", "Email"), ("share.browse", "Browse"),
+            ("properties", "Properties"), ("properties.open-file-location", "Open File Location")])
+        self.assertFalse(any("»" in json.dumps(r, ensure_ascii=False) or "someone" in json.dumps(r) for r in records))
+        # the folder is no task of Share: it is never selected for a panel, though it stands in the task group
+        share = [dict(r, idMso="GroupShare") if r["id"].endswith(".share") else r for r in records]
+        pressed, ctx = [], cu.Context("word", BUILD, set())
+        folder = E("Button", path)
+        folder.activate = lambda: pressed.append("the folder")
+        folder.is_selected = lambda: False
+        email = E("TabItem", "Email")
+        email.activate = lambda: pressed.append("Email")
+        email.is_selected = lambda: True  # the task already selected shows its panel as the page's own
+        ctx.elements = {"word.backstage.info.share.location": folder, "word.backstage.info.share.email": email}
+        tasks = [r for r in share if r["id"] in ctx.elements or r["id"].endswith(".share")]
+        self.assertEqual(cu.backstage_task_details(None, 5, "Share", tasks, ctx, set(), base, None, 0.3), [])
+        self.assertEqual(pressed, [])
+
+    def test_what_a_state_makes_unavailable_is_recorded_so_and_a_page_it_does_not_offer_is_never_opened(self):
+        off = E("Button", "Print")
+        off.is_enabled = False
+        word = FakeWordBackstage({"Info": [E("Group", "Protect Document", kids=[E("Button", "Protect")])],
+                                  "Print": [E("Group", "Print", kids=[off, E("Spinner", "Copies")])],
+                                  "Share": [E("Group", "Share", kids=[E("Button", "Email")])]})
+        for entry in word.nav.kids:
+            if entry.name in ("Share", "Close"):
+                entry.is_enabled = False
+        uia = type("U", (), {"element": lambda self, h: word.root})()
+        win = type("W", (), {"dismiss_surface": lambda self, hwnd, element: word.close()})()
+        launched = type("L", (), {"hwnd": 5, "check_alone": lambda self: None})()
+        real_sleep, cu.time.sleep = cu.time.sleep, lambda s: None
+        try:
+            records = cu.capture_word_backstage(launched, uia, win, cu.Context("word", BUILD, set()), set(), ready=0.3)
+        finally:
+            cu.time.sleep = real_sleep
+        by_id = {r["id"]: r for r in records}
+        self.assertIs(by_id["word.backstage.print.print.print"]["enabled"], False)
+        self.assertNotIn("enabled", by_id["word.backstage.print.print.copies"])
+        self.assertNotIn("enabled", by_id["word.backstage.info"])
+        share = by_id["word.backstage.share"]
+        self.assertEqual((share["kind"], share["enabled"]), ("backstagePage", False))
+        self.assertFalse(any(r["id"].startswith("word.backstage.share.") for r in records))
+        self.assertNotIn("Share", word.pressed)  # a disabled page is never opened
+        self.assertIs(by_id["word.backstage.close"]["enabled"], False)
+        self.assertNotIn("Close", word.pressed)
 
 
 if __name__ == "__main__":

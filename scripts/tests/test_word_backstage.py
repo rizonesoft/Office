@@ -7,10 +7,12 @@ import json
 from pathlib import Path
 import sys
 import unittest
+import unittest.mock
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "scripts" / "lib"))
 import word_backstage as wb  # noqa: E402  (scripts/lib is put on the path just above)
+import word_states  # noqa: E402
 
 INVENTORY = REPO / "design" / "inventory"
 
@@ -135,15 +137,46 @@ class Validate(unittest.TestCase):
         cls.records = json.loads((INVENTORY / "word" / "backstage.json").read_text(encoding="utf-8"))
         cls.baseline = json.loads((INVENTORY / "word" / "baseline.json").read_text(encoding="utf-8"))
         cls.reference = (INVENTORY / "REFERENCE.md").read_text(encoding="utf-8")
+        # D02 T01 §36: what the committed captures over documents in other states hold counts as captured
+        cls.states = word_states.captured_ids(INVENTORY / "word")
 
-    def refused(self, records, fragment, absent=None, reference=None):
+    def refused(self, records, fragment, absent=None, reference=None, also_captured=None):
         with self.assertRaises(wb.Invalid) as ctx:
             wb.validate(records, self.baseline, wb.ABSENT if absent is None else absent,
-                        self.reference if reference is None else reference)
+                        self.reference if reference is None else reference,
+                        also_captured=self.states if also_captured is None else also_captured)
         self.assertIn(fragment, str(ctx.exception))
 
     def test_the_committed_capture_passes(self):
-        wb.validate(self.records, self.baseline, wb.ABSENT, self.reference)
+        wb.validate(self.records, self.baseline, wb.ABSENT, self.reference, also_captured=self.states)
+
+    def test_what_a_document_state_showed_counts_as_captured_and_is_no_longer_absent(self):
+        # D02 T01 §36: six ids a document's state shows were captured over fixtures and left the absence list
+        shown = {"GroupReadOnly", "GroupFileConvert", "UpgradeDocument", "GroupProtectedView",
+                 "GroupPrintProtectedView", "AllowPersonallyIdentifiableInformation"}
+        self.assertLessEqual(shown, self.states)
+        self.assertFalse(shown & set(wb.ABSENT))
+        self.assertNotIn("document-state", wb.ABSENT.values())
+        self.assertNotIn("document-state", wb.REASON_OWNERS)
+        # without the state captures those ids are neither captured nor absent; with them, an id still listed
+        # absent is refused
+        self.refused(self.records, "baseline group GroupReadOnly on TabInfo is neither captured nor listed absent",
+                     also_captured=frozenset())
+        self.refused(self.records, "listed absent but captured: GroupReadOnly",
+                     absent=dict(wb.ABSENT, GroupReadOnly="host-state"))
+
+    def test_each_reason_a_document_state_leaves_behind_names_its_owner(self):
+        # plan review, gap 3: a reason is owned by a section or final, in the list and in the reference
+        self.assertEqual({r: wb.REASON_OWNERS[r] for r in ("signed-state", "server-state", "host-state")},
+                         {"signed-state": "D02 T01 §47", "server-state": "D02 T01 §48", "host-state": "D02 T01 §49"})
+        for reason, owner in (("signed-state", "D02 T01 §47"), ("server-state", "D02 T01 §48"),
+                              ("host-state", "D02 T01 §49")):
+            self.assertIn(reason, wb.ABSENT.values())
+            with unittest.mock.patch.dict(wb.REASON_OWNERS):
+                del wb.REASON_OWNERS[reason]
+                self.refused(self.records, f"the absence reason {reason} has no owning section and is not final")
+            self.refused(self.records, f"REFERENCE.md does not say {reason} is captured by {owner}",
+                         reference=self.reference.replace(f"by `{owner}`", "later"))
 
     def test_a_missing_page_is_refused_by_name(self):
         recs = [r for r in self.records if r["id"] != "word.backstage.print" and
@@ -155,15 +188,15 @@ class Validate(unittest.TestCase):
         self.refused(recs, "baseline group GroupPermissions on TabInfo is neither captured nor listed absent")
 
     def test_an_absence_whose_reason_is_not_documented_is_refused(self):
-        absent = dict(wb.ABSENT, GroupReadOnly="a-new-reason")
+        absent = dict(wb.ABSENT, GroupSignatures="a-new-reason")
         self.refused(self.records, "the absence reason a-new-reason is not documented", absent=absent)
 
     def test_an_absence_reason_without_an_owner_or_a_final_disposition_is_refused(self):
-        reference = self.reference + "\n- `server-state`: shown only for a document in a library.\n"
-        self.refused(self.records, "the absence reason server-state has no owning section and is not final",
-                     absent=dict(wb.ABSENT, GroupReadOnly="server-state"), reference=reference)
-        self.refused(self.records, "REFERENCE.md does not say document-state is captured by D02 T01 §36",
-                     reference=self.reference.replace("by `D02 T01 §36`", "later"))
+        reference = self.reference + "\n- `cloud-state`: shown only for a document in a cloud.\n"
+        self.refused(self.records, "the absence reason cloud-state has no owning section and is not final",
+                     absent=dict(wb.ABSENT, GroupSignatures="cloud-state"), reference=reference)
+        self.refused(self.records, "REFERENCE.md does not say account-state is captured by D02 T01 §37",
+                     reference=self.reference.replace("by `D02 T01 §37`", "later"))
         self.refused(self.records, "REFERENCE.md does not say not-offered is final",
                      reference=self.reference.replace("- `not-offered`: Final:", "- `not-offered`:"))
 
@@ -177,14 +210,15 @@ class Validate(unittest.TestCase):
 
     def test_an_absence_that_was_captured_after_all_is_refused(self):
         self.refused(self.records, "listed absent but captured: GroupPermissions",
-                     absent=dict(wb.ABSENT, GroupPermissions="document-state"))
+                     absent=dict(wb.ABSENT, GroupPermissions="host-state"))
 
     def test_a_missing_behaviour_is_refused_naming_the_record(self):
         recs = copy.deepcopy(self.records)
         target = next(r for r in recs if r["kind"] == "menuItem")
         del target["behaviour"]
         self.refused(recs, f"menuItem {target['id']} has no behaviour")
-        wb.validate(recs, self.baseline, wb.ABSENT, self.reference, require_behaviour=False)
+        wb.validate(recs, self.baseline, wb.ABSENT, self.reference, require_behaviour=False,
+                    also_captured=self.states)
 
     def test_an_action_left_out_or_an_owners_address_is_refused(self):
         self.refused([r for r in self.records if r["id"] != "word.backstage.close"],
@@ -199,7 +233,7 @@ class Validate(unittest.TestCase):
         target["behaviour"] = "Makes the preview larger."
         self.refused(recs, "word.backstage.print.print-preview.zoom-in: its behaviour does not say when it is unavailable")
         target["behaviour"] = "Makes the preview larger. Always available."
-        wb.validate(recs, self.baseline, wb.ABSENT, self.reference)
+        wb.validate(recs, self.baseline, wb.ABSENT, self.reference, also_captured=self.states)
         for incidental in ("Makes the document suggest opening read only.",  # reconciliation 2: a word, no condition
                            "Prints only when asked, and needs nothing more.", "Marks it final; readers see it read only."):
             target["behaviour"] = incidental
@@ -207,7 +241,7 @@ class Validate(unittest.TestCase):
         for stated in ("Shows the size; read only.", "Prints. Needs an installed printer.",
                        "Opens it; disabled until a name is entered."):
             target["behaviour"] = stated
-            wb.validate(recs, self.baseline, wb.ABSENT, self.reference)
+            wb.validate(recs, self.baseline, wb.ABSENT, self.reference, also_captured=self.states)
 
     def test_save_is_an_action_or_the_page_it_shows(self):
         recs = copy.deepcopy(self.records)
