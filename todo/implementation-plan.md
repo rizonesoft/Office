@@ -120,7 +120,7 @@ Sections: 17 | Checklist items: 90
 
 ### Phase 2: Interface inventory and specification
 
-Sections: 45 | Checklist items: 261
+Sections: 46 | Checklist items: 265
 
 | Status | Reference   | Deliverable                         | Needs                                           | Items |
 | ------ | ----------- | ----------------------------------- | ----------------------------------------------- | ----- |
@@ -161,6 +161,7 @@ Sections: 45 | Checklist items: 261
 | [ ]    | D02 T01 §45 | Inventory Checkers on Deep Files    | none                                            | 4     |
 | [ ]    | D02 T01 §46 | Word Status Bar in Document States  | office, windows-host, display-session           | 4     |
 | [ ]    | D02 T01 §47 | Word Signed Document                | office, owner-decision                          | 4     |
+| [ ]    | D02 T01 §48 | Word Server Document States         | office, operator                                | 4     |
 | [ ]    | D02 T02 §1  | Design Tokens and Themes            | none                                            | 6     |
 | [ ]    | D02 T02 §2  | Command Glyph Decision              | none                                            | 5     |
 | [ ]    | D02 T02 §3  | Shell Layout Chapter                | none                                            | 6     |
@@ -309,6 +310,6 @@ The sections of 84 TODO files are not written yet, so they are in no phase above
 | [ ]    | D03 T01 §25 | Interoperability Domain Authoring  | 3              |
 | [ ]    | D03 T01 §26 | VBA Domain Authoring               | 4              |
 
-Progress: 109/184 verified sections, 20 ready to run now, 1 parked, 84 TODO files still to author (not counted here).
+Progress: 109/185 verified sections, 20 ready to run now, 1 parked, 84 TODO files still to author (not counted here).
 
-Checklist: 762/1270 items completed (includes Commit items).
+Checklist: 762/1274 items completed (includes Commit items).
