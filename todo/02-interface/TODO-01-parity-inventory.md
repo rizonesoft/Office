@@ -1258,9 +1258,10 @@ Filed 2026-11-15 from D02 T01 §36's fact check, which moved this here from §36
 
 Filed 2026-11-15 from D02 T01 §36's fact check. Backstage shows a Signatures group, and the status bar a signatures indicator, only for a digitally signed document. Signing one needs a certificate with a private key in the signed-in user's certificate store. Making a self-signed one for the capture and removing it again changes the owner's own store, and creating a credential is the owner's to allow, never a campaign's to decide. It runs where every Office capture runs (a Windows host with a display session); the Needs line names `office` for all three, since the plan's table has no room for the four names together.
 
+**Owner's decision, 2026-11-16 (in session, decision 49 of `docs/specs/2026-10-23-campaign-scope-design.md`):** allowed. The capture may make a self-signed test certificate in `CurrentUser\My`, sign one fixture document with it and delete the certificate and its key again. The `owner-decision` Need is removed with this answer.
+
 **Phase:** 2
-**Needs:** office, owner-decision
-**Owner action:** Say whether the capture may make a self-signed test certificate in your certificate store (CurrentUser\My), sign one fixture document with it and delete the certificate again, or whether signed documents stay uncaptured; the answer is recorded as a numbered decision in `docs/specs/2026-10-23-campaign-scope-design.md`.
+**Needs:** office
 **Surface:** no
 
 **Build order:**
@@ -1270,31 +1271,28 @@ Filed 2026-11-15 from D02 T01 §36's fact check. Backstage shows a Signatures gr
 
 - [ ] Add the `signed` state to `STATES` of `scripts/lib/word_states.py` and to `scripts/make-word-state-fixtures.py`: make a self-signed certificate named for this tool with a short life, sign the fixture through Word's object model, and delete the certificate and its key on every path, a failed run included. Done when: tests against a fake store show the certificate removed after success, after a failure in the middle and after a stop, a certificate that is not the tool's own never touched, and the count of certificates in the store the same before and after. Cheaper substitute: leaving the test certificate in the store for the next run.
 - [ ] Capture the state with `python scripts/capture-ui.py --app word --backstage --state signed --merge` and, once §46 is stamped, `--statusbar --state signed --merge`. Done when: `GroupSignatures` and whatever else the signed document shows are in `design/inventory/word/backstage.json` with `captureState`, and no id is left under `signed-state` in `ABSENT`.
-- [ ] Record in `design/inventory/REFERENCE.md` what a signed document adds and how the fixture is made, or, if the owner's decision is that signed documents stay uncaptured, move the ids to `not-exposed` with the decision cited. Done when: the reference agrees with `ABSENT` and `python scripts/check-inventory.py design/inventory/word` exits 0.
+- [ ] Record in `design/inventory/REFERENCE.md` what a signed document adds and how the fixture is made, with decision 49 cited as what allows the certificate. Done when: the reference agrees with `ABSENT` and `python scripts/check-inventory.py design/inventory/word` exits 0.
 - [ ] Commit: `inventory: capture Word Backstage for a signed document`
 
 **Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_word_states.py"` passes and `python scripts/check-inventory.py design/inventory/word` exits 0 with no `signed-state` reason left in `ABSENT`.
 
 ## 48. Word Server Document States
 
-Filed 2026-11-15 from D02 T01 §36's plan review (gap 3). Backstage shows some groups only for a document that lives in a document library: checked out, requiring check-out, read-only from a server, cached offline, with upload errors, with updates from other authors, under a workflow or a policy tip. §36 gives those ids the reason `server-state` in `ABSENT` of `scripts/lib/word_backstage.py`, because no document on this PC is in such a state. Capturing them needs a SharePoint or OneDrive for Business library the capture may put test documents in, which only the owner can provide. One more id is filed under the same reason, `GroupBroadcastResumeWarning`, which shows while a document is presented online: it needs the presentation service and a broadcast under way, and this section captures it or gives it a final reason with its evidence. It runs where every Office capture runs; the Needs line names `office` for the host.
+Filed 2026-11-15 from D02 T01 §36's plan review (gap 3). Backstage shows some groups only for a document that lives in a document library: checked out, requiring check-out, read-only from a server, cached offline, with upload errors, with updates from other authors, under a workflow or a policy tip. §36 gives those ids the reason `server-state` in `ABSENT` of `scripts/lib/word_backstage.py`, because no document on this PC is in such a state. Capturing them needs a SharePoint or OneDrive for Business library the capture may put test documents in, which only the owner can provide. One more id is filed under the same reason, `GroupBroadcastResumeWarning`, which shows while a document is presented online: it needs the presentation service and a broadcast under way, and this section captures it or gives it a final reason with its evidence. **Changed 2026-11-16 (owner, in session, decision 49 of `docs/specs/2026-10-23-campaign-scope-design.md`):** nothing is captured. The owner makes no test library for it, so server states stay uncaptured and the section now makes `server-state` a final reason instead; the `operator` Need and the owner action are gone, and no Office capture runs, so the `office` Need is gone too. The section as first written is in this file's history.
 
 **Phase:** 2
-**Needs:** office, operator
-**Owner action:** Create a document library the capture may write test documents to (SharePoint or OneDrive for Business, with check-out required on one folder), sign Word in to it on this PC, set the user environment variable `OFFICE_WORD_STATE_LIBRARY` to its address (it stays on this PC and is never committed) and note in `docs/specs/2026-10-23-campaign-scope-design.md` that the library exists; or record in `docs/specs/2026-10-23-campaign-scope-design.md` that server states stay uncaptured.
+**Needs:** none
 **Surface:** no
 
 **Build order:**
 
-1. Make the server fixtures in the owner's library. Done when: each opens in its state.
-2. Capture them. Done when: no id is left under `server-state`.
+1. Make `server-state` a final reason. Done when: no `server-state` id waits on a capture or names an owner section.
 
-- [ ] Add the server states to `STATES` of `scripts/lib/word_states.py` (checked out, check-out required, read-only from the server, cached offline, upload error, updates available), each with how `scripts/make-word-state-fixtures.py` brings a test document of its own in the owner's library into that state through Word's object model and how it puts the library back (the document deleted, nothing else of the library touched). Done when: tests against a fake library show each state made and confirmed, the test documents removed on every path, and a document of the library that the script did not make never opened, changed or deleted. Cheaper substitute: describing the groups from Microsoft's documentation, which is not a capture.
-- [ ] Capture each with `python scripts/capture-ui.py --app word --backstage --state <name> --merge` into `design/inventory/word/backstage-states.json`. Done when: every id under `server-state` in `ABSENT` is captured or moved to a final reason with its evidence in `design/inventory/REFERENCE.md`, two captures of a state give the same records, and `python scripts/check-inventory.py design/inventory/word` exits 0.
-- [ ] Remove `server-state` from `REASON_OWNERS` and from the reference once no id carries it, or, if the owner's decision is that server states stay uncaptured, make it a final reason that cites the decision. Done when: `scripts/tests/test_word_backstage.py` passes with the reason gone or final.
-- [ ] Commit: `inventory: capture Word Backstage for documents in a library`
+- [ ] In `scripts/lib/word_backstage.py`, make `server-state` a final reason (`None` in `REASON_OWNERS`), with a comment that cites decision 49. Done when: a test in `scripts/tests/test_word_backstage.py` shows `server-state` accepted with no owner section and every id that carried it still in `ABSENT`. Cheaper substitute: deleting the ids from `ABSENT`, which leaves the inventory silent about ids Word's own list of commands names; refused.
+- [ ] Document the reason as final in `design/inventory/REFERENCE.md` beside the other Backstage reasons, with the decision it rests on, the count of ids it covers and `GroupBroadcastResumeWarning` named among them. Done when: the reference says "Final:" on the reason's line, names decision 49 and a count that equals the ids carrying it, and `python scripts/check-inventory.py design/inventory/word` exits 0.
+- [ ] Commit: `inventory: Word's server document states stay uncaptured`
 
-**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_word_states.py"` passes and `python scripts/check-inventory.py design/inventory/word` exits 0 with no `server-state` reason left in `ABSENT`, or with it final and the owner's decision cited.
+**Test checkpoint:** `python -m unittest discover -s scripts/tests -p "test_word_backstage.py"` passes and `python scripts/check-inventory.py design/inventory/word` exits 0 with `server-state` final and decision 49 cited.
 
 ## 49. Word Host Document States
 

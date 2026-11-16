@@ -134,22 +134,24 @@ A GitHub check blocks merging until each pull request author has signed. CLA Ass
 
 **Owner's decision, 2026-11-13 (in session):** the hosted CLA Assistant, on the agreements of §3.
 
+**Owner's decision, 2026-11-16 (in session, decision 49 of `docs/specs/2026-10-23-campaign-scope-design.md`):** the check is not required on `main` for now. It runs and shows on every pull request, but it is no branch protection rule, since the campaign commits straight to `main` and a required status check could refuse those pushes. The owner still links the repository, so the `operator` Need stays.
+
 **Phase:** 99
 **Needs:** operator
-**Owner action:** Once §3 is stamped, sign in at cla-assistant.io with the GitHub account that owns `rizonesoft/Office`, link the repository to the agreement of `docs/legal/rizonesoft-cla.md`, and tell a campaign session it is installed and whether the session may mark its check required on `main`. The session records it in `docs/legal/README.md` and removes `operator`.
+**Owner action:** Sign in at cla-assistant.io with the GitHub account that owns `rizonesoft/Office`, link the repository to the agreement of `docs/legal/rizonesoft-cla.md`, and tell a campaign session it is installed. The session records it in `docs/legal/README.md` and removes `operator`.
 **Surface:** no
 
 **Build order:**
 
 1. Install the chosen CLA check on `rizonesoft/Office` pointing at `docs/legal/rizonesoft-cla.md`. Done when: a test pull request from an unsigned account shows a failing check.
-2. Make the check required in branch protection for `main`. Done when: the unsigned test pull request cannot merge.
+2. Record that the check is not required on `main` (decision 49). Done when: `docs/legal/README.md` says so and what making it required would take.
 
 - [ ] Choose between CLA Assistant and the self-hosted GitHub Action and record why in `docs/legal/README.md`. Done when: the choice names where signatures are stored. Cheaper substitute: collecting signatures by email.
 - [ ] Install and configure the check to link `docs/legal/rizonesoft-cla.md` and `docs/legal/rizonesoft-cla-entity.md`. Done when: the check comment on a test pull request links both. Cheaper substitute: a README request to sign, with no enforcement.
-- [ ] Mark the check as required on `main` in branch protection. Done when: `gh api repos/rizonesoft/Office/branches/main/protection` lists the check. Cheaper substitute: an optional check that can be ignored.
+- [ ] Record in `docs/legal/README.md` that the check is not required on `main` by the owner's decision 49, and that making it required is one branch protection setting once direct pushes to `main` are shown to pass it. Done when: the README names the decision and the setting. Cheaper substitute: leaving the check's standing unwritten, so the next reader takes an optional check for an oversight.
 - [ ] Commit: `legal: document contributor agreement check`
 
-**Test checkpoint:** `gh api repos/rizonesoft/Office/branches/main/protection --jq .required_status_checks.contexts` includes the CLA check name.
+**Test checkpoint:** the check's comment on a test pull request from an unsigned account links both agreements, and `docs/legal/README.md` names decision 49.
 
 ## 5. Contributing Guide
 
