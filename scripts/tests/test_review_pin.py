@@ -21,7 +21,7 @@ HEAD = textwrap.dedent('''\
 
     [reviewers.astra]
     cli = "codex"
-    model = "gpt-6-astra"
+    model = "gpt-6.2-astra"
     effort = "medium"
 
     [routes]
@@ -371,7 +371,7 @@ class ThreePass(Cases):
                      "[schedule] no_progress_cap needs", "(33)")
 
     def test_an_antigravity_model_name_agrees_with_the_schedules_efforts(self):
-        argon = THREE_PASS.replace('cli = "codex"\nmodel = "gpt-6-astra"\neffort = "medium"',
+        argon = THREE_PASS.replace('cli = "codex"\nmodel = "gpt-6.2-astra"\neffort = "medium"',
                                    'cli = "agy"\nmodel = "gemini-4-argon-medium"')
         self.assertEqual(load(argon)["reviewers"]["astra"]["cli"], "agy")
         self.refuses(argon.replace("gemini-4-argon-medium", "gemini-4-argon-high"),
@@ -381,7 +381,7 @@ class ThreePass(Cases):
         self.assertNotIn("effort", bare)
         load(bare)
         # A rotation pin with an Antigravity reviewer loads as it always did, whatever its efforts.
-        load(ROTATION.replace('cli = "codex"\nmodel = "gpt-6-astra"\neffort = "medium"',
+        load(ROTATION.replace('cli = "codex"\nmodel = "gpt-6.2-astra"\neffort = "medium"',
                               'cli = "agy"\nmodel = "gemini-4-argon-high"'))
 
     def test_the_lens_block_asks_each_lens_its_question_and_for_its_verdict_line(self):
@@ -516,7 +516,7 @@ class Faults(unittest.TestCase):
         rotation = self.found(ROTATION.replace('[schedule.escalation]\neffort = "medium"\nlenses = ["adversarial"]',
                                                '[schedule.escalation]\neffort = "max"\nlenses = []'))
         self.assertEqual(len(rotation), 2, rotation)
-        reviewer = self.found(HEAD.replace('model = "gpt-6-astra"\neffort = "medium"',
+        reviewer = self.found(HEAD.replace('model = "gpt-6.2-astra"\neffort = "medium"',
                                            'model = "bad model"\neffort = "extreme"\nsandbox = "x"'))
         self.assertEqual(len(reviewer), 3, reviewer)
         self.assertIn("unknown keys: sandbox", reviewer[0])
@@ -581,14 +581,14 @@ class Faults(unittest.TestCase):
 
     def test_every_single_fault_the_loader_refuses_is_what_faults_reports(self):
         cases = (HEAD.replace("schema_version = 1", "schema_version = 2"),
-                 HEAD.replace('model = "gpt-6-astra"', 'model = "bad model"'),
+                 HEAD.replace('model = "gpt-6.2-astra"', 'model = "bad model"'),
                  HEAD.replace('claude = ["astra"]', 'claude = []'),
                  HEAD.replace('claude = ["astra"]', 'claude = ["astra"]\ngemini = ["astra"]\nagy = ["astra"]'),
                  ROTATION.replace('lenses = ["consistency", "design", "record"]', "lenses = []"),
                  THREE_PASS + '\n[[schedule.rounds]]\neffort = "medium"\nlenses = ["optimization"]\n',
                  THREE_PASS.replace('lenses = ["design"]\npasses = ["plan", "round"]',
                                     'lenses = ["quality"]\npasses = ["plan"]'),
-                 THREE_PASS.replace('cli = "codex"\nmodel = "gpt-6-astra"\neffort = "medium"',
+                 THREE_PASS.replace('cli = "codex"\nmodel = "gpt-6.2-astra"\neffort = "medium"',
                                     'cli = "agy"\nmodel = "gemini-4-argon-high"'))
         for text in cases:
             with self.subTest(text=text[-60:]):

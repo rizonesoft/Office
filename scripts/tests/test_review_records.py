@@ -18,7 +18,7 @@ def load_dispatch():
 
 dispatch = load_dispatch()
 
-ROUND = ("## Round 1: astra (`gpt-6-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-08T00:54:50Z\n"
+ROUND = ("## Round 1: astra (`gpt-6.2-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-08T00:54:50Z\n"
          "- Effort: medium\n{extra}- Lines: 1\n\nOVERALL: approve\n")
 
 
@@ -40,7 +40,7 @@ class HistoricalRounds(unittest.TestCase):
         import tempfile
         with tempfile.TemporaryDirectory() as folder:
             path = pathlib.Path(folder) / "findings.md"
-            dispatch.record(path, {"writer": "claude", "reviewer": "astra", "model": "gpt-6-astra", "cli": "codex",
+            dispatch.record(path, {"writer": "claude", "reviewer": "astra", "model": "gpt-6.2-astra", "cli": "codex",
                                    "effort": "medium", "failover": [], "review": "OVERALL: approve"},
                             "2026-11-11T00:00:00Z")
             self.assertNotIn("- Type:", path.read_text(encoding="utf-8"))

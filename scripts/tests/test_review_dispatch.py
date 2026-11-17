@@ -493,7 +493,7 @@ class Dispatch(Harness):
         module.record(path, {**self.RESULT, "review": "Plain."}, "2026-10-20T00:00:01Z")
         self.assertEqual([r["number"] for r in module.read_rounds(path.read_text(encoding="utf-8"))], [1, 2])
         # A round recorded before the count (no Lines field) still reads, running to the next heading.
-        legacy = ("## Round 1: astra (`gpt-6-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-10-16T00:00:00Z\n\n"
+        legacy = ("## Round 1: astra (`gpt-6.2-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-10-16T00:00:00Z\n\n"
                   "Review.\n\n")
         self.assertEqual([r["number"] for r in module.read_rounds(legacy)], [1])
         # A hand edit that changes the review's line count is refused, not misread.
@@ -1278,7 +1278,7 @@ class MultiCli(Harness):
 
         [reviewers.astra]
         cli = "codex"
-        model = "gpt-6-astra"
+        model = "gpt-6.2-astra"
         effort = "medium"
 
         [reviewers.gemini]

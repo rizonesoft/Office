@@ -25,13 +25,13 @@ cli = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cli)
 
 RECORD = "docs/reviews/00-workspace/D99-T01-s1.md"
-RECORD_TEXT = """## Plan review: astra (`gpt-6-astra` via `codex`)
+RECORD_TEXT = """## Plan review: astra (`gpt-6.2-astra` via `codex`)
 
 1. **P2:** a plan finding.
 
 OVERALL: needs-attention
 
-## Round 1: astra (`gpt-6-astra` via `codex`)
+## Round 1: astra (`gpt-6.2-astra` via `codex`)
 
 ## adversarial: needs-attention
 
@@ -46,7 +46,7 @@ OVERALL: needs-attention
 2. Another.
 3. And a third.
 
-## Round 2: astra (`gpt-6-astra` via `codex`)
+## Round 2: astra (`gpt-6.2-astra` via `codex`)
 
 1. **P3:** a later one.
 
@@ -55,7 +55,7 @@ OVERALL: approve
 SPEC_TEXT = "# Spec\n\n## Decisions\n\n1. **First:** one.\n2. **Second:** two.\n"
 # A second record with ten findings in one round, for tests that need many valid triage lines.
 RECORD2 = "docs/reviews/00-workspace/D99-T02-s1.md"
-RECORD2_TEXT = ("## Round 1: astra (`gpt-6-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-10-01T08:00:00Z\n\n"
+RECORD2_TEXT = ("## Round 1: astra (`gpt-6.2-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-10-01T08:00:00Z\n\n"
                 + "".join(f"{n}. **P2, `scripts/a.py:{n}`:** finding {n} of ten.\n" for n in range(1, 11))
                 + "\nOVERALL: needs-attention\n")
 
@@ -608,10 +608,10 @@ class Triage(Indexed):
     """D00 T05 §3: the findings to triage, and the triage files that hold their dispositions."""
 
     TWO = "docs/reviews/00-workspace/D99-T03-s1.md"
-    TWO_TEXT = ("## Round 1: astra (`gpt-6-astra` via `codex`)\n\n1. **[P1] Alpha breaks.** `scripts/a.py:1` it does.\n"
+    TWO_TEXT = ("## Round 1: astra (`gpt-6.2-astra` via `codex`)\n\n1. **[P1] Alpha breaks.** `scripts/a.py:1` it does.\n"
                 "2. **P2, `scripts/a.py:2`: Beta breaks.** More.\n\nOVERALL: needs-attention\n\n"
                 "### Dispositions\n\n1. **[P1] Alpha breaks**: Fixed.\n\n"
-                "## Round 2: astra (`gpt-6-astra` via `codex`)\n\n1. **P1** Gamma breaks. Detail.\n"
+                "## Round 2: astra (`gpt-6.2-astra` via `codex`)\n\n1. **P1** Gamma breaks. Detail.\n"
                 "2. **P3:** a nit.\n3. **P2:** Delta breaks.\n4. **P2**, Epsilon breaks.\n\nOVERALL: needs-attention\n")
 
     def setUp(self):
@@ -757,24 +757,24 @@ class Triage(Indexed):
 
     ALL = "docs/reviews/00-workspace/D99-T06-s1.md"
     ALL_TEXT = (
-        "## Plan review: astra (`gpt-6-astra` via `codex`)\n\n1. **P1, line 91:** The plan omits a role.\n"
+        "## Plan review: astra (`gpt-6.2-astra` via `codex`)\n\n1. **P1, line 91:** The plan omits a role.\n"
         "2. **P2**, `todo/x.md:92`: The plan omits a test.\n\nPLAN: gaps\nOVERALL: needs-attention\n\n"
         "- Planned: gap 1 in abc1234\n\n"
-        "## Round 1: astra (`gpt-6-astra` via `codex`)\n\n1. **P2, `scripts/a.py:5`: A round finding.** More.\n\n"
+        "## Round 1: astra (`gpt-6.2-astra` via `codex`)\n\n1. **P2, `scripts/a.py:5`: A round finding.** More.\n\n"
         "OVERALL: needs-attention\n\n"
-        "## Completion review: astra (`gpt-6-astra` via `codex`)\n\nPart 1\n\n1. **present:** all of it.\n"
+        "## Completion review: astra (`gpt-6.2-astra` via `codex`)\n\nPart 1\n\n1. **present:** all of it.\n"
         "2. **missing-in-scope:** one thing, see the gap list.\n\nGap list\n\n"
         "1. **P2, missing-in-scope:** `scripts/a.py:9`: A completion gap.\n"
         "2. **missing-in-scope, P2**: `scripts/a.py:10` Another, its class first.\n"
         "3. **P1 | missing-in-scope:** `scripts/a.py:11` A third, with a bar.\n"
         "4. **missing-in-scope, P3:** `scripts/a.py:15`: A fourth, the colon inside the bold.\n\nCOMPLETION: gaps\n\n"
         "- Implemented: gap 1 in abc1234\n\n"
-        "## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n1. **closed, P2:** the first gap is closed.\n"
+        "## Reconciliation review: astra (`gpt-6.2-astra` via `codex`)\n\n1. **closed, P2:** the first gap is closed.\n"
         "2. **P2, open: completion gap 2.** It is still open.\n3. **closed (original P1):** the third.\n"
         "4. **P2, `scripts/a.py:12`: A new defect in the repair.** More.\n\nRECONCILIATION: gaps\n\n"
-        "## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n1. **closed, P2:** done.\n\n"
+        "## Reconciliation review: astra (`gpt-6.2-astra` via `codex`)\n\n1. **closed, P2:** done.\n\n"
         "No new findings.\n\nRECONCILIATION: gaps\n\n"
-        "## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n"
+        "## Reconciliation review: astra (`gpt-6.2-astra` via `codex`)\n\n"
         "1. **P1, `scripts/a.py:13`: A defect the third pass found.** More.\n\nRECONCILIATION: complete\n")
 
     def all_passes(self):
@@ -784,7 +784,7 @@ class Triage(Indexed):
         # D00 T07 §4's reconciliation wrote `**New finding, P3: ...**`; the reader refused the record as unknown.
         record = "docs/reviews/00-workspace/D99-T06-s2.md"
         (self.root / record).write_text(
-            "## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n"
+            "## Reconciliation review: astra (`gpt-6.2-astra` via `codex`)\n\n"
             "1. **open, P1: The run remains unproved.** Still open.\n"
             "2. **closed, P3: Finding struck.** Done.\n"
             "3. **New finding, P3: Incorrect repair attribution.** `docs/a.md:174` names the wrong commit.\n\n"
@@ -812,7 +812,7 @@ class Triage(Indexed):
         # Round 1 of §9: a new finding titled "... leaves the file handle open" was dropped as a status line.
         record = "docs/reviews/00-workspace/D99-T08-s1.md"
         (self.root / record).write_text(
-            "## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n"
+            "## Reconciliation review: astra (`gpt-6.2-astra` via `codex`)\n\n"
             "1. **P2, `scripts/a.py:12`: Repair leaves the file handle open.** Reproduce by cancelling.\n"
             "2. **P1, `scripts/a.py:13`: A closed socket is written to.** More.\n"
             "3. **closed, P2:** an earlier gap.\n4. **open, P3, gap 2:** another.\n"
@@ -830,8 +830,8 @@ class Triage(Indexed):
         # The same review quoted a heading and a finding in a code block; both were read as real.
         record = "docs/reviews/00-workspace/D99-T09-s1.md"
         (self.root / record).write_text(
-            "## Round 1: astra (`gpt-6-astra` via `codex`)\n\n1. **P2: A reader bug.** A reviewer can return:\n\n"
-            "   ```text\n   ## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n"
+            "## Round 1: astra (`gpt-6.2-astra` via `codex`)\n\n1. **P2: A reader bug.** A reviewer can return:\n\n"
+            "   ```text\n   ## Reconciliation review: astra (`gpt-6.2-astra` via `codex`)\n"
             "   1. **P2, `scripts/a.py:12`: Repair leaves the file handle open.**\n   RECONCILIATION: gaps\n   ```\n\n"
             "2. **P2: A second finding after the quotation.** More.\n\nOVERALL: needs-attention\n", encoding="utf-8")
         self.assertEqual(self.keys(record), [(record, "1", "1", "P2"), (record, "1", "2", "P2")])
@@ -850,7 +850,7 @@ class Triage(Indexed):
 
     def test_a_plan_only_record_is_listed_named_and_discovered(self):
         record = "docs/reviews/00-workspace/D99-T07-s1.md"
-        (self.root / record).write_text("## Plan review: astra (`gpt-6-astra` via `codex`)\n\n"
+        (self.root / record).write_text("## Plan review: astra (`gpt-6.2-astra` via `codex`)\n\n"
                                         "1. **P1, line 5:** Only a plan review so far.\n\nPLAN: gaps\n", encoding="utf-8")
         self.assertEqual(self.keys(record), [(record, "plan", "1", "P1")])
         self.assertIn((record, "plan", "1", "P1"), self.keys())
@@ -892,7 +892,7 @@ class Triage(Indexed):
         with contextlib.redirect_stdout(out):
             self.assertEqual(cli.main(["check"], root=self.root), 0, out.getvalue())
         (self.root / self.ALL).write_text(
-            self.ALL_TEXT + "\n## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n"
+            self.ALL_TEXT + "\n## Reconciliation review: astra (`gpt-6.2-astra` via `codex`)\n\n"
             "1. **P2, `scripts/a.py:14`: Found by a fourth pass.** More.\n\nRECONCILIATION: complete\n", encoding="utf-8")
         with contextlib.redirect_stdout(out):
             self.assertEqual(cli.main(["check"], root=self.root), 0, out.getvalue())  # every line and source holds
@@ -1009,15 +1009,15 @@ class Upkeep(Indexed):
 
     DATED = "docs/reviews/00-workspace/D99-T10-s1.md"
     DATED_TEXT = (
-        "## Plan review: astra (`gpt-6-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-09T08:00:00Z\n\n"
+        "## Plan review: astra (`gpt-6.2-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-09T08:00:00Z\n\n"
         "1. **P2, line 5:** A plan finding.\n\nPLAN: gaps\nOVERALL: needs-attention\n\n"
-        "## Round 1: astra (`gpt-6-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-10T08:00:00Z\n\n"
+        "## Round 1: astra (`gpt-6.2-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-10T08:00:00Z\n\n"
         "1. **P2, `scripts/a.py:1`: A round finding.** More.\n\nOVERALL: needs-attention\n\n"
-        "## Completion review: astra (`gpt-6-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-11T08:00:00Z\n\n"
+        "## Completion review: astra (`gpt-6.2-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-11T08:00:00Z\n\n"
         "1. **P2, missing-in-scope:** `scripts/a.py:2`: A completion gap.\n\nCOMPLETION: gaps\n\n"
-        "## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-12T08:00:00Z\n\n"
+        "## Reconciliation review: astra (`gpt-6.2-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-12T08:00:00Z\n\n"
         "1. **closed, P2:** done.\n\nRECONCILIATION: gaps\n\n"
-        "## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-13T08:00:00Z\n\n"
+        "## Reconciliation review: astra (`gpt-6.2-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-13T08:00:00Z\n\n"
         "1. **P2, `scripts/a.py:3`: A defect in the repair.** More.\n\nRECONCILIATION: complete\n")
 
     @staticmethod
@@ -1123,7 +1123,7 @@ class Upkeep(Indexed):
                     body="Rewritten so that it says what to do.")
         self.assertEqual(self.report("--check")[0], 0)
         self.assertEqual(lessons.read(self.folder / "the-lesson.md")["revised"], "2026-11-13")  # read back
-        self.dated(self.DATED_TEXT + "\n## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n"
+        self.dated(self.DATED_TEXT + "\n## Reconciliation review: astra (`gpt-6.2-astra` via `codex`)\n\n"
                    "- Writer: claude\n- Run: 2026-11-14T08:00:00Z\n\n1. **P1, `scripts/a.py:4`: The fault again.** More.\n\n"
                    "RECONCILIATION: gaps\n")
         self.triage(self.DATED, "completion finding 1: lesson:the-lesson\nreconciliation 2 finding 1: lesson:the-lesson\n"
@@ -1149,9 +1149,9 @@ class Upkeep(Indexed):
 
     def test_recurrence_for_every_kind_of_pass_before_on_and_after_the_lessons_date(self):
         # Completion review: each of the four pass kinds, with the lesson written after, on and before its run day.
-        head = "astra (`gpt-6-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-10T08:00:00Z\n\n"
+        head = "astra (`gpt-6.2-astra` via `codex`)\n\n- Writer: claude\n- Run: 2026-11-10T08:00:00Z\n\n"
         finding = "1. **P2, `scripts/a.py:1`: The fault.** More.\n\n"
-        earlier = ("## Reconciliation review: astra (`gpt-6-astra` via `codex`)\n\n- Writer: claude\n"
+        earlier = ("## Reconciliation review: astra (`gpt-6.2-astra` via `codex`)\n\n- Writer: claude\n"
                    "- Run: 2026-11-01T08:00:00Z\n\n1. **closed, P2:** done.\n\nRECONCILIATION: gaps\n\n")
         passes = {"plan": ("## Plan review: " + head + finding + "PLAN: gaps\nOVERALL: needs-attention\n", "plan"),
                   "round": ("## Round 1: " + head + finding + "OVERALL: needs-attention\n", "round 1"),

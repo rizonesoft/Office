@@ -16,12 +16,12 @@
 
 schema_version = 1
 
-# GPT-6 Astra through the Codex CLI, read-only sandbox. `effort` is optional
+# GPT-6.2 Astra through the Codex CLI, read-only sandbox. `effort` is optional
 # here and on every schedule step: with a schedule the step decides, and a
 # step without one leaves the choice to the Codex CLI's own configuration.
 [reviewers.astra]
 cli = "codex"
-model = "gpt-6-astra"
+model = "gpt-6.2-astra"
 effort = "medium"
 
 [routes]

@@ -9,10 +9,10 @@ Your own review is not enough for a nontrivial change: a different model reviews
 
 | Work written by | `--writer` | Reviewer (as installed) | Fallback |
 | --- | --- | --- | --- |
-| Claude Code | `claude` | GPT-6 Astra (`codex`, medium then low) | none |
-| Antigravity | `agy` (or `gemini`) | GPT-6 Astra (`codex`, medium then low) | none |
+| Claude Code | `claude` | GPT-6.2 Astra (`codex`, medium then low) | none |
+| Antigravity | `agy` (or `gemini`) | GPT-6.2 Astra (`codex`, medium then low) | none |
 
-Name your own agent as the writer. The pin as installed routes `claude` and `agy` to GPT-6 Astra through the Codex CLI in a read-only sandbox; the project owns its pin and may change it in `.conclave/reviewers.toml`. A route names exactly one reviewer, never of the writer's own model family, and the pin refuses an unrouted writer, an unknown CLI, a second reviewer or a same-family reviewer.
+Name your own agent as the writer. The pin as installed routes `claude` and `agy` to GPT-6.2 Astra through the Codex CLI in a read-only sandbox; the project owns its pin and may change it in `.conclave/reviewers.toml`. A route names exactly one reviewer, never of the writer's own model family, and the pin refuses an unrouted writer, an unknown CLI, a second reviewer or a same-family reviewer.
 
 The pin's `[schedule]` sets each pass's lenses and optional reasoning effort, so the writer never picks them, and it has two shapes. Codex is the sole reviewer for both Claude and Antigravity: medium for plan and the first defect round, then low for completion and reconciliation. Codex is not a campaign writer. A timeout, empty response or malformed verdict is never approval. Check which one applies first: `python scripts/review_pin.py --check` loads the pin, and `[schedule] policy` says which flow runs. `python scripts/review_pin.py --lenses <kind>` prints a three-pass pin's lenses for a pass and `--caps` prints its `pass_cap` and `no_progress_cap`.
 
